@@ -1,6 +1,10 @@
 pipeline {
   agent any
 
+  tools {
+    nodejs 'NodeJS'
+  }
+
   environment {
     DEPLOY_USER = 'root'
     DEPLOY_PATH = '/var/www/vuepress-blog'
@@ -19,9 +23,10 @@ pipeline {
       steps {
         sh '''
           set -e
-          export PATH="/usr/local/bin:/usr/bin:$PATH"
-          npx pnpm@latest install --frozen-lockfile
-          npx pnpm run docs:build
+          corepack enable
+          corepack prepare pnpm@latest --activate
+          pnpm install --frozen-lockfile
+          pnpm run docs:build
         '''
       }
     }
