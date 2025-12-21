@@ -1,3 +1,12 @@
+---
+date: 2025-12-21
+author: Gaaming Zhang
+category:
+  - 网络
+tag:
+  - 网络
+---
+
 # TCP在字节流怎么确认数据包的开始和结束
 
 #### 核心问题
