@@ -58,7 +58,7 @@ pipeline {
           sh '''
             set -e
             REMOTE="$DEPLOY_USER@$DEPLOY_HOST"
-            scp -i "$SSH_KEY" -o StrictHostKeyChecking=no src/pipelines/nginx/myBlog.conf "$REMOTE:/tmp/myBlog.conf"
+            scp -i "$SSH_KEY" -o StrictHostKeyChecking=no pipelines/nginx/myBlog.conf "$REMOTE:/tmp/myBlog.conf"
             ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo mv /tmp/myBlog.conf $NGINX_CONF_REMOTE"
             ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo nginx -t"
             ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo systemctl reload nginx"
