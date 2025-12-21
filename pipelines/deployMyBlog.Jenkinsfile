@@ -19,6 +19,8 @@ pipeline {
       steps {
         sh '''
           set -e
+          export PATH="$(npm config get prefix)/bin:$PATH"
+          npm install -g corepack
           corepack enable
           corepack prepare pnpm@latest --activate
           pnpm install --frozen-lockfile
