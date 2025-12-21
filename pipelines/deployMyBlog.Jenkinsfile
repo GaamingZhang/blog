@@ -15,10 +15,22 @@ pipeline {
       }
     }
 
+    stage('Environment Info') {
+      steps {
+        sh '''
+          echo "====== Build Environment ======"
+          echo "Hostname: $(hostname)"
+          echo "Node Name: $NODE_NAME"
+          uname -a
+        '''
+      }
+    }
+
     stage('Install & Build') {
       steps {
         sh '''
           set -e
+          npm install -g corepack
           corepack enable
           corepack prepare pnpm@latest --activate
           pnpm install --frozen-lockfile
