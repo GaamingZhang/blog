@@ -19,6 +19,9 @@ pipeline {
       steps {
         sh '''
           set -e
+          corepack enable
+          corepack prepare pnpm@latest --activate
+          pnpm -v
           pnpm install --frozen-lockfile
           pnpm run docs:build
         '''
