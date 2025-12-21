@@ -6,7 +6,7 @@ pipeline {
   }
 
   environment {
-    DEPLOY_USER = 'root'
+    DEPLOY_USER = 'ubuntu'
     DEPLOY_PATH = '/var/www/vuepress-blog'
     NGINX_CONF_REMOTE = '/etc/nginx/conf.d/myBlog.conf'
     SSH_KEY_CREDENTIAL = 'TencentNodeSSHKey'
