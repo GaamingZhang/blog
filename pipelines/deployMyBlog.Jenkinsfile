@@ -19,9 +19,8 @@ pipeline {
       steps {
         sh '''
           set -e
-
-          export NVM_DIR="$HOME/.nvm"
-          [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+          export NVM_DIR="/home/node/.nvm"
+          . "$NVM_DIR/nvm.sh"
 
           nvm use 25
 
