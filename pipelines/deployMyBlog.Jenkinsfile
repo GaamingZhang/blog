@@ -33,33 +33,35 @@ pipeline {
 
     stage('Deploy Static Site') {
       steps {
-        withCredentials([string(credentialsId: 'TencentNodeIP', variable: 'DEPLOY_HOST')]) {
-          sshagent([SSH_KEY_CREDENTIAL]) {
-            sh '''
-              set -e
-              REMOTE="$DEPLOY_USER@$DEPLOY_HOST"
-              ssh -o StrictHostKeyChecking=no "$REMOTE" "mkdir -p ${DEPLOY_PATH}_new"
-              rsync -avz --delete src/.vuepress/dist/ "$REMOTE:${DEPLOY_PATH}_new/"
-              ssh "$REMOTE" "rm -rf ${DEPLOY_PATH}_backup && mv ${DEPLOY_PATH} ${DEPLOY_PATH}_backup || true"
-              ssh "$REMOTE" "mv ${DEPLOY_PATH}_new ${DEPLOY_PATH}"
-            '''
-          }
+        withCredentials([
+          string(credentialsId: 'TencentNodeIP', variable: 'DEPLOY_HOST'),
+          sshUserPrivateKey(credentialsId: SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+        ]) {
+          sh '''
+            set -e
+            REMOTE="$DEPLOY_USER@$DEPLOY_HOST"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "mkdir -p ${DEPLOY_PATH}_new"
+            rsync -avz --delete -e "ssh -i $SSH_KEY -o StrictHostKeyChecking=no" src/.vuepress/dist/ "$REMOTE:${DEPLOY_PATH}_new/"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "rm -rf ${DEPLOY_PATH}_backup && mv ${DEPLOY_PATH} ${DEPLOY_PATH}_backup || true"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "mv ${DEPLOY_PATH}_new ${DEPLOY_PATH}"
+          '''
         }
       }
     }
 
     stage('Deploy Nginx Config') {
       steps {
-        withCredentials([string(credentialsId: 'TencentNodeIP', variable: 'DEPLOY_HOST')]) {
-          sshagent([SSH_KEY_CREDENTIAL]) {
-            sh '''
-              set -e
-              REMOTE="$DEPLOY_USER@$DEPLOY_HOST"
-              scp -o StrictHostKeyChecking=no src/pipelines/nginx/myBlog.conf "$REMOTE:$NGINX_CONF_REMOTE"
-              ssh "$REMOTE" "nginx -t"
-              ssh "$REMOTE" "systemctl reload nginx"
-            '''
-          }
+        withCredentials([
+          string(credentialsId: 'TencentNodeIP', variable: 'DEPLOY_HOST'),
+          sshUserPrivateKey(credentialsId: SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+        ]) {
+          sh '''
+            set -e
+            REMOTE="$DEPLOY_USER@$DEPLOY_HOST"
+            scp -i "$SSH_KEY" -o StrictHostKeyChecking=no src/pipelines/nginx/myBlog.conf "$REMOTE:$NGINX_CONF_REMOTE"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "nginx -t"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "systemctl reload nginx"
+          '''
         }
       }
     }
