@@ -5,11 +5,12 @@ category:
   - 网络
 tag:
   - 网络
+  - AI生成
 ---
 
-# dns 工作原理
+# DNS工作原理
 
-#### 核心概念
+## 核心概念
 
 **DNS（Domain Name System）** 是互联网的域名系统，将人类可读的域名（如 google.com）转换为机器可识别的 IP 地址（如 142.251.41.14）。DNS 使用**分布式数据库和递归查询**的方式，高效地完成这个转换过程。
 
@@ -21,11 +22,11 @@ tag:
 
 ---
 
-#### DNS 查询流程（完整示例）
+## DNS 查询流程（完整示例）
 
 假设用户在浏览器输入 **www.google.com**，DNS 解析过程如下：
 
-**第一步：本地查询（客户端）**
+### 第一步：本地查询（客户端）
 ```
 用户浏览器
   ↓
@@ -43,7 +44,7 @@ tag:
   └─ 如果未命中 → 继续下一步
 ```
 
-**第二步：递归查询（本地 DNS 解析器）**
+### 第二步：递归查询（本地 DNS 解析器）
 
 用户配置的本地 DNS 服务器（通常由 ISP 提供）进行递归查询：
 
@@ -77,7 +78,7 @@ tag:
 
 ---
 
-#### DNS 记录类型
+## DNS 记录类型
 
 **常见的 DNS 记录类型**：
 
@@ -113,9 +114,9 @@ nslookup 142.251.41.14
 
 ---
 
-#### DNS 解析模式
+## DNS 解析模式
 
-**1. 递归查询（Recursive Query）**
+### 1. 递归查询（Recursive Query）
 ```
 客户端
   ↓ 全权委托给本地 DNS 服务器
@@ -128,7 +129,7 @@ nslookup 142.251.41.14
 
 **特点**：客户端只发送一次请求，由本地 DNS 服务器完成所有查询工作。
 
-**2. 迭代查询（Iterative Query）**
+### 2. 迭代查询（Iterative Query）
 ```
 本地 DNS → 根服务器："google.com 在哪里？"
 根服务器："去问 TLD 服务器"（返回 TLD 地址）
@@ -146,9 +147,9 @@ TLD 服务器："去问权威服务器"（返回权威服务器地址）
 
 ---
 
-#### DNS 缓存和 TTL
+## DNS 缓存和 TTL
 
-**缓存层级**：
+### 缓存层级
 ```
 浏览器缓存（几分钟）
   ↓（如果未命中）
@@ -159,7 +160,7 @@ TLD 服务器："去问权威服务器"（返回权威服务器地址）
 递归查询（根 → TLD → 权威）
 ```
 
-**TTL（Time To Live）**：
+### TTL（Time To Live）
 ```bash
 # TTL 是 DNS 记录的有效期，单位为秒
 
@@ -183,9 +184,9 @@ dig google.com
 
 ---
 
-#### DNS 查询工具使用
+## DNS 查询工具使用
 
-**1. nslookup（基础查询）**：
+### 1. nslookup（基础查询）
 ```bash
 # 查询 A 记录
 nslookup google.com
@@ -203,7 +204,7 @@ nslookup
 > google.com
 ```
 
-**2. dig（详细查询）**：
+### 2. dig（详细查询）
 ```bash
 # 标准查询
 dig google.com
@@ -224,7 +225,7 @@ dig @8.8.8.8 google.com
 dig -x 142.251.41.14
 ```
 
-**3. host（简化工具）**：
+### 3. host（简化工具）
 ```bash
 # 查询 A 记录
 host google.com
@@ -238,9 +239,9 @@ host -t TXT google.com
 
 ---
 
-#### DNS 性能优化
+## DNS 性能优化
 
-**1. 本地 DNS 缓存**：
+### 1. 本地 DNS 缓存
 ```bash
 # 启用 systemd-resolved（Linux）
 sudo systemctl start systemd-resolved
@@ -257,7 +258,7 @@ sudo apt install dnsmasq
 sudo systemctl start dnsmasq
 ```
 
-**2. 使用高速 DNS 服务**：
+### 2. 使用高速 DNS 服务
 ```bash
 # 常见的公共 DNS：
 # Google:    8.8.8.8, 8.8.4.4
@@ -271,7 +272,7 @@ sudo vim /etc/resolv.conf
 sudo netplan edit 01-netcfg.yaml
 ```
 
-**3. DNS 预解析（浏览器）**：
+### 3. DNS 预解析（浏览器）
 ```html
 <!-- HTML 中添加 DNS 预解析 -->
 <link rel="dns-prefetch" href="//cdn.example.com">
@@ -283,9 +284,9 @@ sudo netplan edit 01-netcfg.yaml
 
 ---
 
-#### DNS 常见问题诊断
+## DNS 常见问题诊断
 
-**问题 1：DNS 解析变慢**
+### 问题 1：DNS 解析变慢
 ```bash
 # 诊断：
 time dig google.com  # 测量解析时间
@@ -304,7 +305,7 @@ sudo systemctl restart nscd
 #    检查网络：ping 8.8.8.8
 ```
 
-**问题 2：DNS 无法解析**
+### 问题 2：DNS 无法解析
 ```bash
 # 诊断：
 nslookup example.com     # 解析失败
@@ -323,7 +324,7 @@ cat /etc/resolv.conf
 nslookup example.com 8.8.8.8
 ```
 
-**问题 3：DNS 污染/劫持**
+### 问题 3：DNS 污染/劫持
 ```bash
 # 症状：访问正常网站跳转到其他地方
 
@@ -339,7 +340,7 @@ dig +dnssec example.com
 
 ---
 
-#### DNS 与网络性能关系
+## DNS 与网络性能关系
 
 ```
 DNS 解析时间（通常 10-100ms）
@@ -360,9 +361,9 @@ DNS 解析占比：5-10%（对于重复访问可减少为 0%）
 
 ---
 
-### 相关高频面试题
+## 相关高频面试题
 
-#### Q1: DNS 递归查询和迭代查询有什么区别？
+### Q1: DNS 递归查询和迭代查询有什么区别？
 
 **答案**：
 
@@ -397,7 +398,7 @@ DNS 解析占比：5-10%（对于重复访问可减少为 0%）
 - 迭代查询通常用于DNS服务器之间的通信
 - 递归查询可能导致 DNS 服务器负载较高，需要适当配置递归查询权限
 
-#### Q2: DNS 缓存的 TTL 值是什么含义？如何影响 DNS 变更生效时间？
+### Q2: DNS 缓存的 TTL 值是什么含义？如何影响 DNS 变更生效时间？
 
 **答案**：
 
@@ -432,7 +433,7 @@ DNS 解析占比：5-10%（对于重复访问可减少为 0%）
 - 变更后监控 DNS 解析状态，确保所有区域都已更新
 - 使用 `dig +short @权威DNS 域名` 验证权威服务器的记录是否已更新
 
-#### Q3: 如何通过 dig 命令追踪完整的 DNS 查询过程？
+### Q3: 如何通过 dig 命令追踪完整的 DNS 查询过程？
 
 **答案**：
 
@@ -476,7 +477,7 @@ dig @a.gtld-servers.net google.com  # 查询 TLD 服务器
 dig @ns1.google.com www.google.com  # 查询权威服务器
 ```
 
-#### Q4: DNS 污染和 DNS 劫持是什么？如何防护？
+### Q4: DNS 污染和 DNS 劫持是什么？如何防护？
 
 **答案**：
 
@@ -525,7 +526,7 @@ dig example.com                # 本地 DNS
    - 实施 DNS 查询监控和异常检测
    - 配置 DNS 过滤策略
 
-#### Q5: CNAME 和 A 记录有什么区别？什么时候使用 CNAME？
+### Q5: CNAME 和 A 记录有什么区别？什么时候使用 CNAME？
 
 **答案**：
 
@@ -574,7 +575,7 @@ cdn.example.com  CNAME  cdn-provider.example.net
 dig www.example.com CNAME +short
 ```
 
-#### Q6: 企业级 DNS 应该如何设计？考虑哪些因素？
+### Q6: 企业级 DNS 应该如何设计？考虑哪些因素？
 
 **答案**：
 
@@ -628,7 +629,7 @@ dig www.example.com CNAME +short
 - 实施 DNS 灾备方案
 - 培训运维人员掌握 DNS 故障排查技能
 
-#### Q7: DNS 使用 UDP 还是 TCP？为什么？什么情况下会使用 TCP？
+### Q7: DNS 使用 UDP 还是 TCP？为什么？什么情况下会使用 TCP？
 
 **答案**：
 
@@ -652,7 +653,7 @@ DNS 主要使用 UDP 协议，但在特定情况下会使用 TCP 协议：
 - 当 DNS 响应超过 512 字节时，服务器会返回 UDP 截断响应（TC=1 标志），客户端会自动切换到 TCP 重新查询
 - DNSSEC 签名会显著增加响应大小，因此现代 DNSSEC 通常使用 TCP
 
-#### Q8: 什么是 DNS 负载均衡？它的原理是什么？
+### Q8: 什么是 DNS 负载均衡？它的原理是什么？
 
 **答案**：
 
@@ -686,7 +687,7 @@ DNS 负载均衡是通过 DNS 系统实现的一种负载均衡技术：
 - CDN 节点选择
 - 多地域服务器负载均衡
 
-#### Q9: 什么是 DNSSEC？它如何保护 DNS 查询的安全性？
+### Q9: 什么是 DNSSEC？它如何保护 DNS 查询的安全性？
 
 **答案**：
 
@@ -727,7 +728,7 @@ dig example.com +dnssec
 - 配置复杂
 - 可能影响 DNS 解析性能
 
-#### Q10: 什么是 Split Horizon DNS？它的应用场景是什么？
+### Q10: 什么是 Split Horizon DNS？它的应用场景是什么？
 
 **答案**：
 
@@ -760,7 +761,7 @@ Split Horizon DNS（分割视图 DNS）是一种根据客户端来源返回不�
 - 根据客户端 IP 地址匹配不同的视图
 - 每个视图有独立的 DNS 记录
 
-#### Q11: 如何调试 DNS 解析问题？有哪些常用工具？
+### Q11: 如何调试 DNS 解析问题？有哪些常用工具？
 
 **答案**：
 
@@ -811,7 +812,7 @@ notepad C:\Windows\System32\drivers\etc\hosts  # Windows
 5. 检查 hosts 文件
 6. 清除本地 DNS 缓存
 
-#### Q12: DNS 的分层结构是怎样的？包括哪些类型的服务器？
+### Q12: DNS 的分层结构是怎样的？包括哪些类型的服务器？
 
 **答案**：
 
