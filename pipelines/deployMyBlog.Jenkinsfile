@@ -19,12 +19,9 @@ pipeline {
       steps {
         sh '''
           set -e
-          export PATH="$(npm config get prefix)/bin:$PATH"
-          npm install -g corepack
-          corepack enable
-          corepack prepare pnpm@latest --activate
-          pnpm install --frozen-lockfile
-          pnpm run docs:build
+          export PATH="/usr/local/bin:/usr/bin:$PATH"
+          npx pnpm@latest install --frozen-lockfile
+          npx pnpm run docs:build
         '''
       }
     }
