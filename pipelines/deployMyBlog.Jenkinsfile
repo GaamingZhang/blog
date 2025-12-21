@@ -18,17 +18,6 @@ pipeline {
     stage('Install & Build') {
       steps {
         sh '''
-          whoami
-
-          set -e
-          export NVM_DIR="/home/node/.nvm"
-          . "$NVM_DIR/nvm.sh"
-
-          nvm use 25
-
-          node -v
-          npm -v
-
           corepack enable
           corepack prepare pnpm@latest --activate
           pnpm -v
