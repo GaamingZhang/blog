@@ -40,10 +40,10 @@ pipeline {
           sh '''
             set -e
             REMOTE="$DEPLOY_USER@$DEPLOY_HOST"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "mkdir -p ${DEPLOY_PATH}_new"
-            rsync -avz --delete -e "ssh -i $SSH_KEY -o StrictHostKeyChecking=no" src/.vuepress/dist/ "$REMOTE:${DEPLOY_PATH}_new/"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "rm -rf ${DEPLOY_PATH}_backup && mv ${DEPLOY_PATH} ${DEPLOY_PATH}_backup || true"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "mv ${DEPLOY_PATH}_new ${DEPLOY_PATH}"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo mkdir -p ${DEPLOY_PATH}_new"
+            rsync -avz --delete --rsync-path="sudo rsync" -e "ssh -i $SSH_KEY -o StrictHostKeyChecking=no" src/.vuepress/dist/ "$REMOTE:${DEPLOY_PATH}_new/"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo rm -rf ${DEPLOY_PATH}_backup && sudo mv ${DEPLOY_PATH} ${DEPLOY_PATH}_backup || true"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo mv ${DEPLOY_PATH}_new ${DEPLOY_PATH}"
           '''
         }
       }
@@ -58,9 +58,10 @@ pipeline {
           sh '''
             set -e
             REMOTE="$DEPLOY_USER@$DEPLOY_HOST"
-            scp -i "$SSH_KEY" -o StrictHostKeyChecking=no src/pipelines/nginx/myBlog.conf "$REMOTE:$NGINX_CONF_REMOTE"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "nginx -t"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "systemctl reload nginx"
+            scp -i "$SSH_KEY" -o StrictHostKeyChecking=no src/pipelines/nginx/myBlog.conf "$REMOTE:/tmp/myBlog.conf"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo mv /tmp/myBlog.conf $NGINX_CONF_REMOTE"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo nginx -t"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo systemctl reload nginx"
           '''
         }
       }
