@@ -18,9 +18,11 @@ pipeline {
     stage('Install & Build') {
       steps {
         sh '''
+          whoami
+
           set -e
           export NVM_DIR="/home/node/.nvm"
-          . "$NVM_DIR/nvm.sh"
+          sudo . "$NVM_DIR/nvm.sh"
 
           nvm use 25
 
