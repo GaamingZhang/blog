@@ -2,12 +2,12 @@
 icon: pen-to-square
 date: 2025-12-21
 category:
-  - Redis
+  - docker
 tag:
-  - Redis
+  - docker
 ---
 
-### docker是怎么对其他容器进行隔离的
+# docker是怎么对其他容器进行隔离的
 
 #### 核心隔离机制
 

@@ -9,6 +9,14 @@ export default navbar([
     prefix: "/posts/",
     children: [
       {
+        text: "Docker",
+        icon: "pen-to-square",
+        prefix: "docker/",
+        children: [
+          { text: "docker是怎么对其他容器进行隔离的", icon: "pen-to-square", link: "docker是怎么对其他容器进行隔离的" }
+        ],
+      },
+      {
         text: "苹果",
         icon: "pen-to-square",
         prefix: "apple/",
