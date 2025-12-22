@@ -29,7 +29,7 @@ export default hopeTheme({
 
   // 博客相关
   blog: {
-    description: "一个前端开发者",
+    description: "一个软件开发工程师",
     intro: "/intro.html",
     medias: {
       GitHub: "https://github.com/GaamingZhang",
