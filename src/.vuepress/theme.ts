@@ -33,6 +33,7 @@ export default hopeTheme({
     intro: "/intro.html",
     medias: {
       GitHub: "https://github.com/GaamingZhang",
+      Email: "mailto:GaamingZhang@outlook.com",
       VuePressThemeHope: {
         icon: "https://theme-hope-assets.vuejs.press/logo.svg",
         link: "https://theme-hope.vuejs.press",
