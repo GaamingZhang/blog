@@ -32,7 +32,7 @@ export default sidebar({
         },
         {
           text: "Kafka",
-          icon: "logos:kafka-icon",
+          icon: "mdi:apache-kafka",
           prefix: "kafka/",
           collapsible: true,
           children: "structure",
