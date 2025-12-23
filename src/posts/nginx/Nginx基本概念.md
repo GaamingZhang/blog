@@ -1,16 +1,16 @@
 ---
-date: 2025-07-01
+date: 2025-12-23
 author: Gaaming Zhang
 category:
   - Nginx
 tag:
   - Nginx
-  - 已完工
+  - 还在施工中···
 ---
 
 # Nginx基本概念
 
-## 简答
+## 概述
 Nginx是一款轻量级、高性能的HTTP和反向代理服务器，也是一个IMAP/POP3/SMTP代理服务器。它以事件驱动、异步非阻塞的架构设计而闻名，能够高效处理大量并发连接，是现代Web架构中不可或缺的核心组件之一。
 
 ## 详细解答
