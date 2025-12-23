@@ -1,3 +1,13 @@
+---
+date: 2025-07-01
+author: Gaaming Zhang
+category:
+  - Redis
+tag:
+  - Redis
+  - 已完工
+---
+
 # 怎么规划Redis集群
 
 ## 详细解答

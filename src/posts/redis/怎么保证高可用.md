@@ -2,9 +2,9 @@
 date: 2025-07-01
 author: Gaaming Zhang
 category:
-  - Nginx
+  - Redis
 tag:
-  - Nginx
+  - Redis
   - 已完工
 ---
 

@@ -8,7 +8,7 @@ tag:
   - 已完工
 ---
 
-# CICD的理解
+# CI/CD的理解
 
 ## 概述
 CI/CD 是持续集成（Continuous Integration）与持续交付/部署（Continuous Delivery/Deployment）的简称，是现代软件开发与运维的核心实践框架，通过自动化流程实现代码到生产的快速、可靠、一致交付。
