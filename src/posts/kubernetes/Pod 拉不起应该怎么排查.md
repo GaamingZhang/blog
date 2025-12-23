@@ -1,6 +1,16 @@
+---
+date: 2025-07-01
+author: Gaaming Zhang
+category:
+  - Kubernetes
+tag:
+  - Kubernetes
+  - 已完工
+---
+
 # Pod 拉不起应该怎么排查
 
-#### 系统化排查流程
+## 系统化排查流程
 
 **排查原则**：从外到内，从简到繁，逐层深入
 
@@ -16,7 +26,7 @@
 8. 检查安全策略 (Security Context)
 ```
 
-#### 常见 Pod 状态及排查方法
+## 常见 Pod 状态及排查方法
 
 | 状态                           | 说明              | 常见原因                         | 排查方法                 |
 | ------------------------------ | ----------------- | -------------------------------- | ------------------------ |
@@ -30,7 +40,7 @@
 | **CreateContainerConfigError** | 容器配置错误      | ConfigMap/Secret缺失             | 检查配置资源             |
 | **Init:Error**                 | Init容器失败      | Init容器异常                     | 查看Init容器日志         |
 
-#### 详细排查步骤
+## 详细排查步骤
 
 **第一步：查看 Pod 基本信息**
 
@@ -129,7 +139,7 @@ kubectl debug <pod-name> -it --image=busybox -n <namespace>
 kubectl debug node/<node-name> -it --image=ubuntu
 ```
 
-#### 常见问题及解决方案
+## 常见问题及解决方案
 
 **问题1: Pending - 资源不足**
 
@@ -467,7 +477,7 @@ kubectl top node <node-name>
 - 检查磁盘空间
 - 检查节点资源压力
 
-#### 实用排查脚本
+## 实用排查脚本
 
 **快速诊断脚本**：
 
@@ -545,7 +555,7 @@ echo -e "\n===== 节点资源使用情况 ====="
 kubectl top nodes
 ```
 
-#### 排查检查清单
+## 排查检查清单
 
 **基础检查**：
 - [ ] Pod状态是什么？（Pending/Running/CrashLoopBackOff等）
@@ -595,7 +605,7 @@ kubectl top nodes
 - [ ] RBAC权限是否足够？
 - [ ] PodSecurityPolicy是否阻止？
 
-#### 高级排查技巧
+## 高级排查技巧
 
 **1. 使用kubectl get pod -o yaml查看完整状态**
 
@@ -652,9 +662,9 @@ kubectl describe pod <pod-name> -n <namespace> --v=8
 
 ---
 
-### 相关面试题
+## 相关面试题
 
-#### Q1: Pending、ImagePullBackOff、CrashLoopBackOff这三种状态的主要区别和排查重点是什么？
+### Q1: Pending、ImagePullBackOff、CrashLoopBackOff这三种状态的主要区别和排查重点是什么？
 
 **答案**：
 
@@ -685,7 +695,7 @@ kubectl describe pod <pod-name> -n <namespace> --v=8
   - 资源限制：检查是否OOM（exit code 137）
 - **关键命令**：`kubectl logs --previous` 查看崩溃前的日志
 
-#### Q2: 如何判断Pod是因为OOM（内存溢出）被杀死的？如何解决？
+### Q2: 如何判断Pod是因为OOM（内存溢出）被杀死的？如何解决？
 
 **答案**：
 
@@ -741,7 +751,7 @@ resources:
 # 使用Prometheus监控内存使用趋势
 ```
 
-#### Q3: Init容器失败会导致什么问题？如何排查？
+### Q3: Init容器失败会导致什么问题？如何排查？
 
 **答案**：
 
@@ -793,7 +803,7 @@ initContainers:
       memory: 128Mi
 ```
 
-#### Q4: 如何排查Pod可以创建但Service访问不通的问题？
+### Q4: 如何排查Pod可以创建但Service访问不通的问题？
 
 **答案**：
 
@@ -864,7 +874,7 @@ spec:
     - containerPort: 8080  # 与Service targetPort匹配
 ```
 
-#### Q5: 如何排查节点上Pod无法调度的问题（节点有足够资源但Pod仍Pending）？
+### Q5: 如何排查节点上Pod无法调度的问题（节点有足够资源但Pod仍Pending）？
 
 **答案**：
 
@@ -937,7 +947,7 @@ affinity:
           - node2
 ```
 
-#### Q6: Pod卡在Terminating状态无法删除怎么办？
+### Q6: Pod卡在Terminating状态无法删除怎么办？
 
 **答案**：
 
@@ -989,7 +999,7 @@ spec:
           command: ["/bin/sh", "-c", "sleep 10"]  # 优雅关闭
 ```
 
-#### Q7: 如何排查Pod间网络不通的问题？
+### Q7: 如何排查Pod间网络不通的问题？
 
 **答案**：
 
@@ -1064,7 +1074,7 @@ kubectl delete pod -n kube-system -l k8s-app=calico-node
 kubectl delete pod -n kube-system -l k8s-app=kube-proxy
 ```
 
-#### Q8: 生产环境中，如何系统性地监控和预防Pod问题？
+### Q8: 生产环境中，如何系统性地监控和预防Pod问题？
 
 **答案**：
 
@@ -1216,19 +1226,101 @@ spec:
 **6. 备份和恢复**：
 
 ```bash
-# 使用Velero备份
-velero backup create my-backup --include-namespaces myapp
+# 使用Velero备份和恢复Kubernetes资源
+# 安装Velero
+velero install --provider aws --bucket velero-backups --secret-file ./credentials-velero
 
-# 定期备份etcd
-ETCDCTL_API=3 etcdctl snapshot save backup.db
+# 备份特定命名空间
+velero backup create my-namespace-backup --include-namespaces myapp
 
-# 版本控制所有YAML配置
-git commit -am "Update deployment config"
+# 备份整个集群
+velero backup create full-cluster-backup
+
+# 查看备份
+velero backup get
+
+# 恢复备份
+velero restore create --from-backup my-namespace-backup
+
+# 备份PVC数据
+velero backup create pvc-backup --include-resources persistentvolumeclaims,persistentvolumes
 ```
 
----
+**7. 灾难恢复演练**：
 
-### 关键点总结
+```yaml
+# 定期进行灾难恢复演练
+# 验证备份的完整性和可恢复性
+# 测试恢复时间目标(RTO)和恢复点目标(RPO)
+
+# 使用Chaos Engineering测试系统韧性
+# 使用Litmus或Chaos Mesh进行故障注入
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: pod-delete-chaos
+  namespace: myapp
+spec:
+  annotationCheck: 'true'
+  engineState: 'active'
+  appinfo:
+    appns: 'myapp'
+    applabel: 'app=myapp'
+    appkind: 'deployment'
+  chaosServiceAccount: pod-delete-sa
+  experiments:
+  - name: pod-delete
+    spec:
+      components:
+        env:
+        - name: TOTAL_CHAOS_DURATION
+          value: '60'
+        - name: CHAOS_INTERVAL
+          value: '10'
+        - name: FORCE
+          value: 'false'
+```
+
+**8. 定期备份etcd**：
+
+```bash
+# 备份etcd集群数据
+ETCDCTL_API=3 etcdctl \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key \
+  snapshot save /etc/kubernetes/etcd-snapshot.db
+
+# 恢复etcd数据
+ETCDCTL_API=3 etcdctl \
+  --endpoints=https://127.0.0.1:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key \
+  snapshot restore /etc/kubernetes/etcd-snapshot.db \
+  --data-dir=/var/lib/etcd-restore \
+  --initial-cluster-token etcd-cluster-1 \
+  --initial-advertise-peer-urls https://127.0.0.1:2380
+```
+
+**9. 版本控制YAML配置**：
+
+```bash
+# 使用Git版本控制所有Kubernetes配置
+git init
+git add deployment.yaml service.yaml
+git commit -m "Initial commit of Kubernetes configurations"
+
+# 使用Helm管理应用配置
+helm create myapp
+helm install myapp ./myapp
+
+# 使用Kustomize管理环境差异
+kustomize build overlays/production | kubectl apply -f -
+```
+
+## 关键点总结
 
 **排查思路**：
 1. 查状态 → 看事件 → 查日志 → 进容器
@@ -1257,3 +1349,4 @@ kubectl get events --sort-by=.lastTimestamp  # 查看事件
 - 使用监控和告警系统
 - 做好日志收集和分析
 - 建立标准化的部署流程
+- 定期进行备份和灾难恢复演练

@@ -1,6 +1,16 @@
+---
+date: 2025-07-01
+author: Gaaming Zhang
+category:
+  - Kubernetes
+tag:
+  - Kubernetes
+  - 已完工
+---
+
 # Kubernetes控制网络转发用的什么组件
 
-#### 核心答案
+## 核心答案
 
 Kubernetes 主要使用 **kube-proxy** 来控制网络转发，它通过以下三种模式实现 Service 的负载均衡和流量转发：
 
@@ -15,7 +25,7 @@ Kubernetes 主要使用 **kube-proxy** 来控制网络转发，它通过以下�
 
 ---
 
-#### 详细解析
+## 详细解析
 
 **1. kube-proxy 的作用**
 
@@ -31,10 +41,14 @@ kube-proxy 是 Kubernetes 集群中每个节点上运行的网络代理组件，
 | ---------------- | ---------------------- | --------------------------- | ------------------------- |
 | **实现原理**     | 使用 iptables NAT 规则 | 使用 IPVS 负载均衡器        | 用户态代理                |
 | **性能**         | 中等，规则多时性能下降 | 高，时间复杂度 O(1)         | 低，需要内核态/用户态切换 |
-| **规则数量**     | 大规模集群规则爆炸     | 优化，使用哈希表            | N/A                       |
-| **负载均衡算法** | 随机（无会话保持）     | 支持多种算法（rr/lc/sh等）  | 轮询                      |
+| **规则数量**     | Service × Endpoint（大规模集群规则爆炸） | 虚拟服务器 + RealServer（优化，使用哈希表） | N/A                       |
+| **负载均衡算法** | 随机（无会话保持）     | 支持多种算法（rr/lc/sh/dh/sed/nq等）  | 轮询                      |
 | **状态**         | 当前默认               | 推荐用于大规模集群          | 已废弃（Kubernetes 1.0）  |
-| **适用场景**     | 中小规模集群           | 大规模集群（>1000 Service） | 不推荐使用                |
+| **适用场景**     | 中小规模集群（< 1000 Service） | 大规模集群（>1000 Service） | 不推荐使用                |
+| **会话保持**     | 不支持                 | 支持（使用 sh 算法）        | 支持                      |
+| **内核支持**     | 普遍支持               | 需要内核启用 IPVS 模块      | 无特殊要求                |
+| **内存占用**     | 规则多时占用大         | 相对较小                   | 较小                      |
+| **规则更新**     | 逐条更新，影响性能     | 批量更新，性能更好         | 实时更新                  |
 
 **3. iptables 模式详解**
 
@@ -102,6 +116,24 @@ ipvsadm -Ln
 - 更好的性能，适合大规模集群
 
 **启用 IPVS 模式**：
+
+1. **检查内核支持**：
+```bash
+# 验证 IPVS 模块是否已加载
+lsmod | grep ip_vs
+
+# 如果未加载，手动加载必要模块
+modprobe ip_vs
+modprobe ip_vs_rr
+modprobe ip_vs_wrr
+modprobe ip_vs_sh
+modprobe ip_vs_dh
+modprobe ip_vs_sed
+modprobe ip_vs_nq
+modprobe nf_conntrack_ipv4
+```
+
+2. **修改 kube-proxy ConfigMap**：
 ```yaml
 # kube-proxy ConfigMap
 apiVersion: v1
@@ -116,6 +148,21 @@ data:
       scheduler: "rr"  # 负载均衡算法
       minSyncPeriod: 0s
       syncPeriod: 30s
+      strictARP: true  # 启用严格 ARP 检查
+```
+
+3. **重启 kube-proxy**：
+```bash
+kubectl delete pod -n kube-system -l k8s-app=kube-proxy
+```
+
+4. **验证 IPVS 模式**：
+```bash
+# 检查 kube-proxy 日志
+kubectl logs -n kube-system kube-proxy-<pod-name> | grep "Using ipvs Proxier"
+
+# 检查 IPVS 规则
+ipvsadm -Ln
 ```
 
 **查看 IPVS 规则**：
@@ -194,11 +241,12 @@ CNI（Container Network Interface）负责 Pod 的网络配置：
 
 **CNI 工作流程**：
 ```bash
-1. kubelet 调用 CNI 插件
+1. kubelet 调用 CNI 插件（通过 /opt/cni/bin 目录下的可执行文件）
 2. CNI 插件创建 veth pair（虚拟网卡对）
-3. 一端放入 Pod 网络命名空间，另一端连接到宿主机网桥
-4. 配置 Pod IP 地址和路由
+3. 一端放入 Pod 网络命名空间（eth0），另一端连接到宿主机网桥
+4. 配置 Pod IP 地址和路由表
 5. 配置节点间的路由或隧道
+6. 更新集群路由信息（如 Calico 使用 BGP 发布路由）
 
 # 查看 CNI 配置
 ls /etc/cni/net.d/
@@ -206,6 +254,34 @@ ls /etc/cni/net.d/
 # 示例：Flannel 配置
 cat /etc/cni/net.d/10-flannel.conflist
 ```
+
+**CNI 配置文件结构**：
+```json
+{
+  "name": "flannel",
+  "cniVersion": "0.3.1",
+  "plugins": [
+    {
+      "type": "flannel",
+      "delegate": {
+        "hairpinMode": true,
+        "isDefaultGateway": true
+      }
+    },
+    {
+      "type": "portmap",
+      "capabilities": {
+        "portMappings": true
+      }
+    }
+  ]
+}
+```
+
+**CNI 插件的网络模型**：
+- **Overlay 网络**：通过隧道技术在现有网络上构建虚拟网络（如 Flannel VXLAN、Weave）
+- **Underlay 网络**：直接使用物理网络，需要额外的网络配置（如 Calico BGP）
+- **混合网络**：结合 Overlay 和 Underlay 的优势（如 Canal）
 
 **7. 完整的网络转发流程**
 
@@ -366,7 +442,7 @@ nsenter -t <pod-pid> -n tcpdump -i eth0 -nn
 
 ---
 
-#### 架构总结
+## 架构总结
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -409,7 +485,7 @@ nsenter -t <pod-pid> -n tcpdump -i eth0 -nn
 
 ### 相关高频面试题
 
-#### Q1: iptables 模式和 IPVS 模式有什么区别？如何选择？
+### Q1: iptables 模式和 IPVS 模式有什么区别？如何选择？
 
 **答案**：
 
@@ -448,7 +524,7 @@ kubectl delete pod -n kube-system -l k8s-app=kube-proxy
 kubectl logs -n kube-system kube-proxy-xxxxx | grep "Using ipvs Proxier"
 ```
 
-#### Q2: Service 的 ClusterIP 是如何实现的？为什么能在集群内访问？
+### Q2: Service 的 ClusterIP 是如何实现的？为什么能在集群内访问？
 
 **答案**：
 
@@ -487,7 +563,7 @@ ping <cluster-ip>  # 通过 iptables 规则转发
 iptables -t nat -L KUBE-SERVICES -n | grep <cluster-ip>
 ```
 
-#### Q3: NodePort 的流量转发路径是什么？有什么性能影响？
+### Q3: NodePort 的流量转发路径是什么？有什么性能影响？
 
 **答案**：
 
@@ -561,7 +637,7 @@ spec:
 # 七层负载均衡，性能更好
 ```
 
-#### Q4: Kubernetes 中的 DNS 解析是如何实现的？
+### Q4: Kubernetes 中的 DNS 解析是如何实现的？
 
 **答案**：
 
@@ -638,7 +714,7 @@ spec:
   dnsPolicy: ClusterFirstWithHostNet
 ```
 
-#### Q5: 如何排查 Service 无法访问的问题？
+### Q5: 如何排查 Service 无法访问的问题？
 
 **答案**：
 
@@ -703,7 +779,7 @@ kubectl run test --image=busybox --rm -it -- nslookup my-service
 | 跨命名空间访问失败 | NetworkPolicy 阻止 | 添加允许规则                        |
 | DNS 解析失败       | CoreDNS 故障       | 检查 CoreDNS Pod 状态               |
 
-#### Q6: externalTrafficPolicy: Local 和 Cluster 有什么区别？
+### Q6: externalTrafficPolicy: Local 和 Cluster 有什么区别？
 
 **答案**：
 
@@ -836,6 +912,57 @@ spec:
 
 ---
 
+### 高频面试题补充
+
+### Q7: kube-proxy 如何实现 Service 的负载均衡？
+
+**答案**：
+- **iptables 模式**：通过 DNAT 规则将 ClusterIP:Port 转发到随机选择的 Pod IP:Port
+- **IPVS 模式**：使用 IPVS 负载均衡器，将虚拟服务器（ClusterIP:Port）转发到多个 RealServer（Pod IP:Port）
+- **负载均衡算法**：
+  - iptables：随机算法
+  - IPVS：支持 rr（轮询）、lc（最少连接）、sh（源地址哈希）等多种算法
+- **动态更新**：kube-proxy 监听 API Server 中 Service 和 Endpoints 的变化，实时更新转发规则
+
+### Q8: Service 与 Endpoints 的关系是什么？
+
+**答案**：
+- **Service**：定义了一组 Pod 的访问方式，包括虚拟 IP（ClusterIP）、端口等
+- **Endpoints**：维护了 Service 对应的 Pod IP 和端口列表
+- **关系**：
+  - Service 通过标签选择器（labelSelector）选择 Pod
+  - Endpoints Controller 监听 Service 和 Pod 的变化，自动更新 Endpoints
+  - kube-proxy 监听 Endpoints 的变化，更新转发规则
+  - 如果 Service 没有标签选择器，则不会自动生成 Endpoints（手动管理）
+
+### Q9: Headless Service 是如何工作的？有什么应用场景？
+
+**答案**：
+- **定义**：Headless Service 是没有 ClusterIP 的 Service（clusterIP: None）
+- **工作原理**：
+  - DNS 解析返回所有 Pod IP 列表（A 记录）
+  - 不进行负载均衡，直接返回所有 Pod IP
+  - StatefulSet 自动为每个 Pod 创建稳定的 DNS 记录：pod-name.service-name.namespace.svc.cluster.local
+- **应用场景**：
+  - StatefulSet 服务发现
+  - 自定义负载均衡
+  - 需要直接访问每个 Pod 的场景
+  - 分布式系统中的成员发现
+
+### Q10: Kubernetes 中的网络策略（NetworkPolicy）是如何实现的？
+
+**答案**：
+- **定义**：NetworkPolicy 是 Kubernetes 中用于控制 Pod 间通信的资源
+- **实现依赖**：需要支持 NetworkPolicy 的 CNI 插件（如 Calico、Cilium、Weave）
+- **实现方式**：
+  - **Calico**：使用 iptables 或 eBPF 实现网络规则
+  - **Cilium**：使用 eBPF 实现高性能网络策略
+  - **Weave**：使用自定义内核模块实现
+- **功能**：
+  - 控制 ingress（入站）和 egress（出站）流量
+  - 基于标签、命名空间、IP 地址的访问控制
+  - 端口级别的精细控制
+
 ### 关键点总结
 
 **核心组件**：
@@ -845,9 +972,9 @@ spec:
 - **CoreDNS**: 集群 DNS 服务
 
 **转发模式**：
-- **iptables**: 默认，适合中小集群
-- **IPVS**: 高性能，适合大规模集群
-- 选择依据：集群规模、负载均衡需求
+- **iptables**: 默认，适合中小集群（< 1000 Service）
+- **IPVS**: 高性能，适合大规模集群（> 1000 Service）
+- 选择依据：集群规模、负载均衡需求、会话保持需求
 
 **关键路径**：
 ```
@@ -855,8 +982,9 @@ Service (ClusterIP) → kube-proxy 规则 → DNAT → Pod IP → CNI 网络 →
 ```
 
 **排查要点**：
-1. Service → Endpoints 是否正确
-2. kube-proxy 是否正常
-3. iptables/IPVS 规则是否生成
-4. Pod 网络是否连通
-5. NetworkPolicy 是否阻止
+1. Service → Endpoints 是否正确（标签选择器匹配）
+2. kube-proxy 是否正常运行（检查日志和状态）
+3. iptables/IPVS 规则是否正确生成
+4. CNI 插件是否正常工作（Pod 网络是否连通）
+5. NetworkPolicy 是否阻止了流量
+6. DNS 解析是否正常（Service 域名解析）

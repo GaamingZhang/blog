@@ -1,3 +1,13 @@
+---
+date: 2025-07-01
+author: Gaaming Zhang
+category:
+  - Kubernetes
+tag:
+  - Kubernetes
+  - 已完工
+---
+
 # Kubernetes 基本概念与基础组件
 
 ## 核心概念

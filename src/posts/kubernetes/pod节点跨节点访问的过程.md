@@ -1,6 +1,16 @@
+---
+date: 2025-07-01
+author: Gaaming Zhang
+category:
+  - Kubernetes
+tag:
+  - Kubernetes
+  - 已完工
+---
+
 # pod节点跨节点访问的过程
 
-#### Kubernetes网络模型基础
+## Kubernetes网络模型基础
 
 **Kubernetes网络三大原则**：
 1. **所有Pod可以不使用NAT直接互相通信**
@@ -12,7 +22,7 @@
 - Pod之间可以直接通过IP通信（无需端口映射）
 - 跨节点通信对应用透明
 
-#### Pod跨节点访问的完整流程
+## Pod跨节点访问的完整流程
 
 ```
 场景：Node1上的Pod A (10.244.1.10) 访问 Node2上的Pod B (10.244.2.20)
@@ -63,7 +73,7 @@
 └─────────────────────────────────────────────────────────────┘
 ```
 
-#### 详细的数据包传输过程
+## 详细的数据包传输过程
 
 **第一步：Pod A发送数据包**
 
@@ -150,7 +160,7 @@ ip route
     - 数据包到达Pod B容器的eth0
     - 应用程序接收数据
 
-#### 不同CNI插件的实现方式
+## 不同CNI插件的实现方式
 
 **1. Flannel - VXLAN模式（Overlay）**
 
@@ -300,86 +310,193 @@ IPIP包: [外层IP: 192.168.1.10 -> 192.168.1.11]
 **5. Cilium - eBPF**
 
 **特点**：
-- 使用eBPF技术，性能极高
-- 在内核层面处理网络
-- 支持高级网络策略和可观测性
+- 使用eBPF（扩展伯克利包过滤器）技术，在内核层面处理网络
+- 性能极高，比传统CNI插件快3-10倍
+- 支持高级网络策略、可观测性和服务网格功能
+- 无需iptables或IPVS，直接在eBPF层面实现网络功能
 
-**优势**：
-- 绕过iptables，减少开销
-- 更高效的包处理
-- 丰富的网络可见性
+**工作原理**：
+```
+1. eBPF程序加载到Linux内核
+2. 在内核层面拦截网络数据包
+3. 使用eBPF map存储路由、策略和连接信息
+4. 直接在内核中完成包处理，避免用户态切换
+```
 
-#### Service访问的跨节点流程
+**核心优势**：
+- **高性能**：绕过iptables，减少上下文切换，延迟降低90%
+- **高级网络策略**：支持基于L3/L4/L7的网络策略（如HTTP路径、SSL证书）
+- **可观测性**：内核级别监控，无需额外工具即可获取详细的网络流量信息
+- **服务网格**：内置Service Mesh功能，无需额外部署Istio
+- **安全隔离**：基于eBPF的网络隔离，提供更强的安全保障
 
-**场景**：Pod A访问Service，Service后端Pod在其他节点
+**Cilium路由模式**：
+```bash
+# Cilium使用eBPF实现路由，不依赖传统路由表
+cilium status
+
+# 查看eBPF路由表
+cilium bpf route list
+```
+
+**L7网络策略示例**：
+```yaml
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: "l7-policy"
+spec:
+  endpointSelector:
+    matchLabels:
+      app: backend
+  ingress:
+  - fromEndpoints:
+    - matchLabels:
+        app: frontend
+    toPorts:
+    - ports:
+      - port: "8080"
+        protocol: TCP
+      rules:
+        http:
+        - method: "GET"
+          path: "/api/v1/*"  # 只允许GET请求访问/api/v1路径
+```
+
+## Service访问的跨节点流程
+
+**场景**：Node1上的Pod A访问Service，Service后端Pod分布在多个节点上
 
 ```
 ┌───────────────────────────────────────────────────────────┐
 │ 1. Pod A访问Service ClusterIP: 10.96.0.100:80           │
+│    (目标地址：10.96.0.100:80)                            │
 └───────────────────────────────────────────────────────────┘
                         ↓
 ┌───────────────────────────────────────────────────────────┐
-│ 2. iptables/IPVS 进行DNAT转换                            │
-│    10.96.0.100:80 → 10.244.2.20:8080 (选择一个后端Pod)  │
+│ 2. Node1上的kube-proxy进行负载均衡                       │
+│    iptables/IPVS 选择一个后端Pod：10.244.2.20:8080       │
 └───────────────────────────────────────────────────────────┘
                         ↓
 ┌───────────────────────────────────────────────────────────┐
-│ 3. 转换后的目标IP是远程Pod，触发跨节点访问               │
-│    按照前面的跨节点流程传输                               │
+│ 3. 进行DNAT转换                                          │
+│    源地址：10.244.1.10 → 192.168.1.10 (Node1 IP)         │
+│    目标地址：10.96.0.100:80 → 10.244.2.20:8080           │
+└───────────────────────────────────────────────────────────┘
+                        ↓
+┌───────────────────────────────────────────────────────────┐
+│ 4. 转换后的数据包通过跨节点网络传输到Node2               │
+│    (按照前面的跨节点流程传输)                             │
+└───────────────────────────────────────────────────────────┘
+                        ↓
+┌───────────────────────────────────────────────────────────┐
+│ 5. Node2接收数据包，进行SNAT转换                         │
+│    源地址：192.168.1.10 → 10.244.1.10 (Pod A IP)         │
+└───────────────────────────────────────────────────────────┘
+                        ↓
+┌───────────────────────────────────────────────────────────┐
+│ 6. 数据包转发到目标Pod B (10.244.2.20:8080)              │
 └───────────────────────────────────────────────────────────┘
 ```
 
 **kube-proxy的作用**：
+- 维护Service和Endpoints的关系
+- 实现Service的负载均衡
+- 处理Session Affinity（会话亲和性）
+- 支持多种负载均衡算法
 
-**iptables模式**：
+**iptables模式详细工作原理**：
 ```bash
-# Service的iptables规则（简化）
-# DNAT规则
--A KUBE-SERVICES -d 10.96.0.100/32 -p tcp -m tcp --dport 80 \
-   -j KUBE-SVC-XXXXX
+# 1. PREROUTING链：处理进入节点的数据包
+-A PREROUTING -m comment --comment "kubernetes service portals" -j KUBE-SERVICES
 
-# 负载均衡到后端Pod（随机选择）
--A KUBE-SVC-XXXXX -m statistic --mode random --probability 0.33 \
-   -j KUBE-SEP-POD1    # 到10.244.1.10:8080
--A KUBE-SVC-XXXXX -m statistic --mode random --probability 0.50 \
-   -j KUBE-SEP-POD2    # 到10.244.2.20:8080
--A KUBE-SVC-XXXXX \
-   -j KUBE-SEP-POD3    # 到10.244.3.30:8080
+# 2. OUTPUT链：处理节点本地产生的数据包  
+-A OUTPUT -m comment --comment "kubernetes service portals" -j KUBE-SERVICES
 
-# DNAT转换
+# 3. 匹配Service ClusterIP
+-A KUBE-SERVICES -d 10.96.0.100/32 -p tcp -m tcp --dport 80 -j KUBE-SVC-XXXXX
+
+# 4. 负载均衡选择后端Pod（随机算法）
+-A KUBE-SVC-XXXXX -m statistic --mode random --probability 0.33 -j KUBE-SEP-POD1
+-A KUBE-SVC-XXXXX -m statistic --mode random --probability 0.50 -j KUBE-SEP-POD2
+-A KUBE-SVC-XXXXX -j KUBE-SEP-POD3
+
+# 5. DNAT转换到后端Pod IP
+-A KUBE-SEP-POD1 -p tcp -j DNAT --to-destination 10.244.1.10:8080
 -A KUBE-SEP-POD2 -p tcp -j DNAT --to-destination 10.244.2.20:8080
+-A KUBE-SEP-POD3 -p tcp -j DNAT --to-destination 10.244.3.30:8080
 ```
 
-**IPVS模式**（更高效）：
+**IPVS模式详细工作原理**：
 ```bash
 # 查看IPVS规则
 ipvsadm -Ln
 
 # 输出示例：
-# TCP  10.96.0.100:80 rr
-#   -> 10.244.1.10:8080    Masq    1      0          0
-#   -> 10.244.2.20:8080    Masq    1      0          0
-#   -> 10.244.3.30:8080    Masq    1      0          0
+# Prot LocalAddress:Port Scheduler Flags
+#   -> RemoteAddress:Port           Forward Weight ActiveConn InActConn
+# TCP  10.96.0.100:80 rr             
+#   -> 10.244.1.10:8080             Masq    1      0          0          
+#   -> 10.244.2.20:8080             Masq    1      0          0          
+#   -> 10.244.3.30:8080             Masq    1      0          0          
 ```
 
-#### 网络性能对比
+**kube-proxy会话亲和性配置**：
+```yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: my-service
+spec:
+  selector:
+    app: my-app
+  ports:
+  - port: 80
+    targetPort: 8080
+  sessionAffinity: ClientIP  # 基于客户端IP的会话亲和性
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800  # 会话超时时间（3小时）
+```
 
-| CNI实现             | 类型    | 性能  | 复杂度 | 适用场景             |
-| ------------------- | ------- | ----- | ------ | -------------------- |
-| **Flannel VXLAN**   | Overlay | ★★★☆☆ | 低     | 简单部署，跨子网     |
-| **Flannel Host-gw** | 路由    | ★★★★★ | 低     | 同子网，性能要求高   |
-| **Calico BGP**      | 路由    | ★★★★★ | 中     | 大规模，需要网络策略 |
-| **Calico IPIP**     | Overlay | ★★★★☆ | 中     | 跨子网，需要策略     |
-| **Cilium eBPF**     | eBPF    | ★★★★★ | 高     | 高性能，高级功能     |
-| **Weave**           | Overlay | ★★★☆☆ | 中     | 自动加密，简单       |
+**Cilium的kube-proxy替代方案**：
+```yaml
+# Cilium可以完全替代kube-proxy，提供更好的性能
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cilium-config
+  namespace: kube-system
+data:
+  kube-proxy-replacement: "strict"  # 严格模式，完全替代kube-proxy
+```
+
+## 网络性能对比
+
+| CNI实现             | 类型    | 性能  | 复杂度 | 网络策略 | 跨子网支持 | 适用场景                     |
+| ------------------- | ------- | ----- | ------ | -------- | ---------- | ---------------------------- |
+| **Flannel VXLAN**   | Overlay | ★★★☆☆ | 低     | ❌        | ✅         | 简单部署，跨子网环境         |
+| **Flannel Host-gw** | 路由    | ★★★★★ | 低     | ❌        | ❌         | 同子网，高性能要求，简单配置 |
+| **Calico BGP**      | 路由    | ★★★★★ | 中     | ✅        | ✅         | 大规模集群，需要网络策略     |
+| **Calico IPIP**     | Overlay | ★★★★☆ | 中     | ✅        | ✅         | 跨子网，需要网络策略         |
+| **Cilium eBPF**     | eBPF    | ★★★★★ | 高     | ✅        | ✅         | 高性能，高级功能需求         |
+| **Weave**           | Overlay | ★★★☆☆ | 中     | ✅        | ✅         | 自动加密，简单部署           |
 
 **性能影响因素**：
-1. **封装开销**：Overlay需要封装/解封装，增加CPU和延迟
-2. **MTU设置**：封装会增加包头，需要调整MTU避免分片
-3. **路由表大小**：大规模集群路由表会很大
-4. **网络策略**：策略越复杂，性能开销越大
+1. **封装开销**：Overlay需要封装/解封装，增加CPU和延迟（VXLAN增加50字节，IPIP增加20字节）
+2. **MTU设置**：封装会增加包头，需要调整MTU避免分片（推荐VXLAN网络使用1450 MTU）
+3. **路由表大小**：大规模集群（>1000节点）路由表会变得很大，影响查找性能
+4. **网络策略**：策略越复杂，性能开销越大（Calico iptables实现约5-10%开销，Cilium eBPF实现<1%）
+5. **数据包大小**：小包（<64字节）受封装影响更大，大包需要调整MTU
 
-#### 实际排查和验证
+**CNI插件选择建议**：
+- **小型集群**：Flannel VXLAN（简单易用）
+- **中型集群**：Calico（平衡性能和功能）
+- **大型集群**：Calico BGP或Cilium（高性能，大规模支持）
+- **高性能需求**：Cilium eBPF（内核级处理，低延迟）
+- **网络策略需求**：Calico或Cilium（Flannel不支持网络策略）
+
+## 实际排查和验证
 
 **1. 查看Pod网络配置**
 
@@ -443,7 +560,7 @@ kubectl exec -it pod-a -- iperf3 -c 10.244.2.20
 kubectl exec -it pod-a -- ping -c 100 10.244.2.20 | grep avg
 ```
 
-#### 常见问题和调试
+## 常见问题和调试
 
 **问题1：Pod无法跨节点通信**
 
@@ -500,8 +617,9 @@ ip link set dev flannel.1 mtu 1450
 ethtool -K eth0 tso on gso on
 ```
 
-#### 网络策略示例
+## 网络策略示例
 
+**示例1：限制Pod只能被特定Pod访问**
 ```yaml
 # 限制Pod B只能被特定Pod访问
 apiVersion: networking.k8s.io/v1
@@ -525,11 +643,88 @@ spec:
       port: 8080
 ```
 
+**示例2：允许所有Pod访问特定服务**
+```yaml
+# 允许所有Pod访问数据库服务
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-all-to-db
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: database
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector: {}
+    ports:
+    - protocol: TCP
+      port: 3306
+```
+
+**示例3：限制Pod只能访问外部特定IP**
+```yaml
+# 限制Pod只能访问外部API服务
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: restrict-egress
+  namespace: default
+spec:
+  podSelector:
+    matchLabels:
+      app: frontend
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 192.168.1.10/32  # 外部API服务IP
+    ports:
+    - protocol: TCP
+      port: 8080
+  - to:
+    - ipBlock:
+        cidr: 0.0.0.0/0
+      except:
+      - 192.168.1.0/24
+    ports:
+    - protocol: UDP
+      port: 53  # DNS查询
+```
+
+**示例4：命名空间间的网络策略**
+```yaml
+# 允许namespace-a的Pod访问namespace-b的服务
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-from-namespace
+  namespace: namespace-b
+spec:
+  podSelector:
+    matchLabels:
+      app: backend
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: namespace-a
+    ports:
+    - protocol: TCP
+      port: 8080
+```
+
 ---
 
 ### 相关面试题
 
-#### Q1: Overlay网络和路由模式的区别是什么？各有什么优缺点？
+### Q1: Overlay网络和路由模式的区别是什么？各有什么优缺点？
 
 **答案**：
 
@@ -560,7 +755,7 @@ spec:
 - **私有云/同子网**：路由模式（BGP/Host-gw）
 - **混合方案**：Calico支持混合（同子网BGP，跨子网IPIP）
 
-#### Q2: kube-proxy的iptables模式和IPVS模式有什么区别？
+### Q2: kube-proxy的iptables模式和IPVS模式有什么区别？
 
 **答案**：
 
@@ -613,7 +808,7 @@ data:
       scheduler: "rr"  # 轮询算法
 ```
 
-#### Q3: 什么是veth pair？它在Kubernetes网络中的作用是什么？
+### Q3: 什么是veth pair？它在Kubernetes网络中的作用是什么？
 
 **答案**：
 
@@ -661,7 +856,7 @@ kubectl exec -it <pod> -- ip link
 - 连接网络命名空间的标准方式
 - 隔离性好，每个Pod有独立的网络栈
 
-#### Q4: 如何解决Pod间通信的MTU问题？
+### Q4: 如何解决Pod间通信的MTU问题？
 
 **答案**：
 
@@ -741,7 +936,7 @@ env:
   value: "auto"  # 自动检测MTU
 ```
 
-#### Q5: NetworkPolicy是如何实现的？它在哪一层生效？
+### Q5: NetworkPolicy是如何实现的？它在哪一层生效？
 
 **答案**：
 
@@ -837,7 +1032,7 @@ calicoctl get globalnetworkpolicy
 kubectl exec -it pod-a -- nc -zv pod-b 8080
 ```
 
-#### Q6: 什么是CNI（Container Network Interface）？常见的CNI插件有哪些？
+### Q6: 什么是CNI（Container Network Interface）？常见的CNI插件有哪些？
 
 **答案**：
 
@@ -913,7 +1108,7 @@ echo '{"cniVersion":"0.3.1","name":"test","type":"bridge"}' | \
 - **高性能**：Cilium（eBPF）
 - **云原生**：云厂商提供的CNI（AWS VPC CNI、Azure CNI）
 
-#### Q7: Service的ClusterIP、NodePort、LoadBalancer有什么区别？网络流量如何转发？
+### Q7: Service的ClusterIP、NodePort、LoadBalancer有什么区别？网络流量如何转发？
 
 **答案**：
 
@@ -1048,7 +1243,7 @@ spec:
       timeoutSeconds: 10800  # 3小时
 ```
 
-#### Q8: 什么是Headless Service？它与普通Service有什么区别？
+### Q8: 什么是Headless Service？它与普通Service有什么区别？
 
 **答案**：
 
@@ -1082,76 +1277,185 @@ spec:
     targetPort: 8080
 ```
 
-**DNS解析差异**：
+### Q9: Kubernetes中的CNI和kube-proxy有什么区别？它们各自的职责是什么？
 
+**答案**：
+
+**CNI（Container Network Interface）** 和 **kube-proxy** 是Kubernetes网络中两个核心组件，但它们的职责和工作层面完全不同：
+
+| 特性 | CNI | kube-proxy |
+|------|-----|------------|
+| **核心职责** | Pod网络配置和连通性 | Service负载均衡和网络代理 |
+| **工作层面** | Pod网络（L2/L3） | Service网络（L3/L4） |
+| **实现方式** | 插件化架构（Flannel/Calico/Cilium） | 内核模块（iptables/IPVS）或eBPF |
+| **作用范围** | 每个Pod的网络命名空间 | 集群内所有Service |
+| **网络策略** | 支持（Calico/Cilium） | 不支持 |
+| **依赖关系** | 独立于kube-proxy | 依赖CNI提供的Pod网络 |
+
+**CNI的主要职责**：
+1. **Pod网络配置**：为每个Pod创建网络命名空间
+2. **IP地址分配**：从Pod CIDR分配唯一的IP地址
+3. **网络连通性**：创建veth pair，连接Pod和主机网络
+4. **跨节点通信**：实现不同节点上Pod间的网络通信（Overlay/路由）
+5. **网络策略**：实现NetworkPolicy的流量控制（部分CNI）
+
+**kube-proxy的主要职责**：
+1. **Service负载均衡**：为ClusterIP提供负载均衡
+2. **DNAT转换**：将Service的ClusterIP转换为后端Pod的IP
+3. **Session亲和性**：支持客户端IP到同一Pod的会话保持
+4. **健康检查**：监控后端Pod的健康状态
+5. **端口映射**：为NodePort和LoadBalancer Service提供端口映射
+
+**协作流程**：
+```
+1. CNI为Pod分配IP，配置网络连通性
+2. Pod A想要访问Service
+3. kube-proxy将Service ClusterIP转换为Pod B的IP
+4. CNI负责将数据包从Pod A发送到Pod B（跨节点通信）
+```
+
+**Cilium的特殊情况**：
+- Cilium可以同时替代CNI和kube-proxy
+- 使用eBPF在内核层面实现所有网络功能
+- 提供更好的性能和更丰富的功能
+
+### Q10: 如何优化Kubernetes集群的网络性能？
+
+**答案**：
+
+**网络性能优化策略**：
+
+1. **选择合适的CNI插件**：
+   - **高性能要求**：选择Calico BGP或Cilium eBPF
+   - **简单场景**：选择Flannel Host-gw（同子网）
+   - **避免使用**：性能较差的Overlay网络（VXLAN）
+
+2. **调整MTU设置**：
+   ```bash
+   # 对于VXLAN网络，将Pod MTU设置为1450
+   ip link set dev cni0 mtu 1450
+   ip link set dev flannel.1 mtu 1450
+   ```
+   - 启用CNI的自动MTU检测
+   - 避免数据包分片
+
+3. **优化kube-proxy模式**：
+   - 使用IPVS模式替代iptables模式
+   - 配置合适的调度算法（rr/lc/dh）
+   - 启用kube-proxy的`--proxy-mode=ipvs`
+
+4. **硬件优化**：
+   - 使用高性能网卡（10G/25G）
+   - 启用网卡offload功能（TSO/GSO/CSO）
+   ```bash
+   ethtool -K eth0 tso on gso on gro on
+   ```
+   - 使用RDMA（适用于高性能计算场景）
+
+5. **网络拓扑优化**：
+   - 将相关Pod调度到同一节点（使用NodeSelector/Affinity）
+   - 减少跨AZ/跨数据中心的流量
+   - 合理规划Pod CIDR和Service CIDR
+
+6. **Cilium eBPF优化**：
+   ```yaml
+   # 启用eBPF加速
+   apiVersion: v1
+   kind: ConfigMap
+   metadata:
+     name: cilium-config
+     namespace: kube-system
+   data:
+     enable-ipv4: "true"
+     enable-ipv6: "false"
+     kube-proxy-replacement: "strict"
+     enable-host-port: "true"
+   ```
+
+7. **监控和调优**：
+   - 使用Prometheus+Grafana监控网络指标
+   - 定期测试网络延迟和吞吐量（iperf3/ping）
+   - 根据监控数据调整配置
+
+**优化效果参考**：
+- **延迟**：从1ms（VXLAN）优化到0.1ms（BGP/eBPF）
+- **吞吐量**：从1Gbps（VXLAN）提升到10Gbps（BGP/eBPF）
+- **并发连接**：从10K提升到100K+（IPVS vs iptables）
+
+### Q11: Kubernetes中的网络命名空间是什么？它在Pod跨节点访问中起什么作用？
+
+**答案**：
+
+**网络命名空间（Network Namespace）**：
+- **定义**：Linux内核提供的网络隔离机制
+- **作用**：为每个进程提供独立的网络栈（IP、路由表、防火墙、网卡）
+- **Kubernetes中的应用**：每个Pod有自己独立的网络命名空间
+
+**网络命名空间的结构**：
+```
+Network Namespace
+├── 网络接口（eth0）
+├── IP地址（10.244.1.10）
+├── 路由表
+├── iptables规则
+├── ARP表
+└── DNS配置
+```
+
+**在Pod跨节点访问中的作用**：
+
+1. **网络隔离**：
+   - 每个Pod有独立的网络环境
+   - Pod间的网络互不干扰
+   - 避免IP地址冲突
+
+2. **Pod唯一IP**：
+   - 每个网络命名空间分配独立的IP地址
+   - 实现K8s网络模型的第三原则（Pod看到的自己IP与其他Pod看到的相同）
+
+3. **网络连通性**：
+   ```
+   Pod A Network Namespace → veth pair → 主机网络 → CNI网络 → 主机网络 → veth pair → Pod B Network Namespace
+   ```
+
+4. **路由决策**：
+   - Pod内部的路由表指导数据包发送
+   ```bash
+   # Pod内的路由表
+   default via 10.244.1.1 dev eth0
+   10.244.1.0/24 dev eth0 proto kernel scope link src 10.244.1.10
+   ```
+
+5. **跨节点通信**：
+   - 网络命名空间的隔离性不影响跨节点通信
+   - CNI负责在不同网络命名空间间建立连接
+
+**查看网络命名空间**：
 ```bash
-# 普通Service DNS解析
-nslookup my-service.default.svc.cluster.local
-# 返回：
-# Name:   my-service.default.svc.cluster.local
-# Address: 10.96.0.100  # ClusterIP
+# 查看所有网络命名空间
+ip netns list
 
-# Headless Service DNS解析
-nslookup my-headless-service.default.svc.cluster.local
-# 返回：
-# Name:   my-headless-service.default.svc.cluster.local
-# Address: 10.244.1.10  # Pod1 IP
-# Address: 10.244.2.20  # Pod2 IP
-# Address: 10.244.3.30  # Pod3 IP
+# 查看Pod的网络命名空间（使用crictl）
+crictl inspectp <pod-id> | grep "sandboxID"
+crictl inspect <sandbox-id> | grep "netns"
+
+# 进入Pod的网络命名空间
+tcpdump -i any -nns 1 -w capture.pcap <(nsenter -t <pod-pid> -n)
 ```
 
-**StatefulSet + Headless Service**：
+**与其他命名空间的关系**：
+- **PID命名空间**：隔离进程
+- **Mount命名空间**：隔离文件系统
+- **IPC命名空间**：隔离进程间通信
+- **UTS命名空间**：隔离主机名和域名
 
-```yaml
-# StatefulSet使用Headless Service
-apiVersion: v1
-kind: Service
-metadata:
-  name: mysql
-spec:
-  clusterIP: None
-  selector:
-    app: mysql
-  ports:
-  - port: 3306
+**网络命名空间是Kubernetes网络模型的基础**，它为Pod提供了独立、安全、可预测的网络环境，同时确保了跨节点通信的透明性和一致性。
 
----
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: mysql
-spec:
-  serviceName: mysql  # 关联Headless Service
-  replicas: 3
-  selector:
-    matchLabels:
-      app: mysql
-  template:
-    metadata:
-      labels:
-        app: mysql
-    spec:
-      containers:
-      - name: mysql
-        image: mysql:5.7
-```
 
-**每个Pod的DNS**：
-```bash
-# StatefulSet Pod有稳定的DNS名称
-mysql-0.mysql.default.svc.cluster.local  → 10.244.1.10
-mysql-1.mysql.default.svc.cluster.local  → 10.244.2.20
-mysql-2.mysql.default.svc.cluster.local  → 10.244.3.30
 
-# 可以直接访问特定Pod
-mysql -h mysql-0.mysql.default.svc.cluster.local
-```
 
-**使用场景**：
-1. **数据库集群**：主从复制，需要访问特定Pod
-2. **消息队列**：客户端需要知道所有broker
-3. **分布式缓存**：一致性哈希，客户端选择节点
-4. **服务发现**：获取所有服务实例列表
+- **iptables/IPVS**：Service负载均衡
+- **NetworkPolicy**：网络隔离和安全
 
 ---
 

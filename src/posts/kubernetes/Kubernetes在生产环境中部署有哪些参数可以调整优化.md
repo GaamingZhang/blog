@@ -1,12 +1,22 @@
+---
+date: 2025-07-01
+author: Gaaming Zhang
+category:
+  - Kubernetes
+tag:
+  - Kubernetes
+  - 已完工
+---
+
 # Kubernetes在生产环境中部署有哪些参数可以调整优化
 
-#### 核心优化维度
+## 核心优化维度
 
 生产环境优化主要围绕：**资源管理、性能调优、可靠性保障、安全加固、成本控制**五个维度。
 
 ---
 
-#### 一、资源配置优化
+## 一、资源配置优化
 
 **1. Pod资源请求和限制**
 
@@ -51,7 +61,7 @@ kubeletArgs:
 
 ---
 
-#### 二、调度策略优化
+## 二、调度策略优化
 
 **1. 节点亲和性（Node Affinity）**
 
@@ -101,7 +111,7 @@ tolerations:
 
 ---
 
-#### 三、控制器配置优化
+## 三、控制器配置优化
 
 **1. Deployment更新策略**
 
@@ -168,7 +178,7 @@ spec:
 
 ---
 
-#### 四、健康检查优化
+## 四、健康检查优化
 
 **三种探针配置**
 
@@ -212,7 +222,7 @@ spec:
 
 ---
 
-#### 五、网络性能优化
+## 五、网络性能优化
 
 **1. Service配置**
 
@@ -269,7 +279,7 @@ spec:
 
 ---
 
-#### 六、存储优化
+## 六、存储优化
 
 **1. PVC配置**
 
@@ -298,7 +308,7 @@ volumes:
 
 ---
 
-#### 七、API Server优化
+## 七、API Server优化
 
 **关键参数**：
 
@@ -316,7 +326,7 @@ volumes:
 
 ---
 
-#### 八、etcd优化
+## 八、etcd优化
 
 **核心配置**：
 
@@ -338,7 +348,7 @@ volumes:
 
 ---
 
-#### 九、kubelet优化
+## 九、kubelet优化
 
 **关键配置**：
 
@@ -366,7 +376,7 @@ topologyManagerPolicy: best-effort  # NUMA拓扑
 
 ---
 
-#### 十、容器运行时优化
+## 十、容器运行时优化
 
 **containerd配置**：
 
@@ -389,7 +399,7 @@ topologyManagerPolicy: best-effort  # NUMA拓扑
 
 ---
 
-#### 十一、安全配置
+## 十一、安全配置
 
 **1. RBAC最小权限**
 
@@ -435,7 +445,7 @@ securityContext:
 
 ---
 
-#### 十二、监控和日志
+## 十二、监控和日志
 
 **1. 资源监控**
 
@@ -467,7 +477,7 @@ resources:
 
 ---
 
-#### 十三、高可用配置
+## 十三、高可用配置
 
 **控制平面HA**：
 
@@ -490,7 +500,7 @@ resources:
 
 ---
 
-#### 十四、成本优化
+## 十四、成本优化
 
 **1. 资源超售配置**
 
@@ -523,30 +533,30 @@ resources:
 
 ### 优化检查清单
 
-#### 资源配置
+### 资源配置
 - [ ] 所有Pod设置了resources requests和limits
 - [ ] 核心服务使用Guaranteed QoS
 - [ ] 节点设置了system-reserved和kube-reserved
 
-#### 可靠性
+### 可靠性
 - [ ] 关键应用配置了PDB
 - [ ] 多副本部署且分散在不同节点
 - [ ] 配置了合理的健康探针
 - [ ] 设置了适当的滚动更新策略
 
-#### 性能
+### 性能
 - [ ] 使用HPA自动伸缩
 - [ ] 高性能应用使用SSD存储
 - [ ] 网络密集型应用考虑Host网络
 - [ ] 配置了合适的Service sessionAffinity
 
-#### 安全
+### 安全
 - [ ] 启用RBAC并遵循最小权限原则
 - [ ] Pod使用非root用户运行
 - [ ] 配置了NetworkPolicy限制流量
 - [ ] 敏感信息使用Secret存储
 
-#### 监控
+### 监控
 - [ ] 部署了metrics-server
 - [ ] 配置了Prometheus监控
 - [ ] 设置了关键指标告警
@@ -556,7 +566,7 @@ resources:
 
 ### 相关面试题
 
-#### Q1: requests和limits的区别？设置不当会有什么影响？
+### Q1: requests和limits的区别？设置不当会有什么影响？
 
 **答案**：
 - **requests**: 调度和资源保证的依据，不会被超用
@@ -571,7 +581,7 @@ resources:
 
 **最佳实践**：关键服务 requests = limits（Guaranteed）
 
-#### Q2: 如何选择合适的HPA指标和阈值？
+### Q2: 如何选择合适的HPA指标和阈值？
 
 **答案**：
 
@@ -586,7 +596,7 @@ resources:
 - 设置stabilizationWindow避免抖动
 - 扩容快、缩容慢
 
-#### Q3: 生产环境中节点资源如何预留？
+### Q3: 生产环境中节点资源如何预留？
 
 **答案**：
 
@@ -608,7 +618,7 @@ eviction-hard:       # 硬驱逐
 **计算公式**：
 可分配资源 = 节点容量 - system-reserved - kube-reserved - eviction-threshold
 
-#### Q4: 如何保证关键服务的高可用性？
+### Q4: 如何保证关键服务的高可用性？
 
 **答案**：
 
@@ -622,7 +632,7 @@ eviction-hard:       # 硬驱逐
 7. **自动恢复**: Deployment自动重启
 8. **监控告警**: 及时发现问题
 
-#### Q5: 大规模集群性能瓶颈在哪里？如何优化？
+### Q5: 大规模集群性能瓶颈在哪里？如何优化？
 
 **答案**：
 
@@ -649,7 +659,7 @@ eviction-hard:       # 硬驱逐
 - 启用事件TTL
 ```
 
-#### Q6: 如何优化容器镜像拉取速度？
+### Q6: 如何优化容器镜像拉取速度？
 
 **答案**：
 
@@ -677,6 +687,93 @@ eviction-hard:       # 硬驱逐
    # kubelet配置
    maxParallelImagePulls: 5
    serializeImagePulls: false
+   ```
+
+### Q7: Pod Disruption Budget (PDB)的作用是什么？如何正确配置？
+
+**答案**：
+- **作用**：限制自愿性中断（如节点维护、滚动更新）时的Pod中断数量，保障服务可用性。
+
+**配置示例**：
+```yaml
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: critical-app-pdb
+spec:
+  minAvailable: 2  # 或 maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: critical-app
+```
+
+**关键点**：
+- `minAvailable`: 最少可用Pod数，绝对值或百分比
+- `maxUnavailable`: 最多不可用Pod数，绝对值或百分比
+- 不支持同时设置两个参数
+- 需要配合Deployment/StatefulSet的副本数使用
+- 仅适用于自愿性中断，不适用于故障性中断
+
+### Q8: SecurityContext有哪些关键配置？如何提升容器安全性？
+
+**答案**：
+**关键配置**：
+```yaml
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 2000
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+    - ALL
+  seccompProfile:
+    type: RuntimeDefault
+```
+
+**安全性提升**：
+- **非Root运行**：防止容器逃逸后的权限提升
+- **只读根文件系统**：防止恶意写入系统文件
+- **禁止特权升级**：限制setuid/setgid操作
+- **最小化能力**：只保留必要的Linux Capabilities
+- **Seccomp配置**：限制系统调用，减少攻击面
+- **用户组隔离**：使用独立的用户和组运行容器
+
+### Q9: 如何保证etcd数据的安全性和可用性？
+
+**答案**：
+
+**数据可用性**：
+1. **集群部署**：3/5/7节点奇数集群，跨故障域
+2. **合理配置**：
+   ```bash
+   --heartbeat-interval=100  # 心跳间隔
+   --election-timeout=1000   # 选举超时
+   ```
+
+**数据安全性**：
+1. **快照备份**：
+   ```bash
+   etcdctl snapshot save backup.db
+   
+   # 检查快照状态
+   etcdctl snapshot status backup.db
+   ```
+
+2. **集群恢复**：
+   ```bash
+   etcdctl snapshot restore backup.db \
+     --name node1 \
+     --initial-cluster "node1=https://node1:2380,node2=https://node2:2380,node3=https://node3:2380" \
+     --initial-advertise-peer-urls "https://node1:2380"
+   ```
+
+3. **加密传输**：启用TLS加密etcd通信
+4. **访问控制**：使用RBAC限制etcd访问
+5. **定期压缩**：
+   ```bash
+   --auto-compaction-retention=1  # 保留1小时历史
    ```
 
 ---

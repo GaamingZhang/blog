@@ -9,6 +9,7 @@ export default hopeTheme({
   author: {
     name: "Gaaming Zhang",
     url: "http://www.gaaming.com.cn",
+    email: "GaamingZhang@outlook.com",
   },
 
   logo: "https://theme-hope-assets.vuejs.press/logo.svg",

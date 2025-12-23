@@ -1,3 +1,13 @@
+---
+date: 2025-07-01
+author: Gaaming Zhang
+category:
+  - Kubernetes
+tag:
+  - Kubernetes
+  - 已完工
+---
+
 # proxy一般部署在哪些节点
 
 在Kubernetes集群中，存在多种类型的proxy组件，它们各自承担不同的功能，因此部署位置也有所不同。以下是Kubernetes中常见proxy的部署位置和原因分析：
