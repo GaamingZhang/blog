@@ -38,6 +38,20 @@ export default sidebar({
           children: "structure",
         },
         {
+          text: "RocketMQ",
+          icon: "simple-icons:apacherocketmq",
+          prefix: "rocketmq/",
+          collapsible: true,
+          children: "structure",
+        },
+        {
+          text: "MySQL",
+          icon: "lineicons:mysql",
+          prefix: "mysql/",
+          collapsible: true,
+          children: "structure",
+        },
+        {
           text: "Docker",
           icon: "mdi:docker",
           prefix: "docker/",
@@ -82,7 +96,7 @@ export default sidebar({
       ]
     },
     {
-      text: "问题集合",
+      text: "问题集",
       icon: "fluent-mdl2:document-set",
       prefix: "problemset/",
       children: [
