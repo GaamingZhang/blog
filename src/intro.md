@@ -1,6 +1,7 @@
 ---
 icon: material-symbols:account-box-sharp
 cover: /assets/images/cover0.jpg
+sticky: true
 ---
 
 # 个人介绍
