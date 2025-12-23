@@ -1,6 +1,6 @@
 ---
 icon: material-symbols:account-box-sharp
-cover: /assets/images/cover1.jpg
+cover: /assets/images/cover0.jpg
 ---
 
 # 个人介绍
