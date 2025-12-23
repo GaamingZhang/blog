@@ -1,4 +1,6 @@
 ---
+date: 2025-07-01
+author: Gaaming Zhang
 icon: material-symbols:account-box-sharp
 cover: /assets/images/cover0.jpg
 sticky: true
