@@ -14,6 +14,8 @@ export default hopeTheme({
 
   logo: "/user_icon.png",
 
+  favicon: "/favicon.ico",
+
   repo: "GaamingZhang",
 
   docsDir: "src",
