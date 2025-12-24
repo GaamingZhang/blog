@@ -79,6 +79,13 @@ export default sidebar({
           collapsible: true,
           children: "structure",
         },
+        {
+          text: "其他",
+          icon: "icon-park-outline:other",
+          prefix: "others/",
+          collapsible: true,
+          children: "structure",
+        },
       ],
     },
     {

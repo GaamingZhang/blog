@@ -5,6 +5,7 @@ category:
   - Nginx
 tag:
   - Nginx
+  - 负载均衡
   - 还在施工中···
 ---
 
