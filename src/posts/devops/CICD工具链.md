@@ -1,11 +1,14 @@
 ---
 date: 2025-07-01
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
-  - CICD
+  - DevOps
 tag:
-  - CICD
-  - 已完工
+  - DevOps
+  - CI/CD
+  - 还在施工中···
 ---
 
 # CI/CD工具链

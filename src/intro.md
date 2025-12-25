@@ -4,6 +4,8 @@ author: Gaaming Zhang
 icon: material-symbols:account-box-sharp
 cover: /assets/images/cover0.jpg
 sticky: true
+star: true
+isOriginal: true
 ---
 
 # 个人介绍
