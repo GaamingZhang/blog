@@ -4,14 +4,9 @@ author: Gaaming Zhang
 isOriginal: false
 article: true
 category:
-  - Network
-  - HTTP
+  - 网络
 tag:
-  - Network
-  - Session
-  - Cookie
-  - HTTP
-  - Web安全
+  - 网络
   - 还在施工中
 ---
 
