@@ -45,6 +45,7 @@ export default hopeTheme({
         link: "https://theme-hope.vuejs.press",
       },
     },
+    timeline:"昨日不再"
   },
 
   // 加密配置
