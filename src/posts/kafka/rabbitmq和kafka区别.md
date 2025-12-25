@@ -5,7 +5,7 @@ category:
   - kafka
 tag:
   - kafka
-  - 已完工
+  - 还在施工中
 ---
 
 # rabbitmq和kafka区别

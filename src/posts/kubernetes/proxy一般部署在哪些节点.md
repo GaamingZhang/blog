@@ -5,7 +5,7 @@ category:
   - Kubernetes
 tag:
   - Kubernetes
-  - 已完工
+  - 还在施工中
 ---
 
 # proxy一般部署在哪些节点

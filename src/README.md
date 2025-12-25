@@ -7,6 +7,6 @@ heroImage: /user_icon.png
 bgImage: /default.jpg
 heroText: Gaaming Zhang 的个人博客
 heroFullScreen: true
-tagline: 做一点简单的记录
+tagline: 温  故  而  知  新
 footer:  Gaaming Zhang 的个人博客
 ---

@@ -6,7 +6,7 @@ category:
 tag:
   - Kubernetes
   - etcd
-  - 已完工
+  - 还在施工中
 ---
 
 # etcd如何管理Kubernetes集群

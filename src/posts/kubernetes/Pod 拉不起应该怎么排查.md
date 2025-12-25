@@ -5,7 +5,7 @@ category:
   - Kubernetes
 tag:
   - Kubernetes
-  - 已完工
+  - 还在施工中
 ---
 
 # Pod 拉不起应该怎么排查

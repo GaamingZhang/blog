@@ -5,7 +5,7 @@ category:
   - Redis
 tag:
   - Redis
-  - 已完工
+  - 还在施工中
 ---
 
 # 怎么规划Redis集群
