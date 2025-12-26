@@ -4,14 +4,10 @@ author: Gaaming Zhang
 isOriginal: false
 article: true
 category:
-  - Network
-  - Web安全
+  - 网络
 tag:
-  - Network
-  - Web安全
-  - XSS
-  - 安全
-  - 还在施工中
+  - 网络
+  - 还在施工中···
 ---
 
 # XSS攻击原理

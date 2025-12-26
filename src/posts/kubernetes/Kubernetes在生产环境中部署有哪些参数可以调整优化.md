@@ -5,7 +5,7 @@ category:
   - Kubernetes
 tag:
   - Kubernetes
-  - 还在施工中
+  - 已完工
 ---
 
 # Kubernetes在生产环境中部署有哪些参数可以调整优化

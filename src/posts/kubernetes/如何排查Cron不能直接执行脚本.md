@@ -5,7 +5,7 @@ category:
   - Kubernetes
 tag:
   - Kubernetes
-  - 还在施工中
+  - 已完工
 ---
 
 # 如何排查Cron不能直接执行脚本
