@@ -8,7 +8,6 @@ category:
 tag:
   - DevOps
   - SRE
-  - 还在施工中···
 ---
 
 # 部门SRE架构

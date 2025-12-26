@@ -8,7 +8,6 @@ category:
 tag:
   - DevOps
   - Ansible
-  - 还在施工中···
 ---
 
 # Ansible基本概念
