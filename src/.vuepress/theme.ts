@@ -4,7 +4,7 @@ import navbar from "./navbar.js";
 import sidebar from "./sidebar.js";
 
 export default hopeTheme({
-  hostname: "https://mister-hope.github.io",
+  hostname: "https://www.gaaming.com.cn",
 
   author: {
     name: "Gaaming Zhang",
@@ -16,7 +16,7 @@ export default hopeTheme({
 
   favicon: "/favicon.ico",
 
-  repo: "GaamingZhang",
+  repo: "https://github.com/GaamingZhang/blog",
 
   docsDir: "src",
 
@@ -49,6 +49,7 @@ export default hopeTheme({
   },
 
   // 加密配置
+  /*
   encrypt: {
     config: {
       "/demo/encrypt.html": {
@@ -57,6 +58,7 @@ export default hopeTheme({
       },
     },
   },
+  */
 
   // 如果想要实时查看任何改变，启用它。注: 这对更新性能有很大负面影响
   // hotReload: true,
