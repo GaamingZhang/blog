@@ -10,6 +10,10 @@ pipeline {
     DEPLOY_PATH = '/var/www/vuepress-blog'
     NGINX_CONF_REMOTE = '/etc/nginx/conf.d/myBlog.conf'
     SSH_KEY_CREDENTIAL = 'TencentNodeSSHKey'
+    WXPUSH_APPID = credentials('wxpush_appID')
+    WXPUSH_SECRET = credentials('wxpush_secret')
+    WXPUSH_USERID = credentials('wxpush_userID')
+    WXPUSH_TEMPLATEID = credentials('wxpush_templateID')
   }
 
   stages {
@@ -65,6 +69,19 @@ pipeline {
           '''
         }
       }
+    }
+  }
+
+  post {
+    success {
+      sh """
+        /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署成功" -content "博客项目 gaamingzhangblog 已成功部署到生产环境\\n\\n部署时间: \$(date '+%Y-%m-%d %H:%M:%S')\\n构建号: \${BUILD_NUMBER}\\n触发者: \${BUILD_CAUSE}"
+      """
+    }
+    failure {
+      sh """
+        /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署失败" -content "博客项目 gaamingzhangblog 部署失败\\n\\n部署时间: \$(date '+%Y-%m-%d %H:%M:%S')\\n构建号: \${BUILD_NUMBER}\\n触发者: \${BUILD_CAUSE}\\n\\n请检查 Jenkins 控制台输出查看详细错误信息"
+      """
     }
   }
 }
