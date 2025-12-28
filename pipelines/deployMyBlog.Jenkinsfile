@@ -95,9 +95,9 @@ pipeline {
         string(credentialsId: 'wxpush_userID', variable: 'WXPUSH_USERID'),
         string(credentialsId: 'wxpush_templateID', variable: 'WXPUSH_TEMPLATEID')
       ]) {
-        sh """
-          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署成功" -content "博客项目 gaamingzhangblog v.${BUILD_NUMBER} 已成功部署到生产环境"
-        """
+        sh '''
+          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署成功" -content "博客项目 gaamingzhangblog v.'${BUILD_NUMBER}' 已成功部署到生产环境"
+        '''
       }
     }
     failure {
@@ -107,9 +107,9 @@ pipeline {
         string(credentialsId: 'wxpush_userID', variable: 'WXPUSH_USERID'),
         string(credentialsId: 'wxpush_templateID', variable: 'WXPUSH_TEMPLATEID')
       ]) {
-        sh """
-          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署失败" -content "博客项目 gaamingzhangblog v.${BUILD_NUMBER} 部署失败"
-        """
+        sh '''
+          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署失败" -content "博客项目 gaamingzhangblog v.'${BUILD_NUMBER}' 部署失败"
+        '''
       }
     }
   }
