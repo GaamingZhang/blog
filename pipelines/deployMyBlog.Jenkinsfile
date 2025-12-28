@@ -5,6 +5,10 @@ pipeline {
     nodejs 'NodeJS'
   }
 
+  parameters {
+    booleanParam(name: 'SKIP_ACCESS_LOG_PROCESSOR', defaultValue: true, description: '是否跳过博客访问日志处理服务的部署')
+  }
+
   environment {
     BLOG_DEPLOY_PATH = '/var/www/vuepress-blog'
     NGINX_CONF_REMOTE = '/etc/nginx/conf.d/myBlog.conf'
@@ -51,6 +55,9 @@ pipeline {
     }
 
     stage('Process Blog Access Log') {
+      when {
+        expression { params.SKIP_ACCESS_LOG_PROCESSOR != true }
+      }
       steps {
         withCredentials([
           string(credentialsId: 'TencentNodeIP', variable: 'DEPLOY_HOST'),
