@@ -1,13 +1,10 @@
 [Unit]
 Description=Blog Access Log Processor
-After=network.target
 
 [Service]
-Type=simple
-User=root
+Type=oneshot
+User=bloglog
+WorkingDirectory=/var/www/vuepress-blog
 ExecStart=/var/www/vuepress-blog/scripts/process-blog-access.sh
-Restart=always
-RestartSec=86400
-
-[Install]
-WantedBy=multi-user.target
+StandardOutput=journal
+StandardError=journal
