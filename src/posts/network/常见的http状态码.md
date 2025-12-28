@@ -1,11 +1,10 @@
 ---
-date: 2025-12-24
+date: 2025-12-28
 author: Gaaming Zhang
 category:
   - 网络协议
 tag:
   - HTTP
-  - 网络协议
 ---
 
 # 常见的HTTP状态码

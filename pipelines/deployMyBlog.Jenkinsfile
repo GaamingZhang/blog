@@ -12,6 +12,7 @@ pipeline {
     TENCENT_NODE_SSH_KEY_CREDENTIAL = 'TencentNodeSSHKey'
     VERSION = "${BUILD_NUMBER}"
     MAX_BACKUPS = 10
+    LOG_PROCESS_SCRIPT = "${BLOG_DEPLOY_PATH}/scripts/process-blog-access.sh"
   }
 
   // TODO: 部署前生成 official_blog_<buildNumber> 分支
@@ -45,6 +46,21 @@ pipeline {
           ]) {
             deployToRemote()
           }
+        }
+      }
+    }
+
+    stage('Process Blog Access Log') {
+      steps {
+        withCredentials([
+          string(credentialsId: 'TencentNodeIP', variable: 'DEPLOY_HOST'),
+          sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+        ]) {
+          sh '''
+            set -e
+            REMOTE="$TENCENT_NODE_DEPLOY_USER@$DEPLOY_HOST"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo chmod +x $LOG_PROCESS_SCRIPT"
+          '''
         }
       }
     }
