@@ -2,7 +2,8 @@ import { navbar } from "vuepress-theme-hope";
 
 export default navbar([
   "/",
-  { text: "个人介绍", link: "/intro.md", icon: "material-symbols:account-box-sharp" },
+  "/intro.md",
+  "/quickReview.md",
   { text: "文档", link: "/posts/", icon: "book" },
   { text: "算法", link: "/algorithm/", icon: "code" },
   { text: "问题集", link: "/problemset/", icon: "fluent-mdl2:document-set" },

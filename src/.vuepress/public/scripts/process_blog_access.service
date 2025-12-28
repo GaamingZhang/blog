@@ -3,7 +3,7 @@ Description=Blog Access Log Processor
 
 [Service]
 Type=oneshot
-User=bloglog
+User=root
 WorkingDirectory=/var/www/vuepress-blog
 ExecStart=/var/www/vuepress-blog/scripts/process_blog_access.sh
 StandardOutput=journal
