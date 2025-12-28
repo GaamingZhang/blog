@@ -7,7 +7,7 @@ Type=simple
 User=root
 ExecStart=/var/www/vuepress-blog/scripts/process-blog-access.sh
 Restart=always
-RestartSec=10
+RestartSec=86400
 
 [Install]
 WantedBy=multi-user.target
