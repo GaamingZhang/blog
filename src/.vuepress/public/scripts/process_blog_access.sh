@@ -52,9 +52,10 @@ if [ -f "$ACCESS_LOG" ]; then
         tail -n +$((LAST_LINE + 1)) "$ACCESS_LOG" | while read line; do
             # 解析日志
             IP=$(echo "$line" | awk '{print $1}')
+            DATE=$(echo "$line" | awk '{print $4}')
             URI=$(echo "$line" | awk '{print $7}')
             
-            echo "访问IP: $IP\n访问页面: $URI"            
+            echo "$IP,$DATE,$URI"
 
             # 发送到微信
             /var/wxpush/wxpush \
@@ -63,7 +64,7 @@ if [ -f "$ACCESS_LOG" ]; then
                 -userID "$WXPUSH_USERID" \
                 -templateID "$WXPUSH_TEMPLATEID" \
                 -title "博客访问通知" \
-                -content "访问IP: $IP\n访问页面: $URI"
+                -content "$IP,$DATE,$URI"
             echo "已发送通知"
         done
     fi
