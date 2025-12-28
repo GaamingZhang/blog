@@ -12,7 +12,7 @@ pipeline {
     TENCENT_NODE_SSH_KEY_CREDENTIAL = 'TencentNodeSSHKey'
     VERSION = "${BUILD_NUMBER}"
     MAX_BACKUPS = 10
-    LOG_PROCESS_SCRIPT = "${BLOG_DEPLOY_PATH}/scripts/process-blog-access.sh"
+    LOG_PROCESS_SCRIPTS = "${BLOG_DEPLOY_PATH}/scripts"
   }
 
   // TODO: 部署前生成 official_blog_<buildNumber> 分支
@@ -59,7 +59,11 @@ pipeline {
           sh '''
             set -e
             REMOTE="$TENCENT_NODE_DEPLOY_USER@$DEPLOY_HOST"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo chmod +x $LOG_PROCESS_SCRIPT"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo chmod +x $LOG_PROCESS_SCRIPTS/process-blog-access.sh"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo cp $LOG_PROCESS_SCRIPTS/process-blog-access.service /etc/systemd/system/"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo systemctl daemon-reload"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo systemctl enable process-blog-access"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo systemctl start process-blog-access"
           '''
         }
       }

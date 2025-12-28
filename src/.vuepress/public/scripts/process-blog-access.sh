@@ -27,7 +27,6 @@ if [ -f "$ACCESS_LOG" ]; then
             # 解析日志
             IP=$(echo "$line" | awk '{print $1}')
             URI=$(echo "$line" | awk '{print $7}')
-            UA=$(echo "$line" | awk -F'"' '{print $6}')
             
             # 发送到微信
             /var/wxpush/wxpush \
