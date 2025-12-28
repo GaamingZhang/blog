@@ -5,6 +5,6 @@ Description=Blog Access Log Processor
 Type=oneshot
 User=bloglog
 WorkingDirectory=/var/www/vuepress-blog
-ExecStart=/var/www/vuepress-blog/scripts/process-blog-access.sh
+ExecStart=/var/www/vuepress-blog/scripts/process_blog_access.sh
 StandardOutput=journal
 StandardError=journal
