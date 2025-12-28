@@ -12,10 +12,6 @@ pipeline {
     TENCENT_NODE_SSH_KEY_CREDENTIAL = 'TencentNodeSSHKey'
     VERSION = "${BUILD_NUMBER}"
     MAX_BACKUPS = 10
-    WXPUSH_APPID = credentials('wxpush_appID')
-    WXPUSH_SECRET = credentials('wxpush_secret')
-    WXPUSH_USERID = credentials('wxpush_userID')
-    WXPUSH_TEMPLATEID = credentials('wxpush_templateID')
   }
 
   // TODO: 部署前生成 official_blog_<buildNumber> 分支
@@ -77,14 +73,28 @@ pipeline {
 
   post {
     success {
-      sh """
-        /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署成功" -content "博客项目 gaamingzhangblog v.${BUILD_NUMBER} 已成功部署到生产环境"
-      """
+      withCredentials([
+        string(credentialsId: 'wxpush_appID', variable: 'WXPUSH_APPID'),
+        string(credentialsId: 'wxpush_secret', variable: 'WXPUSH_SECRET'),
+        string(credentialsId: 'wxpush_userID', variable: 'WXPUSH_USERID'),
+        string(credentialsId: 'wxpush_templateID', variable: 'WXPUSH_TEMPLATEID')
+      ]) {
+        sh """
+          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署成功" -content "博客项目 gaamingzhangblog v.${BUILD_NUMBER} 已成功部署到生产环境"
+        """
+      }
     }
     failure {
-      sh """
-        /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署失败" -content "博客项目 gaamingzhangblog v.${BUILD_NUMBER} 部署失败"
-      """
+      withCredentials([
+        string(credentialsId: 'wxpush_appID', variable: 'WXPUSH_APPID'),
+        string(credentialsId: 'wxpush_secret', variable: 'WXPUSH_SECRET'),
+        string(credentialsId: 'wxpush_userID', variable: 'WXPUSH_USERID'),
+        string(credentialsId: 'wxpush_templateID', variable: 'WXPUSH_TEMPLATEID')
+      ]) {
+        sh """
+          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署失败" -content "博客项目 gaamingzhangblog v.${BUILD_NUMBER} 部署失败"
+        """
+      }
     }
   }
 }
