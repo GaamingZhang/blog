@@ -3,9 +3,36 @@
 ACCESS_LOG="/var/log/nginx/blog-access.log"
 PROCESSED_LOG="/var/log/nginx/blog-access.processed"
 LOCK_FILE="/tmp/blog-access.lock"
+IP_CACHE_FILE="/var/log/nginx/ip-city.cache"
 
 # 加载环境变量
 source /etc/wxpush-credentials.conf
+
+# 查询IP属地函数（带缓存）
+get_ip_city() {
+    local ip=$1
+    local city
+    
+    # 先从缓存查找
+    if [ -f "$IP_CACHE_FILE" ]; then
+        city=$(grep "^$ip," "$IP_CACHE_FILE" 2>/dev/null | cut -d',' -f2)
+        if [ -n "$city" ]; then
+            echo "$city"
+            return
+        fi
+    fi
+    
+    # 缓存中没有，请求API
+    city=$(curl -s "http://ip-api.com/json/$ip" | grep -o '"city":"[^"]*"' | cut -d'"' -f4)
+    if [ -z "$city" ]; then
+        city="未知"
+    fi
+    
+    # 写入缓存
+    echo "$ip,$city" >> "$IP_CACHE_FILE"
+    
+    echo "$city"
+}
 
 # 清理锁文件的函数
 cleanup() {
@@ -54,8 +81,18 @@ if [ -f "$ACCESS_LOG" ]; then
             IP=$(echo "$line" | awk '{print $1}')
             DATE=$(echo "$line" | awk '{print $4}')
             URI=$(echo "$line" | awk '{print $7}')
+            USER_AGENT=$(echo "$line" | awk -F'"' '{print $6}')
+
+            # 检查是否为爬虫请求
+            if echo "$USER_AGENT" | grep -qiE '(bot|crawler|spider|scraper|curl|wget|python-requests|httpie|scrapy|phantomjs|splash|headless|chrome-lighthouse|googlebot|bingbot|yandexbot|baidu|360spider|sogou|sohu-search|sina|ia_archiver|archive.org|slurp)'; then
+                echo "跳过爬虫请求: $IP,$DATE,$URI ($USER_AGENT)"
+                continue
+            fi
+
+            # 查询IP属地
+            CITY=$(get_ip_city "$IP")
             
-            echo "$IP,$DATE,$URI"
+            echo "$IP,$CITY,$DATE,$URI"
 
             # 发送到微信
             /var/wxpush/wxpush \
@@ -64,7 +101,7 @@ if [ -f "$ACCESS_LOG" ]; then
                 -userID "$WXPUSH_USERID" \
                 -templateID "$WXPUSH_TEMPLATEID" \
                 -title "博客访问通知" \
-                -content "$IP,$DATE,$URI"
+                -content "$IP,$CITY,$DATE,$URI"
             echo "已发送通知"
         done
     fi
