@@ -71,6 +71,7 @@ pipeline {
             ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo cp $LOG_PROCESS_SCRIPTS/process_blog_access.timer /etc/systemd/system/"
             ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo systemctl daemon-reload"
             ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo systemctl enable --now process_blog_access.timer"
+            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo systemctl start process_blog_access.timer"
           '''
         }
       }
