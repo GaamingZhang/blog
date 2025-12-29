@@ -1,13 +1,12 @@
 ---
 date: 2025-12-24
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
-  - network
-tag:
-  - CDN
   - 网络
-  - 基本概念
-  - 性能优化
+tag:
+  - 网络
 ---
 
 # CDN基本概念

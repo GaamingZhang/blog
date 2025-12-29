@@ -1,13 +1,12 @@
 ---
 date: 2025-12-24
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
-  - network
-tag:
-  - HTTPS
   - 网络
-  - 安全
-  - 加密
+tag:
+  - 网络
 ---
 
 # HTTPS协议

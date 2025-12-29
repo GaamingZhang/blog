@@ -1,12 +1,12 @@
 ---
 date: 2025-07-01
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - 网络
 tag:
   - 网络
-  - TCP协议
-  - UDP协议
 ---
 
 # TCP和UDP的区别

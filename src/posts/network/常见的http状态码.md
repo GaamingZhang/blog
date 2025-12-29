@@ -1,10 +1,12 @@
 ---
 date: 2025-12-28
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
-  - 网络协议
+  - 网络
 tag:
-  - HTTP
+  - 网络
 ---
 
 # 常见的HTTP状态码

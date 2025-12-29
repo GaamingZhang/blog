@@ -1,11 +1,12 @@
 ---
 date: 2025-07-01
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - 网络
 tag:
   - 网络
-  - 还在施工中
 ---
 
 # ICMP协议的工作原理，以及PING命令的实现机制

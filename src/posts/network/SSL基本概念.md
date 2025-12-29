@@ -1,11 +1,12 @@
 ---
 date: 2025-12-24
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - 网络
 tag:
   - 网络
-  - SSL/TLS协议
 ---
 
 # SSL/TLS基本概念
