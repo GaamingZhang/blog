@@ -1,14 +1,12 @@
 ---
 date: 2025-12-25
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - others
 tag:
   - AI
-  - 人工智能
-  - 新技术
-  - 大模型
-  - 生成式AI
 ---
 
 # AI相关的新技术

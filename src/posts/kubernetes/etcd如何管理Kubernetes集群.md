@@ -1,12 +1,12 @@
 ---
 date: 2025-07-01
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - Kubernetes
 tag:
   - Kubernetes
-  - etcd
-  - 还在施工中
 ---
 
 # etcd如何管理Kubernetes集群

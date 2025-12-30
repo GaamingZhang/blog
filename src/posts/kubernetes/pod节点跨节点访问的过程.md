@@ -1,11 +1,12 @@
 ---
 date: 2025-07-01
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - Kubernetes
 tag:
   - Kubernetes
-  - 还在施工中
 ---
 
 # pod节点跨节点访问的过程

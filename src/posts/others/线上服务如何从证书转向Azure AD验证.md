@@ -1,11 +1,12 @@
 ---
 date: 2025-12-24
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - 线上事故复盘
 tag:
   - 线上事故复盘
-  - 还在施工中···
 ---
 
 # 线上服务如何从证书转向Azure AD验证

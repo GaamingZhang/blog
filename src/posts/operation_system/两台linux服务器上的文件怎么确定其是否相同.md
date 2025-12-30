@@ -1,11 +1,12 @@
 ---
 date: 2025-07-01
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - 操作系统
 tag:
   - 操作系统
-  - 还在施工中
 ---
 
 # 两台linux服务器上的文件怎么确定其是否相同

@@ -1,13 +1,13 @@
 ---
 date: 2025-12-24
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
-  - mysql
+  - 数据库
 tag:
-  - MySQL
-  - 索引
-  - 数据结构
-  - B+树
+  - 数据库
+  - mysql
 ---
 
 # MySQL的索引的数据结构

@@ -1,6 +1,8 @@
 ---
 date: 2025-12-27
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - Serverless
 tag:

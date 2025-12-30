@@ -1,11 +1,12 @@
 ---
 date: 2025-07-01
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - Kubernetes
 tag:
   - Kubernetes
-  - 已完工
 ---
 
 # Kubernetes在生产环境中部署有哪些参数可以调整优化

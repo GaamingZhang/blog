@@ -1,11 +1,14 @@
 ---
 date: 2025-07-01
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
-  - kafka
+  - 消息队列
 tag:
+  - 消息队列
   - kafka
-  - 还在施工中
+  - rabbitmq
 ---
 
 # rabbitmq和kafka区别

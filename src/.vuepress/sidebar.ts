@@ -67,9 +67,9 @@ export default sidebar({
           children: "structure",
         },
         {
-          text: "DevOps",
+          text: "SRE",
           icon: "carbon:ibm-devops-control",
-          prefix: "devops/",
+          prefix: "sre/",
           collapsible: true,
           children: "structure",
         },
@@ -102,20 +102,6 @@ export default sidebar({
           children: "structure",
         }
       ]
-    },
-    {
-      text: "问题集",
-      icon: "fluent-mdl2:document-set",
-      prefix: "problemset/",
-      children: [
-        {
-          text: "SRE",
-          icon: "iconoir:developer",
-          prefix: "sre/",
-          collapsible: true,
-          children: "structure",
-        },
-      ],
-    },
+    }
   ],
 });

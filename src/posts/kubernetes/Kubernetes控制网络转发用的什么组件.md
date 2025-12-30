@@ -1,11 +1,12 @@
 ---
 date: 2025-07-01
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - Kubernetes
 tag:
   - Kubernetes
-  - 已完工
 ---
 
 # Kubernetes控制网络转发用的什么组件

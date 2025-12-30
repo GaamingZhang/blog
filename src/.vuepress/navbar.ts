@@ -5,6 +5,5 @@ export default navbar([
   "/intro.md",
   "/quickReview.md",
   { text: "文档", link: "/posts/", icon: "book" },
-  { text: "算法", link: "/algorithm/", icon: "code" },
-  { text: "问题集", link: "/problemset/", icon: "fluent-mdl2:document-set" },
+  { text: "算法", link: "/algorithm/", icon: "code" }
 ]);

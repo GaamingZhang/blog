@@ -1,13 +1,12 @@
 ---
 date: 2025-12-25
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
-  - operation_system
-tag:
-  - wc命令
-  - Linux命令
   - 操作系统
-  - 命令行工具
+tag:
+  - 操作系统
 ---
 
 # wc命令的基本使用方法

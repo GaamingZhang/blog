@@ -1,11 +1,12 @@
 ---
 date: 2025-07-01
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - docker
 tag:
   - docker
-  - 还在施工中
 ---
 
 # dockfile暴露的端口的作用

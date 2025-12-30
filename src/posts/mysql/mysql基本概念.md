@@ -1,12 +1,13 @@
 ---
 date: 2025-12-24
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - 数据库
 tag:
-  - MySQL
   - 数据库
-  - 基本概念
+  - mysql
 ---
 
 # MySQL基本概念

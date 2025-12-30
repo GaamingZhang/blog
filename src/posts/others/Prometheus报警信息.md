@@ -1,12 +1,12 @@
 ---
 date: 2025-12-24
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - 监控
 tag:
   - 监控
-  - Prometheus
-  - 还在施工中···
 ---
 
 # Prometheus中一般关注什么报警信息

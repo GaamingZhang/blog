@@ -1,11 +1,12 @@
 ---
 date: 2025-12-24
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - 负载均衡
 tag:
   - 负载均衡
-  - 还在施工中···
 ---
 
 # LVS负载均衡集群基本概念

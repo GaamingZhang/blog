@@ -1,11 +1,12 @@
 ---
 date: 2025-07-01
 author: Gaaming Zhang
+isOriginal: false
+article: true
 category:
   - Redis
 tag:
   - Redis
-  - 还在施工中
 ---
 
 # 怎么规划Redis集群
