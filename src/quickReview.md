@@ -3,8 +3,8 @@ date: 2025-12-28
 author: Gaaming Zhang
 icon: hugeicons:zip-01
 cover: /assets/images/cover1.png
-sticky: true
-star: true
+sticky: 1000
+star: 1000
 isOriginal: true
 ---
 
