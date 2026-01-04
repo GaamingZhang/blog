@@ -69,7 +69,7 @@ func (c *ChatManage) Clone() *ChatManage {
 	copy(knowledgeIDs, c.KnowledgeIDs)
 
 	// 深度复制搜索目标切片
-	searchTargets := make([]SearchTarget, len(c.SearchTargets))
+	searchTargets := make(SearchTargets, len(c.SearchTargets))
 	for i, t := range c.SearchTargets {
 		if t != nil {
 			kidsCopy := make([]string, len(t.KnowledgeIDs))

@@ -12,14 +12,14 @@ const (
 	TypeDataTableSummary   = "datatable:summary"   // 表格摘要任务
 )
 
-// ExtractChunkPayload represents the extract chunk task payload
+// ExtractChunkPayload 表示提取块任务的负载
 type ExtractChunkPayload struct {
 	TenantID uint64 `json:"tenant_id"`
 	ChunkID  string `json:"chunk_id"`
 	ModelID  string `json:"model_id"`
 }
 
-// DocumentProcessPayload represents the document process task payload
+// DocumentProcessPayload 表示文档处理任务的负载
 type DocumentProcessPayload struct {
 	RequestId                string   `json:"request_id"`
 	TenantID                 uint64   `json:"tenant_id"`
@@ -35,7 +35,7 @@ type DocumentProcessPayload struct {
 	QuestionCount            int      `json:"question_count,omitempty"`   // 每个chunk生成的问题数量
 }
 
-// FAQImportPayload represents the FAQ import task payload
+// FAQImportPayload 表示FAQ导入任务的负载
 type FAQImportPayload struct {
 	TenantID    uint64            `json:"tenant_id"`
 	TaskID      string            `json:"task_id"`
@@ -45,7 +45,7 @@ type FAQImportPayload struct {
 	Mode        string            `json:"mode"`
 }
 
-// QuestionGenerationPayload represents the question generation task payload
+// QuestionGenerationPayload 表示问题生成任务的负载
 type QuestionGenerationPayload struct {
 	TenantID        uint64 `json:"tenant_id"`
 	KnowledgeBaseID string `json:"knowledge_base_id"`
@@ -53,14 +53,14 @@ type QuestionGenerationPayload struct {
 	QuestionCount   int    `json:"question_count"`
 }
 
-// SummaryGenerationPayload represents the summary generation task payload
+// SummaryGenerationPayload 表示摘要生成任务的负载
 type SummaryGenerationPayload struct {
 	TenantID        uint64 `json:"tenant_id"`
 	KnowledgeBaseID string `json:"knowledge_base_id"`
 	KnowledgeID     string `json:"knowledge_id"`
 }
 
-// KBClonePayload represents the knowledge base clone task payload
+// KBClonePayload 表示知识库复制任务的负载
 type KBClonePayload struct {
 	TenantID uint64 `json:"tenant_id"`
 	TaskID   string `json:"task_id"`
@@ -68,7 +68,7 @@ type KBClonePayload struct {
 	TargetID string `json:"target_id"`
 }
 
-// IndexDeletePayload represents the index delete task payload
+// IndexDeletePayload 表示索引删除任务的负载
 type IndexDeletePayload struct {
 	TenantID         uint64                  `json:"tenant_id"`
 	KnowledgeBaseID  string                  `json:"knowledge_base_id"`
@@ -78,14 +78,14 @@ type IndexDeletePayload struct {
 	EffectiveEngines []RetrieverEngineParams `json:"effective_engines"`
 }
 
-// KBDeletePayload represents the knowledge base delete task payload
+// KBDeletePayload 表示知识库删除任务的负载
 type KBDeletePayload struct {
 	TenantID         uint64                  `json:"tenant_id"`
 	KnowledgeBaseID  string                  `json:"knowledge_base_id"`
 	EffectiveEngines []RetrieverEngineParams `json:"effective_engines"`
 }
 
-// KBCloneTaskStatus represents the status of a knowledge base clone task
+// KBCloneTaskStatus 表示知识库复制任务的状态
 type KBCloneTaskStatus string
 
 const (
@@ -95,7 +95,7 @@ const (
 	KBCloneStatusFailed     KBCloneTaskStatus = "failed"
 )
 
-// KBCloneProgress represents the progress of a knowledge base clone task
+// KBCloneProgress 表示知识库复制任务的进度
 type KBCloneProgress struct {
 	TaskID    string            `json:"task_id"`
 	SourceID  string            `json:"source_id"`
@@ -110,15 +110,15 @@ type KBCloneProgress struct {
 	UpdatedAt int64             `json:"updated_at"` // 最后更新时间
 }
 
-// ChunkContext represents chunk content with surrounding context
+// ChunkContext 表示带有周围上下文的块内容
 type ChunkContext struct {
 	ChunkID     string `json:"chunk_id"`
 	Content     string `json:"content"`
-	PrevContent string `json:"prev_content,omitempty"` // Previous chunk content for context
-	NextContent string `json:"next_content,omitempty"` // Next chunk content for context
+	PrevContent string `json:"prev_content,omitempty"` // 用于上下文的前一个块内容
+	NextContent string `json:"next_content,omitempty"` // 用于上下文的下一个块内容
 }
 
-// PromptTemplateStructured represents the prompt template structured
+// PromptTemplateStructured 表示结构化的提示词模板
 type PromptTemplateStructured struct {
 	Description string      `json:"description"`
 	Tags        []string    `json:"tags"`
@@ -131,7 +131,7 @@ type GraphNode struct {
 	Attributes []string `json:"attributes,omitempty"`
 }
 
-// GraphRelation represents the relation of the graph
+// GraphRelation 表示图中的关系
 type GraphRelation struct {
 	Node1 string `json:"node1,omitempty"`
 	Node2 string `json:"node2,omitempty"`
@@ -144,13 +144,13 @@ type GraphData struct {
 	Relation []*GraphRelation `json:"relation,omitempty"`
 }
 
-// NameSpace represents the name space of the knowledge base and knowledge
+// NameSpace 表示知识库和知识的命名空间
 type NameSpace struct {
 	KnowledgeBase string `json:"knowledge_base"`
 	Knowledge     string `json:"knowledge"`
 }
 
-// Labels returns the labels of the name space
+// Labels 返回命名空间的标签
 func (n NameSpace) Labels() []string {
 	res := make([]string, 0)
 	if n.KnowledgeBase != "" {

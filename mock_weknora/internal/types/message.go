@@ -1,8 +1,6 @@
 package types
 
 import (
-	"database/sql/driver"
-	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -29,20 +27,6 @@ type MentionedItem struct {
 
 // MentionedItems是用于数据库存储的MentionedItem的切片
 type MentionedItems []MentionedItem
-
-// Scan实现sql。用于数据库反序列化的扫描器接口
-func (m *MentionedItems) Scan(value interface{}) error {
-	if value == nil {
-		*m = make(MentionedItems, 0)
-		return nil
-	}
-	b, ok := value.([]byte)
-	if !ok {
-		*m = make(MentionedItems, 0)
-		return nil
-	}
-	return json.Unmarshal(b, m)
-}
 
 type Message struct {
 	// 消息的唯一标识符
