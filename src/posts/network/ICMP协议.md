@@ -1,5 +1,5 @@
 ---
-date: 2025-07-01
+date: 2026-01-06
 author: Gaaming Zhang
 isOriginal: false
 article: true
@@ -9,7 +9,7 @@ tag:
   - 网络
 ---
 
-# ICMP协议的工作原理，以及PING命令的实现机制
+# ICMP协议
 
 ## ICMP 概述
 

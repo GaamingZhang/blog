@@ -340,7 +340,7 @@ awk 'BEGIN {
 - BSD awk (macOS默认) 的`strftime()`函数支持的格式选项较少
 - 对于需要复杂时间处理的跨平台脚本，建议使用外部工具（如`date`命令）辅助
 
-#### 输入输出函数
+### 输入输出函数
 ```bash
 # getline 函数：读取下一行输入
 awk '{ print "当前行:", $0; getline; print "下一行:", $0 }' file.txt
@@ -614,9 +614,9 @@ awk '{ sum += $1; n++ } END { print sum/n }' file.txt
 
 ---
 
-### 相关高频面试题
+## 常见问题
 
-#### Q1: 如何用 awk 提取日志文件中的特定字段和统计数据？
+### Q1: 如何用 awk 提取日志文件中的特定字段和统计数据？
 
 **答案**：
 
@@ -635,12 +635,9 @@ awk '{ count[$1]++ } END { for (ip in count) print ip, count[ip] }' access.log |
 
 # 4. 统计流量最高的 URL
 awk '{ sum[$7] += $10 } END { for (url in sum) print url, sum[url] }' access.log | sort -k2 -rn | head -10
-
-# 5. 统计特定时间段的请求
-awk '$4 >= "[20/Dec/2024:10:00:00" && $4 < "[20/Dec/2024:11:00:00" { count++ } END { print count }' access.log
 ```
 
-#### Q2: awk 中的数组有什么特点？如何使用关联数组？
+### Q2: awk 中的数组有什么特点？如何使用关联数组？
 
 **答案**：
 
@@ -659,13 +656,9 @@ awk '{ if ($1 in dict) print "exists"; else print "not exists" }' file.txt
 
 # 4. 删除数组元素
 awk '{ if (count[$1] > 1) delete count[$1] } END { for (k in count) print k }' file.txt
-
-# 5. 二维数组
-awk '{ arr[$1, $2]++ } END { for (k in arr) print k, arr[k] }' file.txt
-# 访问：arr[key1, key2] 或 arr[key1 SUBSEP key2]
 ```
 
-#### Q3: awk 的 gsub 和 sub 函数有什么区别？
+### Q3: awk 的 gsub 和 sub 函数有什么区别？
 
 **答案**：
 
@@ -685,203 +678,66 @@ awk '{ gsub(/[0-9]/, "X", $2); print }' file.txt  # 只修改第 2 个字段
 awk '{ n = gsub(/old/, "new"); print n, $0 }' file.txt
 ```
 
-#### Q4: awk 中的 split 函数有什么用？
+### Q4: awk 的 BEGIN 和 END 块有什么作用？
 
 **答案**：
 
 ```bash
-# 将字符串按分割符分割成数组
+# BEGIN 块：在处理任何输入文件之前执行
+awk 'BEGIN {
+    print "=== 开始处理 ==="
+    FS=":"  # 设置输入分割符
+    OFS="\t"  # 设置输出分割符
+    print "用户名\tUID\tGID\t家目录"
+    print "------\t---\t---\t------"
+}' /etc/passwd
 
-# 1. 基本用法
-awk '{ n = split($0, arr, ":"); for (i=1; i<=n; i++) print arr[i] }' file.txt
+# END 块：在处理完所有输入文件的所有行之后执行
+awk '{ sum += $3; count++ } 
+END {
+    print "=== 处理完成 ==="
+    print "总工资：", sum
+    print "平均工资：", sum/count
+}' salary.txt
 
-# 2. 动态处理字段
-echo "a:b:c" | awk '{ split($0, a, ":"); print a[1], a[3] }'
-# 输出：a c
-
-# 3. 统计分割后的数据
-awk '{ split($0, parts, ","); sum += parts[2] } END { print sum }' file.csv
-
-# 4. 处理嵌套数据
-awk '{ split($0, a, "|"); split(a[1], b, ":"); print b[2] }' file.txt
+# 完整示例：统计文件内容
+awk 'BEGIN {
+    print "开始统计文件行数和单词数"
+    total_lines = 0
+    total_words = 0
+}
+{
+    total_lines++
+    total_words += NF
+}
+END {
+    print "总行数：", total_lines
+    print "总单词数：", total_words
+    print "平均每行单词数：", total_words/total_lines
+}' file.txt
 ```
 
-#### Q5: awk 的 printf 如何格式化输出？
+### Q5: 如何使用 awk 实现数据去重？
 
 **答案**：
 
 ```bash
-# printf 的常用格式符
-# %d 整数，%f 浮点，%s 字符串，%x 十六进制
-# 修饰符：- 左对齐，0 补零，. 精度
+# 方法1：保留第一次出现的行
+awk '!seen[$0]++' file.txt
 
-# 1. 基本格式
-awk '{ printf "%s %d %.2f\n", $1, $2, $3 }' file.txt
-
-# 2. 宽度和对齐
-awk '{ printf "%-15s %5d %10.2f\n", $1, $2, $3 }' file.txt
-# %-15s：左对齐 15 个字符
-# %5d：右对齐 5 位整数
-# %10.2f：10 位宽，2 位小数
-
-# 3. 补零
-awk '{ printf "%05d\n", $1 }' file.txt
-# 12 → 00012
-
-# 4. 百分比格式
-awk '{ printf "%.1f%%\n", $1 * 100 }' file.txt
-```
-
-#### Q6: awk 如何处理多文件？FNR 和 NR 的区别？
-
-**答案**：
-
-```bash
-# NR：总行号（所有文件）
-# FNR：当前文件的行号（会重置）
-
-# 示例：处理两个文件
-awk '{ print FILENAME, FNR, NR, $0 }' file1.txt file2.txt
-
-# 输出可能为：
-# file1.txt 1 1 ...
-# file1.txt 2 2 ...
-# file2.txt 1 3 ...  ← FNR 重置，NR 继续增长
-# file2.txt 2 4 ...
-
-# 处理多文件的合并操作
-awk 'FNR == 1 { print "=== " FILENAME " ===" } { print }' file1.txt file2.txt
-
-# 只处理第一个文件
-awk 'FNR == NR { print }' file1.txt file2.txt
-# 或
-awk 'FILENAME == "file1.txt" { print }' file1.txt file2.txt
-```
-
-#### Q7: 如何使用 awk 实现数据去重并保留最新记录？
-
-**答案**：
-
-```bash
-# 示例数据（最后一列是时间戳，保留每个用户的最新记录）
-# John 30 Beijing 1702987200
-# Jane 25 Shanghai 1702987300
-# John 31 Beijing 1702987400  # John 的更新记录
-
-# 方法1：使用数组存储最新记录，然后输出所有记录
-awk '{ 
-    # 使用第一个字段作为键，保存最新的记录
-    latest[$1] = $0
-    # 保存时间戳用于排序（如果需要按时间顺序输出）
-    timestamp[$1] = $4
-}' 
-END { 
-    # 直接输出（顺序不一定是时间顺序）
-    for (user in latest) {
-        print latest[user]
+# 方法2：保留最后一次出现的行（使用数组存储最新记录）
+awk '{ latest[$1] = $0 } 
+END {
+    for (key in latest) {
+        print latest[key]
     }
-    
-    # 按时间戳排序输出（需要外部sort工具）
-    print "\n按时间顺序输出："
-    for (user in latest) {
-        print timestamp[user], latest[user]
-    } | sort -k1 -n | cut -f2-  # 排序后去掉时间戳字段
 }' data.txt
 
-# 方法2：倒序读取文件，第一次出现的记录就是最新的
-# 先反转文件，然后去重，再反转回来
-awk '!seen[$1]++' <(tac data.txt) | tac
-```
+# 方法3：根据特定字段去重
+awk '!seen[$3]++' data.txt  # 根据第3个字段去重
 
-#### Q8: awk 中 getline 函数的使用场景和注意事项？
-
-**答案**：
-
-```bash
-# getline 的基本功能是读取下一行输入
-
-# 使用场景1：读取特定行的下一行数据
-awk '/start/ { getline; print "找到start的下一行：", $0 }' file.txt
-
-# 使用场景2：从文件读取数据
-awk 'BEGIN {
-    while (getline < "config.txt") {
-        if ($1 == "PORT") {
-            port = $2
-            break
-        }
-    }
-    close("config.txt")
-    print "配置的端口：", port
-}'
-
-# 使用场景3：读取命令输出
-awk 'BEGIN {
-    "date +%Y-%m-%d" | getline currentDate
-    print "今天日期：", currentDate
-}'
-
-# 注意事项1：getline 会改变当前记录和字段变量
-awk '{ print "当前行：", $0; getline; print "getline后：", $0 }' file.txt
-
-# 注意事项2：检查 getline 的返回值
-awk 'BEGIN {
-    while ((getline < "data.txt") > 0) {
-        print $0
-    }
-    if (ERRNO) {
-        print "读取文件错误：", ERRNO
-    }
-    close("data.txt")
-}'
-
-# 注意事项3：避免在循环中嵌套使用 getline
-# 这可能导致不可预期的行为
-```
-
-#### Q9: 如何在 awk 中实现自定义函数？
-
-**答案**：
-
-```bash
-# 自定义函数的基本语法
-awk 'function function_name(parameter1, parameter2, ...) {
-    # 函数体
-    return result
-}
-{ 
-    # 调用函数
-    result = function_name($1, $2)
-    print result
-}' file.txt
-
-# 示例1：计算阶乘
-awk 'function factorial(n) {
-    if (n <= 1) return 1
-    return n * factorial(n-1)
-}
-{ print $1, "的阶乘：", factorial($1) }' numbers.txt
-
-# 示例2：格式化输出
-awk 'function format_name(first, last) {
-    return toupper(substr(first, 1, 1)) substr(first, 2) " " \
-           toupper(substr(last, 1, 1)) substr(last, 2)
-}
-{ print format_name($1, $2) }' names.txt
-
-# 示例3：数据验证
-awk 'function is_valid_email(email) {
-    return match(email, /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/) != 0
-}
-{ 
-    if (is_valid_email($2)) {
-        print $1, "的邮箱有效：", $2
-    } else {
-        print $1, "的邮箱无效：", $2
-    }
-}' users.txt
-
-# 注意：参数是按值传递的，数组参数需要特殊处理（仅 gawk 支持）
+# 方法4：倒序读取文件，保留第一次出现的行（即原文件的最后一次出现）
+awk '!seen[$0]++' <(tac file.txt) | tac
 ```
 
 ---

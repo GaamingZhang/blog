@@ -1015,9 +1015,9 @@ done
 
 ---
 
-## 相关高频面试题
+## 常见问题
 
-#### Q1: curl 如何发送 POST 请求并携带 JSON 数据？
+### Q1: curl 如何发送 POST 请求并携带 JSON 数据？
 
 **答案**：
 
@@ -1060,7 +1060,7 @@ curl https://api.example.com/users \
   -d '{"name":"John"}'
 ```
 
-#### Q2: curl 如何处理认证？Bearer Token 和 Basic Auth 分别怎么使用？
+### Q2: curl 如何处理认证？Bearer Token 和 Basic Auth 分别怎么使用？
 
 **答案**：
 
@@ -1144,7 +1144,7 @@ curl -n https://api.example.com/users
 # -n 选项使用 .netrc 认证
 ```
 
-#### Q3: 如何用 curl 测量 API 的响应时间和性能？
+### Q3: 如何用 curl 测量 API 的响应时间和性能？
 
 **答案**：
 
@@ -1291,7 +1291,7 @@ echo "Max:  ${max}s"
 echo "Avg:  ${avg}s"
 ```
 
-#### Q4: curl 如何上传文件？multipart/form-data 和 application/octet-stream 有什么区别？
+### Q4: curl 如何上传文件？multipart/form-data 和 application/octet-stream 有什么区别？
 
 **答案**：
 
@@ -1418,7 +1418,7 @@ curl -F "file=@/absolute/path/to/file.txt" https://api.example.com/upload
 curl -v -F "file=@test.txt" https://api.example.com/upload 2>&1 | less
 ```
 
-#### Q5: 如何用 curl 调试 HTTPS 请求？如何查看 SSL 证书信息？
+### Q5: 如何用 curl 调试 HTTPS 请求？如何查看 SSL 证书信息？
 
 **答案**：
 

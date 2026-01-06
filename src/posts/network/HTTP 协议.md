@@ -7,7 +7,6 @@ category:
   - 网络
 tag:
   - 网络
-  - HTTP协议
 ---
 
 # HTTP协议
