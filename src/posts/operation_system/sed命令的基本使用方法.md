@@ -22,7 +22,7 @@ sed（Stream Editor）是**流式文本编辑器**，用于非交互式批量文
 5. **循环处理**：重复上述步骤直到处理完所有输入行
 
 **基础语法**：`sed [选项] '命令' 文件`
-- 常用选项：`-n` 静默模式（不自动打印模式空间）、`-i` 原地编辑文件、`-e` 多条命令、`-r/-E` 扩展正则（`-r` 是 GNU sed 扩展，`-E` 是 BSD sed 扩展，新版 GNU sed 也支持 `-E`）、`-f` 从文件读取命令
+- 常用选项：`-n` 静默模式（不自动打印模式空间）、`-i` 原地编辑文件、`-e` 多条命令、`-r/-E` 扩展正则、`-f` 从文件读取命令
 
 **核心命令**：
 - `s/pattern/replacement/flags`：替换，flags 包括 `g` 全局、`p` 打印、`数字` 指定第几次、`i` 忽略大小写
@@ -296,7 +296,7 @@ sed -E '
 ' app.log
 ```
 
-## 常见问题
+## 相关高频面试题与简答
 
 **Q1: sed 替换时如何处理特殊字符（如 `/` 或 `&`）？**
 ```bash
@@ -325,7 +325,36 @@ sed "s|/old/path|$new_path|g" file.txt  # 使用双引号
 sed 's@/etc/nginx/sites-enabled/.*\.conf@/etc/nginx/sites-enabled/default.conf@g' nginx.conf
 ```
 
-**Q2: 如何用 sed 实现配置文件参数修改？**
+**Q2: sed 如何只替换每行第 N 次匹配？**
+```bash
+# 1. 替换每行第 N 次出现（基本用法）
+sed 's/foo/bar/2' file.txt          # 替换每行第2次出现的foo
+
+# 2. 替换第 N 次及之后所有（g修饰符）
+sed 's/foo/bar/2g' file.txt         # 替换每行第2次及之后所有的foo
+
+# 3. 结合行号和次数限制
+sed '3s/foo/bar/2' file.txt         # 只替换第3行的第2次出现
+
+sed '5,10s/foo/bar/3g' file.txt     # 替换5-10行的第3次及之后所有
+
+# 4. 实际应用：修改CSV文件中的特定字段
+# 假设CSV格式：name,age,email,phone
+sed 's/,/;/2' data.csv              # 将第2个逗号替换为分号
+
+sed 's/,/;/3g' data.csv             # 将第3个及之后的逗号替换为分号
+
+# 5. 使用正则匹配并限制替换次数
+# 替换每行第3个数字
+
+sed -E 's/[0-9]+/X/3' text.txt      # 替换每行第3个数字为X
+
+# 6. 结合保持空间实现更复杂的替换
+# 只替换包含特定模式行的第2次匹配
+sed '/pattern/s/foo/bar/2' file.txt
+```
+
+**Q3: 如何用 sed 实现配置文件参数修改？**
 ```bash
 # 1. 修改 key=value 格式（最基本）
 sed -i 's/^server_port=.*/server_port=8080/' config.ini
@@ -348,7 +377,7 @@ sed -i -E 's/^user=.*/user=app/; s/^log_level=.*/log_level=info/' app.ini
 sed -i -E 's/^#(server_port=).*/\18080/; s/^server_port=.*/server_port=8080/' config.ini
 ```
 
-**Q3: sed 如何删除文件中的某些行？**
+**Q4: sed 如何删除文件中的某些行？**
 ```bash
 # 1. 删除空行
 sed '/^$/d' file.txt
@@ -381,7 +410,12 @@ sed -i '$d' file.txt          # 删除最后一行
 sed -i ':a;$d;N;2,3ba' file.txt # 删除最后3行（复杂实现）
 ```
 
-**Q4: macOS 的 sed 与 Linux sed 有什么区别？**
+**Q5: sed 与 awk 如何选择？**
+- sed：面向行的简单文本替换、删除、插入，模式匹配+单一操作。
+- awk：面向列（字段）的复杂文本处理、统计、格式化输出，支持变量、函数、条件。
+- 典型分工：sed 改配置文件/日志过滤，awk 提取特定列/计算/报表。
+
+**Q6: macOS 的 sed 与 Linux sed 有什么区别？**
 ```bash
 # macOS（BSD sed）必须提供备份扩展名
 sed -i.bak 's/old/new/g' file.txt  # 生成 file.txt.bak
@@ -398,21 +432,51 @@ sed -i 's/old/new/g' file.txt      # 直接修改
 # macOS: brew install gnu-sed，使用 gsed
 ```
 
-**Q5: 如何使用 sed 实现多行日志的合并？**
+**Q7: 如何使用 sed 实现文件内容的逆序输出？**
+```bash
+# 方法1：使用保持空间（最经典）
+sed '1!G;h;$!d' file.txt
+# 1!G: 非第一行时，将保持空间内容追加到模式空间
+# h: 将模式空间内容复制到保持空间
+# $!d: 非最后一行时，删除模式空间内容（不输出）
+
+# 方法2：使用 tac 命令（更简洁）
+tac file.txt
+```
+
+**Q8: 如何使用 sed 合并连续的空行为单行？**
+```bash
+# 合并连续空行
+# /^$/!b：非空行直接输出
+# n：读取下一行到模式空间
+# /^$/!b：如果下一行不是空行，直接输出
+# d：删除多余的空行
+sed '/^$/!b;n;/^$/!b;d' file.txt
+
+# 更简洁的方式（使用扩展正则）
+sed -E '/^$/{N;/\n$/D}' file.txt
+```
+
+**Q9: 如何使用 sed 实现多行日志的合并？**
 ```bash
 # 合并以时间戳开头的多行日志（常见于 Java 堆栈跟踪）
 # 假设日志格式：2023-10-01 10:00:00 ERROR ...
-# 适用：GNU sed 和 BSD sed（跨平台兼容）
 sed -E '/^[0-9]{4}-[0-9]{2}-[0-9]{2}/{x;p;x;}; 1!{H;d}; ${x;p}' log.txt
+# /^[0-9]{4}/：匹配时间戳行
+# x;p;x：交换到保持空间，打印，再交换回来
+# 1!{H;d}：非第一行，追加到保持空间并删除当前行
+# ${x;p}：最后一行，交换并打印所有内容
+```
 
-# 分步解释：
-# 1. /^[0-9]{4}-[0-9]{2}-[0-9]{2}/：匹配时间戳开头的行（新日志条目）
-# 2. x;p;x：交换到保持空间，打印之前积累的日志，再交换回来
-# 3. 1!{H;d}：非第一行时，追加到保持空间并删除当前行（不输出）
-# 4. ${x;p}：最后一行时，交换并打印所有积累的日志
+**Q10: 如何使用 sed 实现条件替换（根据不同条件替换不同内容）？**
+```bash
+# 使用分支命令实现条件替换
+# 如果包含 ERROR 替换为 [ERROR]，WARNING 替换为 [WARNING]，其他添加 [INFO]
+sed -E '/ERROR/{s/ERROR/[ERROR]/;b}; /WARNING/{s/WARNING/[WARNING]/;b}; s/^/[INFO]/' log.txt
 
-# 更简单的实现（使用 tac + sed，仅 GNU sed）
-# tac log.txt | sed -E '/^[0-9]{4}/{/^[0-9]{4}/!P; D}' | tac
+# 使用测试命令实现
+# 如果替换成功则跳过后续替换
+sed -E 's/ERROR/[ERROR]/;t; s/WARNING/[WARNING]/;t; s/^/[INFO]/' log.txt
 ```
 
 ## 实用技巧与注意事项
@@ -548,18 +612,14 @@ sed -E '/^[0-9]{4}-[0-9]{2}-[0-9]{2}/{x;p;x;}; 1!{H;d}; ${x;p}' log.txt
   sed -n '/pattern/p' file.txt
   ```
 
-- **坑2**：跨平台 `-i` 参数差异
+- **坑2**：macOS `-i` 后缺少备份扩展名
   ```bash
-  # Linux (GNU sed) 正确
-  sed -i 's/old/new/g' file.txt  # 直接修改，不生成备份
-  sed -i.bak 's/old/new/g' file.txt  # 生成备份文件 file.txt.bak
+  # Linux 正确
+  sed -i 's/old/new/g' file.txt
   
-  # macOS (BSD sed) 正确（必须提供备份扩展名）
-  sed -i.bak 's/old/new/g' file.txt  # 生成备份文件 file.txt.bak
-  sed -i '' 's/old/new/g' file.txt   # 不保留备份（需要空字符串作为扩展名）
-  
-  # 跨平台兼容写法（推荐）
-  sed -i.bak 's/old/new/g' file.txt && rm -f file.txt.bak  # 先创建备份再删除
+  # macOS 正确（必须提供备份扩展名）
+  sed -i.bak 's/old/new/g' file.txt  # 保留备份
+  sed -i '' 's/old/new/g' file.txt   # 不保留备份
   ```
 
 - **坑3**：正则未转义导致字面匹配失败（`.` `*` `[]` 等）
@@ -600,35 +660,23 @@ sed -E '/^[0-9]{4}-[0-9]{2}-[0-9]{2}/{x;p;x;}; 1!{H;d}; ${x;p}' log.txt
 
 - **坑7**：多行插入时的语法错误
   ```bash
-  # Linux (GNU sed) 正确
+  # Linux 正确
   sed '5i\
 Line 1\
 Line 2\
 Line 3' file.txt
   
-  # macOS (BSD sed) 正确（需要额外的转义）
+  # macOS 正确（需要不同的转义）
   sed '5i\\
 Line 1\\
 Line 2\\
 Line 3' file.txt
-  
-  # 跨平台兼容写法（强烈推荐）
-  # 方法1：使用 here-document 插入多行内容
+  # 或使用 here-document
   sed '5r /dev/stdin' file.txt <<EOF
 Line 1
 Line 2
 Line 3
 EOF
-  
-  # 方法2：使用 printf 生成兼容的转义序列
-  sed -e "$(printf '5i\\\
-Line 1\\\
-Line 2\\\
-Line 3\\\
-')" file.txt
-  
-  # 方法3：单行插入（跨平台兼容）
-  sed '5a\新内容行1' file.txt
   ```
 
 - **坑8**：正则表达式中的捕获组数量不匹配
