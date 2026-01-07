@@ -312,7 +312,7 @@ PromQL（Prometheus Query Language）是Prometheus的核心查询语言，支持
 - **默认端口**：9121
 - **使用方式**：`redis_exporter --redis.addr=redis://redis-server:6379 --redis.password=password`
 
-## 高频面试题
+## 常见问题
 
 ### 1. Prometheus与传统监控系统（如Zabbix）的区别是什么？
 

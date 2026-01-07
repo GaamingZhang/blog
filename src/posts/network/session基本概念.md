@@ -856,7 +856,7 @@ function verifySessionId(signedSessionId) {
 }
 ```
 
-## 高频面试题
+## 常见问题
 
 ### 1. 什么是Session？它的工作原理是什么？
 
@@ -1893,5 +1893,3 @@ Session的核心价值在于状态保持、安全性、灵活性和跨页面共�
 Session的存储方式包括内存存储、数据库存储、Redis存储、Memcached存储和文件存储，每种方式都有其优缺点和适用场景。在实际应用中，需要根据业务需求选择合适的存储方式。
 
 Session的安全问题包括Session ID泄露、Session固定攻击、Session劫持等，需要采取相应的防护措施，如使用HttpOnly Cookie、绑定IP地址、使用HTTPS等。
-
-对于面试来说，需要重点掌握Session的工作原理、Session与Cookie的区别、Session的存储方式、Session的安全问题和防护措施，以及在分布式系统、前后端分离架构、移动应用等场景下如何使用Session。

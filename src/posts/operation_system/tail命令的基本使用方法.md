@@ -135,7 +135,7 @@ tail -F /var/log/nginx/access.log
 
 ---
 
-## 相关面试题
+## 常见问题
 
 ### 1. head命令和tail命令有什么区别？
 

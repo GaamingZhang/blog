@@ -570,7 +570,7 @@ for (int i = 0; i < 10; i++) {
 SendResult result = producer.send(msgs);
 ```
 
-## 相关高频面试题
+## 相关常见问题
 
 ### 1. RocketMQ如何保证消息不丢失？
 

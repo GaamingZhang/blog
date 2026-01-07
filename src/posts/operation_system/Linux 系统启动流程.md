@@ -485,7 +485,7 @@ mkinitramfs -o /boot/initrd.img-$(uname -r) $(uname -r)  # 通用
 
 ---
 
-### 相关高频面试题
+### 相关常见问题
 
 #### Q1: GRUB 和 initramfs 的作用分别是什么？
 

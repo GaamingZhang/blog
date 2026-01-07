@@ -7,9 +7,6 @@ category:
   - Kubernetes
 tag:
   - Kubernetes
-  - Deployment
-  - Pod
-  - YAML
 ---
 
 # Deployment文件如何实现Pod的部署
@@ -110,212 +107,9 @@ Deployment不直接管理Pod，而是通过ReplicaSet来实现Pod的生命周期
 3. **状态更新**：将Pod状态更新到API服务器
 4. **部署完成**：当所有Pod都处于Running状态且通过健康检查后，Deployment状态变为Available
 
-## 4. Deployment文件示例和最佳实践
+## 4. 高频常见问题
 
-### 4.1 基本Deployment文件示例
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx-deployment
-  labels:
-    app: nginx
-spec:
-  replicas: 3
-  selector:
-    matchLabels:
-      app: nginx
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:1.21.6
-        ports:
-        - containerPort: 80
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "250m"
-          limits:
-            memory: "128Mi"
-            cpu: "500m"
-        livenessProbe:
-          httpGet:
-            path: /
-            port: 80
-          initialDelaySeconds: 30
-          periodSeconds: 10
-        readinessProbe:
-          httpGet:
-            path: /
-            port: 80
-          initialDelaySeconds: 5
-          periodSeconds: 10
-```
-
-### 4.2 高级Deployment配置示例
-
-```yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: app-deployment
-  labels:
-    app: myapp
-  annotations:
-    deployment.kubernetes.io/revision: "1"
-spec:
-  replicas: 5
-  selector:
-    matchLabels:
-      app: myapp
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 25%
-      maxUnavailable: 1
-  minReadySeconds: 60
-  revisionHistoryLimit: 10
-  progressDeadlineSeconds: 600
-  template:
-    metadata:
-      labels:
-        app: myapp
-        version: v1
-    spec:
-      affinity:
-        podAntiAffinity:
-          requiredDuringSchedulingIgnoredDuringExecution:
-          - labelSelector:
-              matchExpressions:
-              - key: app
-                operator: In
-                values:
-                - myapp
-            topologyKey: "kubernetes.io/hostname"
-      containers:
-      - name: app-container
-        image: myapp:v1
-        ports:
-        - containerPort: 8080
-        env:
-        - name: ENVIRONMENT
-          value: "production"
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: db-secret
-              key: url
-        resources:
-          requests:
-            memory: "256Mi"
-            cpu: "500m"
-          limits:
-            memory: "512Mi"
-            cpu: "1000m"
-```
-
-### 4.3 Deployment最佳实践
-
-1. **合理设置资源限制**：
-   - 为每个容器设置requests和limits，避免资源争用
-   - 基于实际负载测试确定合适的资源配置
-
-2. **配置健康检查**：
-   - 实现livenessProbe检测容器是否存活
-   - 实现readinessProbe检测容器是否准备好接收流量
-   - 根据应用特性调整initialDelaySeconds和periodSeconds
-
-3. **优化更新策略**：
-   - 对于生产环境，优先使用RollingUpdate策略
-   - 根据应用承受能力设置maxSurge和maxUnavailable
-   - 使用minReadySeconds确保Pod完全就绪后再继续更新
-
-4. **使用标签和选择器**：
-   - 设计清晰的标签结构，便于资源管理和查询
-   - 确保selector与template.labels匹配，避免孤儿Pod
-
-5. **设置合理的历史版本数量**：
-   - 使用revisionHistoryLimit控制历史版本数量
-   - 既保留足够的回滚点，又避免占用过多etcd空间
-
-6. **配置亲和性规则**：
-   - 使用podAntiAffinity避免将所有副本部署在同一节点
-   - 使用nodeAffinity将Pod部署到特定类型的节点
-
-## 5. Deployment相关操作命令
-
-### 5.1 Deployment的创建与应用
-
-```bash
-# 从文件创建Deployment
-kubectl apply -f deployment.yaml
-
-# 创建Deployment并指定命名空间
-kubectl apply -f deployment.yaml -n my-namespace
-
-# 查看Deployment创建状态
-kubectl rollout status deployment/nginx-deployment
-```
-
-### 5.2 Deployment的查看与管理
-
-```bash
-# 查看所有Deployment
-kubectl get deployments
-
-# 查看特定Deployment的详细信息
-kubectl describe deployment nginx-deployment
-
-# 查看Deployment的YAML配置
-kubectl get deployment nginx-deployment -o yaml
-```
-
-### 5.3 Deployment的更新操作
-
-```bash
-# 更新Deployment的镜像
-kubectl set image deployment/nginx-deployment nginx=nginx:1.22.0
-
-# 编辑Deployment的配置
-kubectl edit deployment nginx-deployment
-
-# 查看更新历史
-kubectl rollout history deployment nginx-deployment
-```
-
-### 5.4 Deployment的回滚操作
-
-```bash
-# 回滚到上一个版本
-kubectl rollout undo deployment nginx-deployment
-
-# 回滚到指定版本
-kubectl rollout undo deployment nginx-deployment --to-revision=2
-```
-
-### 5.5 Deployment的扩缩容
-
-```bash
-# 手动扩缩容Deployment
-kubectl scale deployment nginx-deployment --replicas=5
-
-# 自动扩缩容（需要HPA配置）
-kubectl autoscale deployment nginx-deployment --min=2 --max=10 --cpu-percent=80
-```
-
-## 6. 高频常见问题
-
-### 6.1 Deployment更新卡住怎么办？
+### 4.1 Deployment更新卡住怎么办？
 
 **问题**：执行`kubectl rollout status`显示部署正在进行，但长时间没有完成。
 
@@ -325,7 +119,7 @@ kubectl autoscale deployment nginx-deployment --min=2 --max=10 --cpu-percent=80
 - 检查`progressDeadlineSeconds`设置是否合理，如果超时可以考虑延长时间
 - 如果无法修复，可以使用`kubectl rollout undo`回滚到之前的版本
 
-### 6.2 如何确保Deployment更新零停机？
+### 4.2 如何确保Deployment更新零停机？
 
 **问题**：在更新Deployment时，如何确保应用程序不中断服务？
 
@@ -335,7 +129,7 @@ kubectl autoscale deployment nginx-deployment --min=2 --max=10 --cpu-percent=80
 - 设置minReadySeconds，给Pod足够的时间完成初始化
 - 避免使用Recreate策略（除非必要），因为它会先删除所有旧Pod再创建新Pod
 
-### 6.3 Deployment的Pod分布不均匀怎么办？
+### 4.3 Deployment的Pod分布不均匀怎么办？
 
 **问题**：Deployment的Pod副本分布在少数几个节点上，导致负载不均衡。
 
@@ -344,7 +138,7 @@ kubectl autoscale deployment nginx-deployment --min=2 --max=10 --cpu-percent=80
 - 确保集群节点标签正确配置，便于调度器进行负载均衡
 - 检查节点资源是否充足，如果某些节点资源不足，调度器可能不会将Pod部署到这些节点
 
-### 6.4 如何管理Deployment的资源消耗？
+### 4.4 如何管理Deployment的资源消耗？
 
 **问题**：Deployment的Pod占用了过多的集群资源，影响其他应用。
 
@@ -354,7 +148,7 @@ kubectl autoscale deployment nginx-deployment --min=2 --max=10 --cpu-percent=80
 - 定期监控Pod的资源使用情况，根据实际需求调整配置
 - 考虑使用Horizontal Pod Autoscaler实现基于负载的自动扩缩容
 
-### 6.5 Deployment回滚失败怎么办？
+### 4.5 Deployment回滚失败怎么办？
 
 **问题**：执行`kubectl rollout undo`后，回滚操作失败。
 
@@ -364,7 +158,7 @@ kubectl autoscale deployment nginx-deployment --min=2 --max=10 --cpu-percent=80
 - 检查旧版本的镜像是否仍然可用
 - 如果回滚失败，可以尝试手动删除当前的ReplicaSet，让Deployment重新创建正确版本的ReplicaSet
 
-## 7. 总结
+## 5. 总结
 
 Deployment文件是Kubernetes中实现无状态应用程序部署的核心工具，它通过声明式API和控制器模式，为用户提供了一种简单而强大的方式来管理Pod的生命周期。
 

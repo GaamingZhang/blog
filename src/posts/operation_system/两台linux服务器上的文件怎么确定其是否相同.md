@@ -139,7 +139,7 @@ bspatch /path/to/file.txt /tmp/file.txt.test /tmp/file.patch
 3. **网络稳定性**：在不稳定网络环境下，优先使用校验和方法，避免直接比较中断
 4. **安全性**：敏感文件推荐使用SHA256等更安全的哈希算法，避免MD5的碰撞风险
 
-## 高频面试题
+## 常见问题
 
 ### Q1: md5sum和sha256sum的区别是什么？
 

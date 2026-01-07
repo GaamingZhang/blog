@@ -273,7 +273,7 @@ wc -l < file.txt  # 优于 cat file.txt | wc -l
 wc -l file.txt  # 只统计行数，比 wc file.txt 更快
 ```
 
-## 高频面试题及答案
+## 常见问题及答案
 
 ### 1. wc命令的全称是什么？它的主要功能是什么？
 

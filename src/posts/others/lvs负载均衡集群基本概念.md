@@ -319,7 +319,7 @@ systemctl enable keepalived
 
 **适用场景**：对可用性要求极高的生产环境
 
-## 高频面试题
+## 常见问题
 
 ### 1. LVS与Nginx的区别是什么？
 

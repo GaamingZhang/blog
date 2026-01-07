@@ -724,7 +724,7 @@ app.use(authenticateToken, (req, res, next) => {
 });
 ```
 
-## 高频面试题
+## 常见问题
 
 ### 1. 什么是JWT？它由哪几部分组成？
 

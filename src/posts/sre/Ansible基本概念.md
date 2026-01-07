@@ -691,7 +691,7 @@ ansible-project/
 - **加密敏感数据**：使用Ansible Vault加密敏感变量和文件
 - **定期更新Ansible**：保持Ansible版本最新，修复安全漏洞
 
-## 高频面试题及答案
+## 常见问题及答案
 
 ### 1. 什么是Ansible？它的主要特点是什么？
 

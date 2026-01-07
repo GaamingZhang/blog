@@ -484,7 +484,7 @@ nsenter -t <pod-pid> -n tcpdump -i eth0 -nn
 
 ---
 
-### 相关高频面试题
+### 相关常见问题
 
 ### Q1: iptables 模式和 IPVS 模式有什么区别？如何选择？
 
@@ -913,7 +913,7 @@ spec:
 
 ---
 
-### 高频面试题补充
+### 常见问题补充
 
 ### Q7: kube-proxy 如何实现 Service 的负载均衡？
 

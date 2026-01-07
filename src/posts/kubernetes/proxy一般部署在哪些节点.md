@@ -144,7 +144,7 @@ spec:
 | Service Mesh Proxy | Worker节点（Sidecar） | 服务间通信管理 |
 | 集群外部Proxy | 集群外部 | 远程访问集群API |
 
-## 高频面试题及答案
+## 常见问题及答案
 
 ### 1. kube-proxy支持哪些代理模式？它们有什么区别？
 

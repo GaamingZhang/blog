@@ -451,7 +451,7 @@ function initJaegerTracer(serviceName) {
 - 使用Grafana创建统一的监控仪表板
 - 实现日志、指标和追踪数据的关联分析
 
-## 5. 与Jaeger相关的高频面试题及答案
+## 5. 与Jaeger相关的常见问题及答案
 
 ### 5.1 Jaeger基础概念
 

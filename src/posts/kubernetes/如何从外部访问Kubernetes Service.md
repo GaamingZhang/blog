@@ -5,15 +5,8 @@ isOriginal: true
 article: true
 category:
   - Kubernetes
-  - 云原生
-  - 容器编排
 tag:
   - Kubernetes
-  - Service
-  - 外部访问
-  - NodePort
-  - LoadBalancer
-  - Ingress
 ---
 
 # 如何从外部访问 Kubernetes Service

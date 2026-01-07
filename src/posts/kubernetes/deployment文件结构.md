@@ -7,8 +7,6 @@ category:
   - Kubernetes
 tag:
   - Kubernetes
-  - Deployment
-  - YAML
 ---
 
 # Deployment文件结构

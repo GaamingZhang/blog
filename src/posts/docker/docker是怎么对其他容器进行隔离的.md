@@ -364,7 +364,7 @@ docker run --read-only -v /data rw <image>
 
 ---
 
-## 相关高频面试题及答案
+## 相关常见问题及答案
 
 ### Q1: Docker 容器与虚拟机的隔离有什么区别？
 

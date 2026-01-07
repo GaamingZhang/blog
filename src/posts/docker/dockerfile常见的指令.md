@@ -37,7 +37,7 @@ Dockerfile 通过声明式指令定义镜像构建过程，常见指令分为基
 - `STOPSIGNAL <signal>`：指定容器停止时接收的信号，默认 `SIGTERM`；用于优雅关闭应用，如 `STOPSIGNAL SIGINT` 配合 Node.js 的 `process.on('SIGINT', ...)`。
 - `SHELL ["executable", "parameters"]`：设置默认 shell，用于 RUN/CMD/ENTRYPOINT 的 shell 格式；默认 Linux 为 `["/bin/sh", "-c"]`，Windows 为 `["cmd", "/S", "/C"]`；可用于指定 bash 等替代 shell。
 
-## 相关高频面试题与简答
+## 相关常见问题与简答
 - 问：CMD 与 ENTRYPOINT 的区别？如何配合使用？
   答：CMD 可被 `docker run` 参数完全覆盖，ENTRYPOINT 不可覆盖只能追加参数；常见模式 `ENTRYPOINT ["python"]` + `CMD ["app.py"]`，允许覆盖脚本但保持解释器不变。
 

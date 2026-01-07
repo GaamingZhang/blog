@@ -557,7 +557,7 @@ istioctl dashboard jaeger
 istioctl dashboard grafana
 ```
 
-## 高频面试题及答案
+## 常见问题及答案
 
 ### Istio核心概念与架构
 

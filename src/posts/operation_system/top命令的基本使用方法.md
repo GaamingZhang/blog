@@ -785,7 +785,7 @@ awk '{print $1, $2, $6}' mem_monitor.log | grep 1234
 
 ---
 
-### 相关高频面试题
+### 相关常见问题
 
 #### Q1: top 命令中 load average 的三个值是什么意思？如何判断系统负载是否正常？
 

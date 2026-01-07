@@ -1,3 +1,14 @@
+---
+date: 2026-01-06
+author: Gaaming Zhang
+isOriginal: false
+article: true
+category:
+  - 网络
+tag:
+  - 网络
+---
+
 # gRPC 基本概念
 
 ## 1. 什么是 gRPC？

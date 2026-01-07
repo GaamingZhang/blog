@@ -663,7 +663,7 @@ kubectl describe pod <pod-name> -n <namespace> --v=8
 
 ---
 
-## 相关面试题
+## 常见问题
 
 ### Q1: Pending、ImagePullBackOff、CrashLoopBackOff这三种状态的主要区别和排查重点是什么？
 
