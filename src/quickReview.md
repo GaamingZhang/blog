@@ -1174,6 +1174,47 @@ B+树是一种多路平衡查找树，具有以下特点：
 └─────────────────────────────────────────────────────────────┘
 ```
 
+### Deployment实现Pod部署的详细流程
+
+当用户使用`kubectl apply -f deployment.yaml`命令部署应用时，Kubernetes会执行以下完整流程：
+
+#### 3.1 配置文件解析与验证
+
+1. **文件解析**：Kubernetes API服务器解析Deployment YAML文件
+2. **语法验证**：检查YAML语法和字段合法性
+3. **权限验证**：验证用户是否有创建Deployment的权限
+4. **存储配置**：将验证通过的配置存储到etcd数据库中
+
+#### 3.2 Deployment资源创建
+
+1. **资源创建**：API服务器创建Deployment资源对象
+2. **事件触发**：触发Deployment控制器的协调循环
+3. **ReplicaSet生成**：Deployment控制器根据Pod模板生成新的ReplicaSet
+
+#### 3.3 Pod的创建与调度
+
+1. **ReplicaSet协调**：ReplicaSet控制器接收到新的ReplicaSet资源
+2. **Pod创建请求**：向API服务器发送Pod创建请求
+3. **调度决策**：Scheduler根据资源需求和调度策略将Pod分配到合适的节点
+4. **Pod启动**：Kubelet在目标节点上启动Pod并监控其状态
+
+#### 3.4 状态确认与健康检查
+
+1. **状态监控**：Kubelet持续监控Pod的容器状态
+2. **健康检查**：执行livenessProbe和readinessProbe验证Pod健康状态
+3. **状态更新**：将Pod状态更新到API服务器
+4. **部署完成**：当所有Pod都处于Running状态且通过健康检查后，Deployment状态变为Available
+
+### Pod调度的大致流程
+
+Pod从创建到最终在Node上运行的过程可以概括为以下几个主要阶段：
+
+1. **Pod创建**：用户或控制器通过API服务器创建Pod资源
+2. **验证和准入控制**：API服务器验证Pod配置并执行准入控制
+3. **调度决策**：调度器选择最合适的Node来运行Pod
+4. **绑定**：将Pod绑定到选定的Node
+5. **容器运行**：Node上的kubelet负责启动Pod中的容器
+
 ## Docker
 
 ### 隔离机制
@@ -1235,6 +1276,17 @@ Union FS 是一种分层、轻量级的文件系统，允许将多个不同的�
   - 节省磁盘空间，多个容器共享镜像层
   - 提高容器启动速度，无需复制整个镜像
   - 保证镜像的完整性，防止被意外修改
+
+### docker容器创建流程
+
+1. Docker CLI解析命令并发送请求给Docker Daemon
+2. Docker Daemon检查本地是否存在`nginx:latest`镜像，如果不存在则从Docker Hub拉取
+3. Docker Daemon为容器创建命名空间和控制组
+4. Docker Daemon配置网络，创建veth pair并连接到docker0网桥，设置端口映射
+5. Docker Daemon配置存储，创建容器层并挂载镜像层，绑定宿主机的`/my/data`目录到容器的`/app/data`目录
+6. Docker Daemon设置环境变量`ENV=production`
+7. Docker Daemon通过containerd和runc创建容器进程，执行nginx命令
+8. 容器在后台运行，Docker CLI返回容器ID
 
 ## kafka
 

@@ -1,3 +1,14 @@
+---
+date: 2026-01-07
+author: Gaaming Zhang
+isOriginal: false
+article: true
+category:
+  - 操作系统
+tag:
+  - 操作系统
+---
+
 # RDMA协议 (Remote Direct Memory Access)
 
 ## 1. 介绍

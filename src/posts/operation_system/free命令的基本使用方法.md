@@ -1,15 +1,12 @@
 ---
-date: 2026-01-06
+date: 2026-01-07
 author: Gaaming Zhang
-isOriginal: true
+isOriginal: false
 article: true
 category:
   - 操作系统
 tag:
-  - Linux
-  - 命令行工具
-  - 系统管理
-  - 内存监控
+  - 操作系统
 ---
 
 # free命令的基本使用方法

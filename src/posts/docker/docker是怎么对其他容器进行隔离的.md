@@ -17,7 +17,7 @@ Docker 容器隔离基于 Linux 内核的三大核心技术：**Namespace（命�
 
 ---
 
-## 1. Namespace（命名空间）- 视图隔离
+## Namespace（命名空间）- 视图隔离
 
 Namespace 是 Linux 内核提供的一种轻量级虚拟化技术，通过为容器创建独立的系统资源视图，让容器"以为"自己独占整个系统。Linux 提供了 7 种不同类型的 Namespace，分别隔离不同的系统资源：
 
@@ -41,6 +41,44 @@ docker run --rm alpine ps aux
 docker run -d --name nginx nginx
 docker top nginx
 ps aux | grep nginx
+```
+
+#### Docker 命令行示例：查看 PID 命名空间隔离
+
+```bash
+# 1. 启动一个测试容器
+docker run -d --name nginx-test nginx
+
+# 2. 获取容器在宿主机的 PID
+docker inspect -f '{{.State.Pid}}' nginx-test
+# 输出示例: 12345
+
+# 3. 查看容器内的进程列表（容器内看到的 PID 从 1 开始）
+docker exec nginx-test ps aux
+# 输出示例:
+# USER       PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND
+# root         1  0.0  0.2  83636  4604 ?        Ss   10:00   0:00 nginx: master process nginx -g daemon off;
+# nginx        6  0.0  0.3  84132  7080 ?        S    10:00   0:00 nginx: worker process
+
+# 4. 查看宿主机上的容器进程（显示真实 PID）
+docker top nginx-test
+# 输出示例:
+# UID                 PID                 PPID                C                   STIME               TTY                 TIME                CMD
+# root                12345               12320               0                   10:00               ?                   00:00:00            nginx: master process nginx -g daemon off;
+# systemd+            12389               12345               0                   10:00               ?                   00:00:00            nginx: worker process
+
+# 5. 在宿主机上通过 PID 查看该进程的命名空间信息
+ls -la /proc/$(docker inspect -f '{{.State.Pid}}' nginx-test)/ns/
+# 输出示例:
+lrwxrwxrwx 1 root root 0 Jul  1 10:00 ipc -> ipc:[4026532241]
+lrwxrwxrwx 1 root root 0 Jul  1 10:00 mnt -> mnt:[4026532239]
+lrwxrwxrwx 1 root root 0 Jul  1 10:00 net -> net:[4026532243]
+lrwxrwxrwx 1 root root 0 Jul  1 10:00 pid -> pid:[4026532240]
+lrwxrwxrwx 1 root root 0 Jul  1 10:00 uts -> uts:[4026532242]
+lrwxrwxrwx 1 root root 0 Jul  1 10:00 user -> user:[4026531837]
+
+# 6. 清理测试容器
+docker rm -f nginx-test
 ```
 
 ### Network Namespace（网络隔离）
@@ -144,7 +182,7 @@ docker run --rm --hostname mycontainer alpine hostname
 
 ---
 
-## 2. Cgroups（控制组）- 资源限制
+## Cgroups（控制组）- 资源限制
 
 Cgroups（Control Groups）是 Linux 内核提供的一种资源管理机制，用于限制、记录和隔离进程组使用的物理资源（CPU、内存、磁盘 I/O、网络等）。
 
@@ -194,6 +232,69 @@ docker run --oom-kill-disable <image>
 docker run --memory-reservation 256m <image>
 ```
 
+#### Docker 命令行示例：设置和查看容器资源限制
+
+```bash
+# 1. 创建带资源限制的容器
+# CPU: 0.5核，绑定到CPU 0和1
+# 内存: 512MB硬限制，1GB内存+Swap限制，256MB软限制
+docker run -d \
+  --name resource-limited-container \
+  --cpus 0.5 \
+  --cpuset-cpus 0,1 \
+  --memory 512m \
+  --memory-swap 1g \
+  --memory-reservation 256m \
+  nginx
+
+# 2. 获取容器ID
+CONTAINER_ID=$(docker ps -qf "name=resource-limited-container")
+
+# 3. 查看容器在宿主机的PID
+CONTAINER_PID=$(docker inspect -f '{{.State.Pid}}' $CONTAINER_ID)
+echo "容器PID: $CONTAINER_PID"
+
+# 4. 使用docker inspect查看容器资源限制配置
+docker inspect $CONTAINER_ID \
+  --format='
+CPU 配置:
+  CPUs: {{.HostConfig.NanoCpus}} nanocores ({{div .HostConfig.NanoCpus 1000000000}} cores)
+  CPU 核心: {{.HostConfig.CpusetCpus}}
+  CPU 份额: {{.HostConfig.CpuShares}}
+
+内存配置:
+  内存硬限制: {{.HostConfig.Memory}} bytes
+  内存+Swap限制: {{.HostConfig.MemorySwap}} bytes
+  内存软限制: {{.HostConfig.MemoryReservation}} bytes
+'
+
+# 5. 直接查看宿主机Cgroup配置文件
+# CPU相关限制
+echo "\n--- CPU Cgroup 配置 ---"
+# CPU使用率限制 (cfs_quota_us/cfs_period_us = 50%)
+cat /sys/fs/cgroup/cpu/docker/$CONTAINER_ID/cpu.cfs_quota_us
+cat /sys/fs/cgroup/cpu/docker/$CONTAINER_ID/cpu.cfs_period_us
+# CPU核心绑定
+cat /sys/fs/cgroup/cpuset/docker/$CONTAINER_ID/cpuset.cpus
+
+# 内存相关限制
+echo "\n--- 内存 Cgroup 配置 ---">
+# 内存硬限制
+cat /sys/fs/cgroup/memory/docker/$CONTAINER_ID/memory.limit_in_bytes
+# 内存+Swap限制
+cat /sys/fs/cgroup/memory/docker/$CONTAINER_ID/memory.memsw.limit_in_bytes
+# 内存软限制
+cat /sys/fs/cgroup/memory/docker/$CONTAINER_ID/memory.soft_limit_in_bytes
+# 当前内存使用量
+cat /sys/fs/cgroup/memory/docker/$CONTAINER_ID/memory.usage_in_bytes
+
+# 6. 使用docker stats实时监控容器资源使用
+docker stats resource-limited-container
+
+# 7. 清理测试容器
+docker rm -f resource-limited-container
+```
+
 ### 磁盘 I/O 限制
 
 - **带宽限制**：限制容器的磁盘读写速率
@@ -236,7 +337,7 @@ cat /sys/fs/cgroup/blkio/docker/<container_id>/blkio.throttle.read_bps_device
 
 ---
 
-## 3. Union FS（联合文件系统）- 文件隔离
+## Union FS（联合文件系统）- 文件隔离
 
 Union FS 是一种分层、轻量级的文件系统，允许将多个不同的文件系统挂载到同一个目录下，形成一个统一的文件系统视图。Docker 使用 Union FS 实现镜像的分层存储和容器的文件系统隔离。
 
@@ -283,7 +384,7 @@ docker exec -it <container> ls -la /
 
 ---
 
-## 4. 安全加固机制
+## 安全加固机制
 
 除了核心隔离技术外，Docker 还提供了多种安全加固机制，进一步提高容器的安全性。
 
@@ -306,6 +407,75 @@ docker run --cap-add NET_ADMIN --rm alpine ip link add dummy0 type dummy
 
 # 移除所有 Capabilities，只保留必要的
 docker run --cap-drop ALL --cap-add CHOWN --cap-add DAC_OVERRIDE --rm alpine chown root:root /tmp
+```
+
+#### Docker 命令行示例：管理和验证容器的 Capabilities
+
+```bash
+# 1. 查看容器默认的 Capabilities
+echo "=== 查看容器默认 Capabilities ==="
+docker run --rm alpine capsh --print | grep "Current: "
+
+# 输出示例:
+# Current: cap_chown,cap_dac_override,cap_fowner,cap_fsetid,cap_kill,cap_setgid,cap_setuid,cap_setpcap,cap_net_bind_service,cap_net_raw,cap_sys_chroot,cap_mknod,cap_audit_write,cap_setfcap+ep
+
+# 2. 创建具有自定义 Capabilities 的容器
+# 移除所有默认 Capabilities，只添加必要的权限
+echo "\n=== 创建具有自定义 Capabilities 的容器 ==="
+docker run -d \
+  --name capabilities-test-container \
+  --cap-drop ALL \
+  --cap-add CHOWN \
+  --cap-add DAC_OVERRIDE \
+  --cap-add NET_ADMIN \
+  alpine sleep 3600
+
+# 3. 查看自定义容器的 Capabilities
+echo "\n=== 查看自定义容器的 Capabilities ==="
+docker exec capabilities-test-container capsh --print | grep "Current: "
+
+# 4. 测试网络管理权限（需要 CAP_NET_ADMIN）
+echo "\n=== 测试网络管理权限 (CAP_NET_ADMIN) ==="
+# 尝试创建虚拟网卡
+docker exec capabilities-test-container \
+  ip link add dummy0 type dummy
+
+if [ $? -eq 0 ]; then
+  echo "✅ 成功创建虚拟网卡 dummy0 (CAP_NET_ADMIN 有效)"
+  # 清理创建的虚拟网卡
+  docker exec capabilities-test-container ip link delete dummy0
+else
+  echo "❌ 创建虚拟网卡失败 (CAP_NET_ADMIN 无效)"
+fi
+
+# 5. 测试文件权限管理（需要 CAP_CHOWN 和 CAP_DAC_OVERRIDE）
+echo "\n=== 测试文件权限管理 (CAP_CHOWN 和 CAP_DAC_OVERRIDE) ==="
+docker exec capabilities-test-container \
+  sh -c 'touch /tmp/test.txt && chown 1000:1000 /tmp/test.txt && ls -l /tmp/test.txt'
+
+if [ $? -eq 0 ]; then
+  echo "✅ 成功修改文件权限 (CAP_CHOWN 和 CAP_DAC_OVERRIDE 有效)"
+else
+  echo "❌ 修改文件权限失败 (CAP_CHOWN 或 CAP_DAC_OVERRIDE 无效)"
+fi
+
+# 6. 测试危险 Capability 的限制（CAP_SYS_ADMIN）
+echo "\n=== 测试危险 Capability 限制 (CAP_SYS_ADMIN) ==="
+# 尝试挂载文件系统（需要 CAP_SYS_ADMIN）
+docker exec capabilities-test-container \
+  mount -t tmpfs tmpfs /mnt
+
+if [ $? -ne 0 ]; then
+  echo "✅ 挂载文件系统失败（预期行为）- 危险的 CAP_SYS_ADMIN 已被正确限制"
+else
+  echo "⚠️  挂载文件系统成功（意外行为）- 危险的 CAP_SYS_ADMIN 未被限制"
+  # 清理挂载点
+  docker exec capabilities-test-container umount /mnt
+fi
+
+# 7. 清理测试容器
+echo "\n=== 清理测试容器 ==="
+docker rm -f capabilities-test-container
 ```
 
 ### Seccomp（安全计算模式）
@@ -400,27 +570,28 @@ docker run --read-only -v /data rw <image>
 - 使用私有镜像仓库，确保镜像安全
 - 定期更新容器和宿主机内核
 
-### Q3: 如何查看容器的 Namespace 和 Cgroup 配置？
+### Q3: 什么是 Docker 容器逃逸？如何防止？
 
 **答案**：
 
-```bash
-# 1. 获取容器在宿主机的 PID
-docker inspect -f '{{.State.Pid}}' <container>  # 假设输出为 12345
+**容器逃逸**：指容器内的进程突破容器隔离，获得对宿主机的访问权限。
 
-# 2. 查看该进程的 Namespace
-ls -la /proc/12345/ns/  # 列出所有 Namespace
+**常见逃逸方式**：
+1. **内核漏洞利用**：利用 Linux 内核漏洞突破 Namespace 隔离
+2. **权限提升**：通过不当的权限配置获得宿主机特权
+3. **危险挂载**：挂载宿主机敏感目录（如 /proc、/sys）并修改
+4. **特权模式**：使用 --privileged 模式运行容器
+5. **恶意镜像**：使用包含恶意代码的基础镜像
 
-# 3. 进入容器的 Network Namespace
-sudo nsenter --net=/proc/12345/ns/net ip addr  # 查看容器网络配置
-
-# 4. 查看 Cgroup 配置
-cat /proc/12345/cgroup  # 查看进程所属的 Cgroup
-
-# 5. 查看具体资源限制
-cat /sys/fs/cgroup/cpu/docker/<container_id>/cpu.shares
-cat /sys/fs/cgroup/memory/docker/<container_id>/memory.limit_in_bytes
-```
+**防止措施**：
+1. 保持内核更新，修复已知漏洞
+2. 启用 User Namespace，隔离容器用户
+3. 最小化容器权限，仅授予必要的 Capabilities
+4. 使用严格的 Seccomp 和 AppArmor/SELinux 配置
+5. 配置只读文件系统
+6. 禁止使用 --privileged 模式
+7. 安全挂载卷，避免挂载敏感目录
+8. 使用可信的基础镜像，定期扫描镜像漏洞
 
 ### Q4: Docker 的 --privileged 特权模式有什么风险？
 
@@ -444,187 +615,27 @@ cat /sys/fs/cgroup/memory/docker/<container_id>/memory.limit_in_bytes
 - 需要特权操作时，使用最小化 Capabilities 替代
 - 对于需要访问特定设备的场景，使用 --device 参数单独授权
 
-### Q5: 如何限制容器只能访问特定网络或服务？
+### Q5: 如何查看容器的 Namespace 和 Cgroup 配置？
 
 **答案**：
 
-1. **使用 Docker 自定义网络**：
-
 ```bash
-# 创建隔离网络
-docker network create --driver bridge isolated-net
+# 1. 获取容器在宿主机的 PID
+docker inspect -f '{{.State.Pid}}' <container>  # 假设输出为 12345
 
-# 运行容器在隔离网络
-docker run --network isolated-net <image>
+# 2. 查看该进程的 Namespace
+ls -la /proc/12345/ns/  # 列出所有 Namespace
 
-# 只允许特定容器加入该网络
-docker network connect isolated-net <container>
+# 3. 进入容器的 Network Namespace
+sudo nsenter --net=/proc/12345/ns/net ip addr  # 查看容器网络配置
+
+# 4. 查看 Cgroup 配置
+cat /proc/12345/cgroup  # 查看进程所属的 Cgroup
+
+# 5. 查看具体资源限制
+cat /sys/fs/cgroup/cpu/docker/<container_id>/cpu.shares
+cat /sys/fs/cgroup/memory/docker/<container_id>/memory.limit_in_bytes
 ```
-
-2. **使用 iptables 规则**：
-
-```bash
-# 限制容器只能访问特定 IP 和端口
-iptables -A DOCKER-USER -s <container_ip> -d <target_ip> --dport <target_port> -j ACCEPT
-iptables -A DOCKER-USER -s <container_ip> -j DROP
-```
-
-3. **在 Kubernetes 环境中使用 NetworkPolicy**：
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: restrict-access
-  namespace: default
-spec:
-  podSelector:
-    matchLabels:
-      app: myapp
-  policyTypes:
-  - Ingress
-  - Egress
-  ingress:
-  - from:
-    - podSelector:
-        matchLabels:
-          app: allowed-app
-    ports:
-    - protocol: TCP
-      port: 80
-  egress:
-  - to:
-    - ipBlock:
-        cidr: 10.0.0.0/24
-    ports:
-    - protocol: TCP
-      port: 53
-    - protocol: UDP
-      port: 53
-```
-
-### Q6: 容器的根文件系统存储在哪里？如何清理？
-
-**答案**：
-
-1. **存储位置**：
-   - 默认存储路径：`/var/lib/docker/`
-   - 具体位置取决于存储驱动：
-     - OverlayFS：`/var/lib/docker/overlay2/`
-     - AUFS：`/var/lib/docker/aufs/`
-     - Device Mapper：`/var/lib/docker/devicemapper/`
-
-2. **查看存储路径**：
-
-```bash
-docker info | grep "Docker Root Dir"
-```
-
-3. **清理命令**：
-
-```bash
-# 清理未使用的容器、镜像、网络和卷
-docker system prune
-
-# 清理所有未使用的资源（包括停止的容器和未使用的镜像）
-docker system prune -a
-
-# 清理所有未使用的资源，包括卷
-docker system prune -a --volumes
-
-# 清理特定类型的资源
-docker container prune  # 清理停止的容器
-docker image prune  # 清理未使用的镜像
-docker volume prune  # 清理未使用的卷
-docker network prune  # 清理未使用的网络
-```
-
-### Q7: 什么是 Docker 容器逃逸？如何防止？
-
-**答案**：
-
-**容器逃逸**：指容器内的进程突破容器隔离，获得对宿主机的访问权限。
-
-**常见逃逸方式**：
-1. **内核漏洞利用**：利用 Linux 内核漏洞突破 Namespace 隔离
-2. **权限提升**：通过不当的权限配置获得宿主机特权
-3. **危险挂载**：挂载宿主机敏感目录（如 /proc、/sys）并修改
-4. **特权模式**：使用 --privileged 模式运行容器
-5. **恶意镜像**：使用包含恶意代码的基础镜像
-
-**防止措施**：
-1. 保持内核更新，修复已知漏洞
-2. 启用 User Namespace，隔离容器用户
-3. 最小化容器权限，仅授予必要的 Capabilities
-4. 使用严格的 Seccomp 和 AppArmor/SELinux 配置
-5. 配置只读文件系统
-6. 禁止使用 --privileged 模式
-7. 安全挂载卷，避免挂载敏感目录
-8. 使用可信的基础镜像，定期扫描镜像漏洞
-
-### Q8: 如何监控容器的资源使用情况？
-
-**答案**：
-
-1. **Docker 内置命令**：
-
-```bash
-# 查看容器资源使用情况
-docker stats <container>
-
-# 查看容器详细统计信息
-docker stats --all --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.NetIO}}\t{{.BlockIO}}"
-```
-
-2. **cAdvisor**：Google 开发的容器监控工具，提供容器资源使用情况的实时监控和历史数据
-
-```bash
-docker run -d --name cadvisor -p 8080:8080 -v /:/rootfs:ro -v /var/run:/var/run:ro -v /sys:/sys:ro -v /var/lib/docker/:/var/lib/docker:ro gcr.io/cadvisor/cadvisor:latest
-```
-
-3. **Prometheus + Grafana**：
-   - Prometheus 采集容器 metrics
-   - Grafana 可视化展示
-
-4. **Kubernetes 监控方案**：
-   - metrics-server：提供基础资源指标
-   - Prometheus Operator：完整的监控解决方案
-   - Istio Service Mesh：服务级监控
-
-### Q9: 什么是 Docker 镜像的分层存储？有什么优势？
-
-**答案**：
-
-**分层存储**：Docker 镜像由多个只读层叠加而成，每个层对应 Dockerfile 中的一条指令。当容器运行时，Docker 会在镜像层之上添加一个可写层，用于存储容器的修改。
-
-**优势**：
-
-1. **空间效率**：多个容器可以共享同一个镜像层，节省磁盘空间
-2. **时间效率**：容器启动时无需复制整个镜像，只需创建一个可写层
-3. **版本控制**：每个层都有唯一的哈希值，便于镜像版本管理和回滚
-4. **增量更新**：更新镜像时只需修改差异层，减少网络传输量
-5. **缓存机制**：构建镜像时可以利用缓存，加速构建过程
-
-### Q10: 如何优化 Docker 容器的性能？
-
-**答案**：
-
-1. **使用合适的存储驱动**：优先选择 OverlayFS，性能优异
-2. **优化镜像大小**：
-   - 使用轻量级基础镜像（如 Alpine）
-   - 多层构建，减少最终镜像大小
-   - 清理不必要的依赖和文件
-3. **优化容器运行**：
-   - 限制容器资源，避免资源竞争
-   - 使用合适的网络模式
-   - 启用 TSO/GRO 等网络加速特性
-4. **优化应用程序**：
-   - 调整应用程序参数，适应容器环境
-   - 使用高性能的应用程序框架
-   - 优化数据库连接和查询
-5. **使用容器编排工具**：
-   - Kubernetes：自动调度和资源管理
-   - Docker Swarm：简化多容器管理
 
 ---
 

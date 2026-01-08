@@ -1,3 +1,14 @@
+---
+date: 2025-07-01
+author: Gaaming Zhang
+isOriginal: false
+article: true
+category:
+  - docker
+tag:
+  - docker
+---
+
 # Docker容器创建过程
 
 ## 引言

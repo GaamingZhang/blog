@@ -7,8 +7,6 @@ category:
   - Kubernetes
 tag:
   - Kubernetes
-  - Pod
-  - 调度流程
 ---
 
 # Pod被创建调度到Node的全过程
