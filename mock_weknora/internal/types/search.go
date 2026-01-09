@@ -41,21 +41,21 @@ func (st SearchTargets) GetAllKnowledgeBaseIDs() []string {
 // SearchResult 表示搜索结果
 type SearchResult struct {
 	// ID
-	ID string `gorm:"column:id"              json:"id"`
+	ID string `json:"id"`
 	// Content
-	Content string `gorm:"column:content"         json:"content"`
+	Content string `json:"content"`
 	// Knowledge ID
-	KnowledgeID string `gorm:"column:knowledge_id"    json:"knowledge_id"`
+	KnowledgeID string `json:"knowledge_id"`
 	// Chunk index
-	ChunkIndex int `gorm:"column:chunk_index"     json:"chunk_index"`
+	ChunkIndex int `json:"chunk_index"`
 	// Knowledge title
-	KnowledgeTitle string `gorm:"column:knowledge_title" json:"knowledge_title"`
+	KnowledgeTitle string `json:"knowledge_title"`
 	// Start at
-	StartAt int `gorm:"column:start_at"        json:"start_at"`
+	StartAt int `json:"start_at"`
 	// End at
-	EndAt int `gorm:"column:end_at"          json:"end_at"`
+	EndAt int `json:"end_at"`
 	// Seq
-	Seq int `gorm:"column:seq"             json:"seq"`
+	Seq int `json:"seq"`
 	// Score
 	Score float64 `                              json:"score"`
 	// Match type

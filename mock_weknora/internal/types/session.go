@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 // FallbackStrategy 表示兜底策略类型
@@ -70,13 +69,13 @@ type ContextConfig struct {
 // Session 表示会话
 type Session struct {
 	// ID
-	ID string `json:"id"          gorm:"type:varchar(36);primaryKey"`
+	ID string `json:"id"`
 	// Title
 	Title string `json:"title"`
 	// Description
 	Description string `json:"description"`
 	// Tenant ID
-	TenantID uint64 `json:"tenant_id"   gorm:"index"`
+	TenantID uint64 `json:"tenant_id"`
 
 	// // Strategy configuration
 	// KnowledgeBaseID   string              `json:"knowledge_base_id"`                    // 关联的知识库ID
@@ -91,21 +90,20 @@ type Session struct {
 	// RerankTopK        int                 `json:"rerank_top_k"`                         // 排序TopK
 	// RerankThreshold   float64             `json:"rerank_threshold"`                     // 排序阈值
 	// SummaryModelID    string              `json:"summary_model_id"`                     // 总结模型ID
-	// SummaryParameters *SummaryConfig      `json:"summary_parameters" gorm:"type:json"`  // 总结模型参数
-	// AgentConfig       *SessionAgentConfig `json:"agent_config"       gorm:"type:jsonb"` // Agent 配置（会话级别，仅存储enabled和knowledge_bases）
-	// ContextConfig     *ContextConfig      `json:"context_config"     gorm:"type:jsonb"` // 上下文管理配置（可选）
+	// SummaryParameters *SummaryConfig      `json:"summary_parameters"`  // 总结模型参数
+	// AgentConfig       *SessionAgentConfig `json:"agent_config"`       // Agent 配置（会话级别，仅存储enabled和knowledge_bases）
+	// ContextConfig     *ContextConfig      `json:"context_config"`     // 上下文管理配置（可选）
 
-	CreatedAt time.Time      `json:"created_at"`
-	UpdatedAt time.Time      `json:"updated_at"`
-	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"index"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	DeletedAt time.Time `json:"deleted_at"`
 
 	// Association relationship, not stored in the database
-	Messages []Message `json:"-" gorm:"foreignKey:SessionID"`
+	Messages []Message `json:"-"`
 }
 
-func (s *Session) BeforeCreate(tx *gorm.DB) (err error) {
+func (s *Session) BeforeCreate() {
 	s.ID = uuid.New().String()
-	return nil
 }
 
 // StringArray 表示字符串列表

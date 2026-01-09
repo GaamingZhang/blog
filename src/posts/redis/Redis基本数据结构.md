@@ -1,3 +1,14 @@
+---
+date: 2026-01-08
+author: Gaaming Zhang
+isOriginal: false
+article: true
+category:
+  - Redis
+tag:
+  - Redis
+---
+
 # Redis基本数据结构
 
 Redis 是一个开源的高性能键值存储系统，以其丰富的数据结构和卓越的性能而闻名。作为一名软件开发工程师，深入理解 Redis 的基本数据结构是掌握 Redis 核心功能的基础。Redis 提供了多种数据结构，每种结构都有其特定的使用场景和性能特性。

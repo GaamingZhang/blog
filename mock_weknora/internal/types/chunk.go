@@ -2,8 +2,6 @@ package types
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 // ChunkType 定义了不同类型的 Chunk
@@ -78,9 +76,9 @@ func (f ChunkFlags) ToggleFlag(flag ChunkFlags) ChunkFlags {
 // ImageInfo 表示与 Chunk 关联的图片信息
 type ImageInfo struct {
 	// 图片URL（COS）
-	URL string `json:"url"          gorm:"type:text"`
+	URL string `json:"url"`
 	// 原始图片URL
-	OriginalURL string `json:"original_url" gorm:"type:text"`
+	OriginalURL string `json:"original_url"`
 	// 图片在文本中的开始位置
 	StartPos int `json:"start_pos"`
 	// 图片在文本中的结束位置
@@ -99,7 +97,7 @@ type ImageInfo struct {
 // 块可以独立嵌入为向量并检索，支持精确的内容定位
 type Chunk struct {
 	// 块的唯一标识符，使用UUID格式
-	ID string `json:"id"                       gorm:"type:varchar(36);primaryKey"`
+	ID string `json:"id"`
 	// 租户ID，用于多租户隔离
 	TenantID uint64 `json:"tenant_id"`
 	// 关联的知识ID，与Knowledge模型关联
@@ -107,18 +105,18 @@ type Chunk struct {
 	// 知识库ID，用于快速定位
 	KnowledgeBaseID string `json:"knowledge_base_id"`
 	// 可选标签ID，用于知识库内分类（用于FAQ）
-	TagID string `json:"tag_id"                   gorm:"type:varchar(36);index"`
+	TagID string `json:"tag_id"`
 	// 块的实际文本内容
 	Content string `json:"content"`
 	// 块在原始文档中的索引位置
 	ChunkIndex int `json:"chunk_index"`
 	// 是否启用该块，可用于临时禁用某些块
-	IsEnabled bool `json:"is_enabled"               gorm:"default:true"`
+	IsEnabled bool `json:"is_enabled"`
 	// Flags 存储多个布尔状态的位标志（如推荐状态等）
 	// 默认值为 ChunkFlagRecommended (1)，表示默认可推荐
-	Flags ChunkFlags `json:"flags"                    gorm:"default:1"`
+	Flags ChunkFlags `json:"flags"`
 	// 块的状态，用于管理块的生命周期
-	Status ChunkStatus `json:"status"                   gorm:"default:0"`
+	Status ChunkStatus `json:"status"`
 	// 块在原始文档中的起始字符位置
 	StartAt int `json:"start_at"`
 	// 块在原始文档中的结束字符位置
@@ -128,23 +126,23 @@ type Chunk struct {
 	// 下一个块的 ID，用于构建文档的顺序关系
 	NextChunkID string `json:"next_chunk_id"`
 	// Chunk 类型，用于区分不同类型的 Chunk
-	ChunkType ChunkType `json:"chunk_type"               gorm:"type:varchar(20);default:'text'"`
+	ChunkType ChunkType `json:"chunk_type"`
 	// 父 Chunk ID，用于关联图片 Chunk 和原始文本 Chunk
-	ParentChunkID string `json:"parent_chunk_id"          gorm:"type:varchar(36);index"`
+	ParentChunkID string `json:"parent_chunk_id"`
 	// 关系 Chunk ID，用于关联关系 Chunk 和原始文本 Chunk
-	RelationChunks JSON `json:"relation_chunks"          gorm:"type:json"`
+	RelationChunks JSON `json:"relation_chunks"`
 	// 间接关系 Chunk ID，用于关联间接关系 Chunk 和原始文本 Chunk
-	IndirectRelationChunks JSON `json:"indirect_relation_chunks" gorm:"type:json"`
+	IndirectRelationChunks JSON `json:"indirect_relation_chunks"`
 	// Metadata 存储 chunk 级别的扩展信息，例如 FAQ 元数据
-	Metadata JSON `json:"metadata"                 gorm:"type:json"`
+	Metadata JSON `json:"metadata"`
 	// ContentHash 存储内容的 hash 值，用于快速匹配（主要用于 FAQ）
-	ContentHash string `json:"content_hash"             gorm:"type:varchar(64);index"`
+	ContentHash string `json:"content_hash"`
 	// 图片信息，存储为 JSON
-	ImageInfo string `json:"image_info"               gorm:"type:text"`
+	ImageInfo string `json:"image_info"`
 	// 块的创建时间
 	CreatedAt time.Time `json:"created_at"`
 	// 块的最后更新时间
 	UpdatedAt time.Time `json:"updated_at"`
 	// 软删除标记，支持数据恢复
-	DeletedAt gorm.DeletedAt `json:"deleted_at"               gorm:"index"`
+	DeletedAt time.Time `json:"deleted_at"`
 }

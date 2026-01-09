@@ -1,3 +1,14 @@
+---
+date: 2026-01-08
+author: Gaaming Zhang
+isOriginal: false
+article: true
+category:
+  - Nginx
+tag:
+  - Nginx
+---
+
 # Nginx在流量架构中起到什么样的作用
 
 ## 引言

@@ -5,16 +5,8 @@ isOriginal: true
 article: true
 category:
   - Redis
-  - 数据库
-  - 分布式系统
 tag:
   - Redis
-  - 数据一致性
-  - 分布式系统
-  - 缓存
-  - 主从复制
-  - 持久化
-  - 集群
 ---
 
 # Redis如何保证数据一致性

@@ -2,8 +2,6 @@ package types
 
 import (
 	"time"
-
-	"gorm.io/gorm"
 )
 
 // 内置代理的BuiltinAgentID常量
@@ -35,27 +33,27 @@ type CustomAgent struct {
 	// 代理的唯一标识符（租户ID与ID组成复合主键）
 	// 对于内置代理，这是'builtin-quick-answer'或'builtin-smart-reasoning'
 	// 对于自定义代理，这是一个UUID
-	ID string `yaml:"id" json:"id" gorm:"type:varchar(36);primaryKey"`
+	ID string `yaml:"id" json:"id"`
 	// 代理的名称
-	Name string `yaml:"name" json:"name" gorm:"type:varchar(255);not null"`
+	Name string `yaml:"name" json:"name"`
 	// 代理的描述
-	Description string `yaml:"description" json:"description" gorm:"type:text"`
+	Description string `yaml:"description" json:"description"`
 	// 代理的头像/图标（emoji或图标名称）
-	Avatar string `yaml:"avatar" json:"avatar" gorm:"type:varchar(64)"`
+	Avatar string `yaml:"avatar" json:"avatar"`
 	// 是否为内置代理（普通模式/代理模式）
-	IsBuiltin bool `yaml:"is_builtin" json:"is_builtin" gorm:"default:false"`
+	IsBuiltin bool `yaml:"is_builtin" json:"is_builtin"`
 	// 租户ID（与ID组成复合主键）
-	TenantID uint64 `yaml:"tenant_id" json:"tenant_id" gorm:"primaryKey"`
+	TenantID uint64 `yaml:"tenant_id" json:"tenant_id"`
 	// 创建者用户ID（可选）
-	CreatedBy string `yaml:"created_by" json:"created_by" gorm:"type:varchar(36)"`
+	CreatedBy string `yaml:"created_by" json:"created_by"`
 
 	// 代理配置
-	Config CustomAgentConfig `yaml:"config" json:"config" gorm:"type:json"`
+	Config CustomAgentConfig `yaml:"config" json:"config"`
 
 	// 时间戳
-	CreatedAt time.Time      `yaml:"created_at" json:"created_at"`
-	UpdatedAt time.Time      `yaml:"updated_at" json:"updated_at"`
-	DeletedAt gorm.DeletedAt `yaml:"deleted_at" json:"deleted_at" gorm:"index"`
+	CreatedAt time.Time `yaml:"created_at" json:"created_at"`
+	UpdatedAt time.Time `yaml:"updated_at" json:"updated_at"`
+	DeletedAt time.Time `yaml:"deleted_at" json:"deleted_at"`
 }
 
 // CustomAgentConfig 表示自定义代理的配置

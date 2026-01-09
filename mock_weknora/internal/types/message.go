@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 // 历史记录表示会话历史记录条目
@@ -30,7 +29,7 @@ type MentionedItems []MentionedItem
 
 type Message struct {
 	// 消息的唯一标识符
-	ID string `json:"id"                    gorm:"type:varchar(36);primaryKey"`
+	ID string `json:"id"`
 	// 该消息所属的会话ID
 	SessionID string `json:"session_id"`
 	// 请求ID，用于跟踪API请求
@@ -40,14 +39,14 @@ type Message struct {
 	// 消息角色：“user”、“assistant”、“system”
 	Role string `json:"role"`
 	// 响应中使用的知识块引用
-	KnowledgeReferences References `json:"knowledge_references"  gorm:"type:json,column:knowledge_references"`
+	KnowledgeReferences References `json:"knowledge_references"`
 	// Agent执行步骤（仅对由代理生成的助手消息有效）
 	// 包含代理的详细推理过程和工具调用
 	// 存储在用户历史记录中，但不包含在LLM上下文以避免冗余
-	AgentSteps AgentSteps `json:"agent_steps,omitempty" gorm:"type:jsonb,column:agent_steps"`
+	AgentSteps AgentSteps `json:"agent_steps,omitempty"`
 	// 提到的知识库和文件（用于用户消息）
 	// 存储用户发送消息时提到的知识库和文件
-	MentionedItems MentionedItems `json:"mentioned_items,omitempty" gorm:"type:jsonb,column:mentioned_items"`
+	MentionedItems MentionedItems `json:"mentioned_items,omitempty"`
 	// 是否完成消息生成
 	IsCompleted bool `json:"is_completed"`
 	// 创建时间
@@ -55,20 +54,15 @@ type Message struct {
 	// 更新时间
 	UpdatedAt time.Time `json:"updated_at"`
 	// 软删除时间
-	DeletedAt gorm.DeletedAt `json:"deleted_at"            gorm:"index"`
+	DeletedAt time.Time `json:"deleted_at"`
 }
 
 // AgentSteps表示代理执行步骤的集合
 // 用于在数据库中存储代理推理过程
 type AgentSteps []AgentStep
 
-// BeforeCreate是一个在创建新消息记录之前运行的GORM钩子
-// 自动为新消息生成UUID并初始化知识引用
-//   - tx: GORM数据库事务
-//
-// 返回:
-//   - error: 任何在钩子执行过程中遇到的错误
-func (m *Message) BeforeCreate(tx *gorm.DB) (err error) {
+// BeforeCreate初始化新消息的UUID和空集合
+func (m *Message) BeforeCreate() {
 	m.ID = uuid.New().String()
 	if m.KnowledgeReferences == nil {
 		m.KnowledgeReferences = make(References, 0)
@@ -79,5 +73,4 @@ func (m *Message) BeforeCreate(tx *gorm.DB) (err error) {
 	if m.MentionedItems == nil {
 		m.MentionedItems = make(MentionedItems, 0)
 	}
-	return nil
 }

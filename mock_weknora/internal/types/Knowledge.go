@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"gorm.io/gorm"
 )
 
 const (
@@ -56,7 +55,7 @@ const (
 
 type Knowledge struct {
 	// ID 知识ID
-	ID string `json:"id" gorm:"type:varchar(36);primaryKey"`
+	ID string `json:"id"`
 	// TenantID 租户ID
 	TenantID uint64 `json:"tenant_id"`
 	// KnowledgeBaseID 知识库ID
@@ -74,7 +73,7 @@ type Knowledge struct {
 	// ParseStatus 解析状态
 	ParseStatus string `json:"parse_status"`
 	// SummaryStatus 摘要状态
-	SummaryStatus string `json:"summary_status" gorm:"type:varchar(32);default:none"`
+	SummaryStatus string `json:"summary_status"`
 	// EnableStatus 启用状态
 	EnableStatus string `json:"enable_status"`
 	// EmbedingModelID 嵌入模型ID
@@ -92,7 +91,7 @@ type Knowledge struct {
 	// StorageSize 存储大小
 	StorageSize int64 `json:"storage_size"`
 	// Metadata 元数据
-	Metadata JSON `json:"metadata" gorm:"type:json"`
+	Metadata JSON `json:"metadata"`
 	// CreatedAt 创建时间
 	CreatedAt time.Time `json:"created_at"`
 	// UpdatedAt 更新时间
@@ -102,9 +101,9 @@ type Knowledge struct {
 	// ErrorMessage 错误信息
 	ErrorMessage string `json:"error_message"`
 	// DeletedAt 删除时间
-	DeletedAt gorm.DeletedAt `json:"deleted_at" gorm:"index"`
+	DeletedAt time.Time `json:"deleted_at"`
 	// 知识库名称（不存储在数据库中，在查询时填充）
-	KnowledgeBaseName string `json:"knowledge_base_name" gorm:"-"`
+	KnowledgeBaseName string `json:"knowledge_base_name"`
 }
 
 // GetMetadata 获取元数据
@@ -120,12 +119,11 @@ func (k *Knowledge) GetMetadata() map[string]string {
 	return metadata
 }
 
-// BeforeCreate钩 子在创建新的知识实体之前为它们生成一个UUID。
-func (k *Knowledge) BeforeCreate(tx *gorm.DB) (err error) {
+// BeforeCreate 在创建新的知识实体之前为它们生成一个UUID。
+func (k *Knowledge) BeforeCreate() {
 	if k.ID == "" {
 		k.ID = uuid.New().String()
 	}
-	return nil
 }
 
 // ManualKnowledgeMetadata 人工添加的知识的元数据
