@@ -1,3 +1,14 @@
+---
+date: 2026-01-09
+author: Gaaming Zhang
+isOriginal: false
+article: true
+category:
+  - Nginx
+tag:
+  - Nginx
+---
+
 # 如何查看nginx里访问请求的延时
 
 ## 引言
