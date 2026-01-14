@@ -67,6 +67,20 @@ export default sidebar({
           children: "structure",
         },
         {
+          text: "Zookeeper",
+          icon: "guidance:zoo",
+          prefix: "zookeeper/",
+          collapsible: true,
+          children: "structure",
+        },
+        {
+          text: "Elasticsearch",
+          icon: "devicon-plain:elasticsearch",
+          prefix: "elasticsearch/",
+          collapsible: true,
+          children: "structure",
+        },
+        {
           text: "SRE",
           icon: "carbon:ibm-devops-control",
           prefix: "sre/",
