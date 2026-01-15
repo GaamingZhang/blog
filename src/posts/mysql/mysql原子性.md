@@ -1,3 +1,14 @@
+---
+date: 2026-01-15
+author: Gaaming Zhang
+isOriginal: true
+article: true
+category:
+  - 数据库
+tag:
+  - 数据库
+---
+
 # MySQL的原子性
 
 ## 概述

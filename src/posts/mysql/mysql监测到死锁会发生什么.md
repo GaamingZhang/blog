@@ -1,19 +1,12 @@
 ---
-date: 2026-01-06
+date: 2026-01-15
 author: Gaaming Zhang
 isOriginal: true
 article: true
 category:
-  - MySQL
   - 数据库
-  - 性能优化
-  - 故障排查
 tag:
-  - MySQL
-  - 死锁
-  - 事务
-  - 并发控制
-  - 数据库性能
+  - 数据库
 ---
 
 # MySQL监测到死锁会发生什么

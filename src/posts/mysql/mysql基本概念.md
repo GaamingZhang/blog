@@ -1,13 +1,12 @@
 ---
-date: 2025-12-24
+date: 2026-01-15
 author: Gaaming Zhang
-isOriginal: false
+isOriginal: true
 article: true
 category:
   - 数据库
 tag:
   - 数据库
-  - mysql
 ---
 
 # MySQL基本概念
