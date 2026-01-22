@@ -1,3 +1,15 @@
+---
+date: 2026-01-22
+author: Gaaming Zhang
+isOriginal: true
+article: true
+category:
+  - Kubernetes
+tag:
+  - Kubernetes
+  - ClaudeAI
+---
+
 # Kubernetes 常用命令详解
 
 ## 目录
