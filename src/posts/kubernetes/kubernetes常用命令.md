@@ -1,0 +1,881 @@
+# Kubernetes 常用命令详解
+
+## 目录
+
+- [简介](#简介)
+- [kubectl 基础](#kubectl-基础)
+- [集群管理命令](#集群管理命令)
+- [Pod 管理命令](#pod-管理命令)
+- [Deployment 管理命令](#deployment-管理命令)
+- [Service 管理命令](#service-管理命令)
+- [ConfigMap 和 Secret 管理](#configmap-和-secret-管理)
+- [日志和调试命令](#日志和调试命令)
+- [资源管理命令](#资源管理命令)
+- [命名空间管理](#命名空间管理)
+- [实用技巧](#实用技巧)
+- [常见问题](#常见问题)
+
+## 简介
+
+Kubernetes (K8s) 是目前最流行的容器编排平台,而 kubectl 是与 Kubernetes 集群交互的主要命令行工具。掌握 kubectl 的常用命令对于日常的容器化应用管理至关重要。本文将系统性地介绍 Kubernetes 的常用命令,帮助开发者提高工作效率。
+
+## kubectl 基础
+
+### 查看 kubectl 版本
+
+```bash
+# 查看客户端和服务端版本
+kubectl version
+
+# 仅查看客户端版本
+kubectl version --client
+
+# 简短输出
+kubectl version --short
+```
+
+### 查看集群信息
+
+```bash
+# 查看集群信息
+kubectl cluster-info
+
+# 查看集群详细信息
+kubectl cluster-info dump
+
+# 查看节点列表
+kubectl get nodes
+
+# 查看节点详细信息
+kubectl describe node <node-name>
+```
+
+### 配置上下文
+
+```bash
+# 查看当前上下文
+kubectl config current-context
+
+# 查看所有上下文
+kubectl config get-contexts
+
+# 切换上下文
+kubectl config use-context <context-name>
+
+# 查看配置
+kubectl config view
+
+# 设置默认命名空间
+kubectl config set-context --current --namespace=<namespace-name>
+```
+
+## 集群管理命令
+
+### 查看集群资源
+
+```bash
+# 查看所有 API 资源
+kubectl api-resources
+
+# 查看 API 版本
+kubectl api-versions
+
+# 查看集群事件
+kubectl get events
+
+# 查看特定命名空间的事件
+kubectl get events -n <namespace>
+
+# 按时间排序查看事件
+kubectl get events --sort-by=.metadata.creationTimestamp
+```
+
+### 节点管理
+
+```bash
+# 标记节点为不可调度(维护模式)
+kubectl cordon <node-name>
+
+# 恢复节点为可调度
+kubectl uncordon <node-name>
+
+# 驱逐节点上的所有 Pod
+kubectl drain <node-name> --ignore-daemonsets --delete-emptydir-data
+
+# 给节点打标签
+kubectl label nodes <node-name> <label-key>=<label-value>
+
+# 删除节点标签
+kubectl label nodes <node-name> <label-key>-
+
+# 查看节点资源使用情况
+kubectl top nodes
+```
+
+## Pod 管理命令
+
+### 创建和查看 Pod
+
+```bash
+# 从 YAML 文件创建 Pod
+kubectl apply -f pod.yaml
+
+# 创建并运行一个临时 Pod
+kubectl run nginx --image=nginx
+
+# 查看所有 Pod
+kubectl get pods
+
+# 查看所有命名空间的 Pod
+kubectl get pods --all-namespaces
+kubectl get pods -A
+
+# 查看 Pod 详细信息
+kubectl get pods -o wide
+
+# 以 YAML 格式查看 Pod
+kubectl get pod <pod-name> -o yaml
+
+# 以 JSON 格式查看 Pod
+kubectl get pod <pod-name> -o json
+
+# 查看 Pod 详细描述
+kubectl describe pod <pod-name>
+
+# 监控 Pod 状态变化
+kubectl get pods --watch
+kubectl get pods -w
+```
+
+### 删除 Pod
+
+```bash
+# 删除指定 Pod
+kubectl delete pod <pod-name>
+
+# 强制删除 Pod
+kubectl delete pod <pod-name> --force --grace-period=0
+
+# 根据标签删除 Pod
+kubectl delete pods -l <label-key>=<label-value>
+
+# 删除命名空间下所有 Pod
+kubectl delete pods --all -n <namespace>
+```
+
+### Pod 交互
+
+```bash
+# 进入 Pod 容器(单容器)
+kubectl exec -it <pod-name> -- /bin/bash
+kubectl exec -it <pod-name> -- sh
+
+# 进入多容器 Pod 的特定容器
+kubectl exec -it <pod-name> -c <container-name> -- /bin/bash
+
+# 在 Pod 中执行单条命令
+kubectl exec <pod-name> -- ls /app
+
+# 从 Pod 复制文件到本地
+kubectl cp <pod-name>:/path/to/file /local/path
+
+# 从本地复制文件到 Pod
+kubectl cp /local/path <pod-name>:/path/to/file
+
+# 多容器 Pod 复制文件
+kubectl cp <pod-name>:/path/to/file /local/path -c <container-name>
+```
+
+### Pod 端口转发
+
+```bash
+# 将 Pod 端口转发到本地
+kubectl port-forward <pod-name> 8080:80
+
+# 转发到所有网络接口
+kubectl port-forward --address 0.0.0.0 <pod-name> 8080:80
+
+# Service 端口转发
+kubectl port-forward svc/<service-name> 8080:80
+```
+
+## Deployment 管理命令
+
+### 创建和查看 Deployment
+
+```bash
+# 创建 Deployment
+kubectl create deployment nginx --image=nginx
+
+# 从 YAML 创建
+kubectl apply -f deployment.yaml
+
+# 查看所有 Deployment
+kubectl get deployments
+kubectl get deploy
+
+# 查看 Deployment 详细信息
+kubectl describe deployment <deployment-name>
+
+# 查看 Deployment 状态
+kubectl rollout status deployment/<deployment-name>
+```
+
+### 扩缩容
+
+```bash
+# 手动扩缩容
+kubectl scale deployment <deployment-name> --replicas=5
+
+# 自动扩缩容
+kubectl autoscale deployment <deployment-name> --min=2 --max=10 --cpu-percent=80
+```
+
+### 更新和回滚
+
+```bash
+# 更新镜像
+kubectl set image deployment/<deployment-name> <container-name>=<new-image>
+
+# 编辑 Deployment
+kubectl edit deployment <deployment-name>
+
+# 查看更新历史
+kubectl rollout history deployment/<deployment-name>
+
+# 查看特定版本详情
+kubectl rollout history deployment/<deployment-name> --revision=2
+
+# 回滚到上一个版本
+kubectl rollout undo deployment/<deployment-name>
+
+# 回滚到指定版本
+kubectl rollout undo deployment/<deployment-name> --to-revision=2
+
+# 暂停更新
+kubectl rollout pause deployment/<deployment-name>
+
+# 恢复更新
+kubectl rollout resume deployment/<deployment-name>
+
+# 重启 Deployment
+kubectl rollout restart deployment/<deployment-name>
+```
+
+### 删除 Deployment
+
+```bash
+# 删除 Deployment
+kubectl delete deployment <deployment-name>
+
+# 删除 Deployment 但保留 Pod
+kubectl delete deployment <deployment-name> --cascade=orphan
+```
+
+## Service 管理命令
+
+### 创建和查看 Service
+
+```bash
+# 创建 Service 暴露 Deployment
+kubectl expose deployment <deployment-name> --port=80 --target-port=8080 --type=ClusterIP
+
+# 创建 NodePort Service
+kubectl expose deployment <deployment-name> --port=80 --type=NodePort
+
+# 创建 LoadBalancer Service
+kubectl expose deployment <deployment-name> --port=80 --type=LoadBalancer
+
+# 查看所有 Service
+kubectl get services
+kubectl get svc
+
+# 查看 Service 详细信息
+kubectl describe service <service-name>
+
+# 查看 Service 的 Endpoints
+kubectl get endpoints <service-name>
+```
+
+### 删除 Service
+
+```bash
+# 删除 Service
+kubectl delete service <service-name>
+kubectl delete svc <service-name>
+```
+
+## ConfigMap 和 Secret 管理
+
+### ConfigMap 操作
+
+```bash
+# 从文件创建 ConfigMap
+kubectl create configmap <configmap-name> --from-file=config.conf
+
+# 从目录创建 ConfigMap
+kubectl create configmap <configmap-name> --from-file=config-dir/
+
+# 从字面值创建 ConfigMap
+kubectl create configmap <configmap-name> --from-literal=key1=value1 --from-literal=key2=value2
+
+# 查看 ConfigMap
+kubectl get configmaps
+kubectl get cm
+
+# 查看 ConfigMap 详情
+kubectl describe configmap <configmap-name>
+
+# 查看 ConfigMap 内容
+kubectl get configmap <configmap-name> -o yaml
+
+# 编辑 ConfigMap
+kubectl edit configmap <configmap-name>
+
+# 删除 ConfigMap
+kubectl delete configmap <configmap-name>
+```
+
+### Secret 操作
+
+```bash
+# 创建通用 Secret
+kubectl create secret generic <secret-name> --from-literal=username=admin --from-literal=password=123456
+
+# 从文件创建 Secret
+kubectl create secret generic <secret-name> --from-file=ssh-privatekey=~/.ssh/id_rsa
+
+# 创建 Docker Registry Secret
+kubectl create secret docker-registry <secret-name> \
+  --docker-server=<registry-server> \
+  --docker-username=<username> \
+  --docker-password=<password> \
+  --docker-email=<email>
+
+# 创建 TLS Secret
+kubectl create secret tls <secret-name> --cert=path/to/cert/file --key=path/to/key/file
+
+# 查看 Secret
+kubectl get secrets
+
+# 查看 Secret 详情(不显示值)
+kubectl describe secret <secret-name>
+
+# 查看 Secret 内容(Base64 编码)
+kubectl get secret <secret-name> -o yaml
+
+# 解码 Secret
+kubectl get secret <secret-name> -o jsonpath='{.data.password}' | base64 --decode
+
+# 删除 Secret
+kubectl delete secret <secret-name>
+```
+
+## 日志和调试命令
+
+### 查看日志
+
+```bash
+# 查看 Pod 日志
+kubectl logs <pod-name>
+
+# 查看多容器 Pod 的特定容器日志
+kubectl logs <pod-name> -c <container-name>
+
+# 实时查看日志
+kubectl logs -f <pod-name>
+
+# 查看最近的日志(如最近 100 行)
+kubectl logs --tail=100 <pod-name>
+
+# 查看最近时间段的日志
+kubectl logs --since=1h <pod-name>
+
+# 查看之前容器的日志(容器重启后)
+kubectl logs <pod-name> --previous
+
+# 查看所有容器日志
+kubectl logs <pod-name> --all-containers=true
+```
+
+### 调试命令
+
+```bash
+# 运行临时调试 Pod
+kubectl run debug --image=busybox -it --rm -- sh
+
+# 在现有 Pod 上创建调试容器(需要 K8s 1.23+)
+kubectl debug <pod-name> -it --image=busybox
+
+# 调试节点
+kubectl debug node/<node-name> -it --image=ubuntu
+
+# 查看资源使用情况
+kubectl top pods
+kubectl top pods -n <namespace>
+kubectl top nodes
+
+# 查看 Pod 的资源限制
+kubectl describe pod <pod-name> | grep -A 5 "Limits"
+```
+
+## 资源管理命令
+
+### 应用配置文件
+
+```bash
+# 创建资源
+kubectl create -f <file.yaml>
+
+# 应用配置(创建或更新)
+kubectl apply -f <file.yaml>
+
+# 应用目录下所有配置
+kubectl apply -f <directory>/
+
+# 应用多个文件
+kubectl apply -f file1.yaml -f file2.yaml
+
+# 从 URL 应用
+kubectl apply -f https://example.com/config.yaml
+
+# 删除资源
+kubectl delete -f <file.yaml>
+
+# 替换资源
+kubectl replace -f <file.yaml>
+
+# 强制替换
+kubectl replace --force -f <file.yaml>
+```
+
+### 资源查看和筛选
+
+```bash
+# 根据标签筛选
+kubectl get pods -l app=nginx
+kubectl get pods -l 'environment in (production, qa)'
+kubectl get pods -l app=nginx,tier=frontend
+
+# 根据字段选择器筛选
+kubectl get pods --field-selector status.phase=Running
+kubectl get pods --field-selector metadata.namespace=default
+
+# 排序输出
+kubectl get pods --sort-by=.metadata.creationTimestamp
+
+# 自定义列输出
+kubectl get pods -o custom-columns=NAME:.metadata.name,STATUS:.status.phase
+
+# JSONPath 输出
+kubectl get pods -o jsonpath='{.items[*].metadata.name}'
+
+# 查看资源的 YAML 定义
+kubectl get pod <pod-name> -o yaml > pod.yaml
+```
+
+### 资源编辑
+
+```bash
+# 编辑资源
+kubectl edit pod <pod-name>
+kubectl edit deployment <deployment-name>
+kubectl edit service <service-name>
+
+# 使用指定编辑器
+KUBE_EDITOR="nano" kubectl edit pod <pod-name>
+```
+
+### 批量操作
+
+```bash
+# 删除所有 Pod
+kubectl delete pods --all
+
+# 删除特定标签的资源
+kubectl delete pods -l app=nginx
+
+# 删除多种资源类型
+kubectl delete pods,services -l app=nginx
+
+# 强制删除所有 Pod
+kubectl delete pods --all --force --grace-period=0
+```
+
+## 命名空间管理
+
+### 命名空间操作
+
+```bash
+# 查看所有命名空间
+kubectl get namespaces
+kubectl get ns
+
+# 创建命名空间
+kubectl create namespace <namespace-name>
+
+# 删除命名空间
+kubectl delete namespace <namespace-name>
+
+# 查看命名空间详情
+kubectl describe namespace <namespace-name>
+
+# 在特定命名空间操作
+kubectl get pods -n <namespace-name>
+kubectl get all -n <namespace-name>
+
+# 设置默认命名空间
+kubectl config set-context --current --namespace=<namespace-name>
+```
+
+## 实用技巧
+
+### 别名设置
+
+```bash
+# 在 ~/.bashrc 或 ~/.zshrc 中添加
+alias k='kubectl'
+alias kg='kubectl get'
+alias kd='kubectl describe'
+alias kdel='kubectl delete'
+alias kl='kubectl logs'
+alias kx='kubectl exec -it'
+alias ka='kubectl apply -f'
+```
+
+### 命令补全
+
+```bash
+# Bash 补全(添加到 ~/.bashrc)
+source <(kubectl completion bash)
+complete -F __start_kubectl k
+
+# Zsh 补全(添加到 ~/.zshrc)
+source <(kubectl completion zsh)
+```
+
+### 常用组合命令
+
+```bash
+# 查看所有资源
+kubectl get all
+kubectl get all -n <namespace>
+kubectl get all --all-namespaces
+
+# 快速查看 Pod IP
+kubectl get pods -o wide | awk '{print $1, $6}'
+
+# 查看失败的 Pod
+kubectl get pods --field-selector=status.phase=Failed
+
+# 查看未就绪的 Pod
+kubectl get pods --field-selector=status.phase!=Running
+
+# 统计各状态的 Pod 数量
+kubectl get pods --all-namespaces | awk '{print $4}' | sort | uniq -c
+
+# 查找重启次数多的 Pod
+kubectl get pods --all-namespaces --sort-by='.status.containerStatuses[0].restartCount'
+
+# 导出所有资源定义
+kubectl get all --all-namespaces -o yaml > all-resources.yaml
+```
+
+### 性能和资源
+
+```bash
+# 查看集群资源使用情况
+kubectl top nodes
+kubectl top pods --all-namespaces
+kubectl top pods --containers
+
+# 查看 Pod 资源配额
+kubectl describe quota -n <namespace>
+
+# 查看资源限制
+kubectl describe limitrange -n <namespace>
+
+# 查看 PV 和 PVC
+kubectl get pv
+kubectl get pvc
+kubectl describe pv <pv-name>
+kubectl describe pvc <pvc-name>
+```
+
+### 故障排查
+
+```bash
+# 查看 Pod 事件
+kubectl describe pod <pod-name> | grep -A 10 Events
+
+# 查看最近失败的 Pod
+kubectl get pods --field-selector=status.phase=Failed
+
+# 查看容器退出码
+kubectl get pod <pod-name> -o jsonpath='{.status.containerStatuses[0].state.terminated.exitCode}'
+
+# 查看 Pod 调度失败原因
+kubectl get events --field-selector involvedObject.name=<pod-name>
+
+# 验证 YAML 文件语法
+kubectl apply -f config.yaml --dry-run=client
+
+# 服务器端验证
+kubectl apply -f config.yaml --dry-run=server
+```
+
+### 标签和注解
+
+```bash
+# 添加标签
+kubectl label pod <pod-name> env=production
+
+# 修改标签
+kubectl label pod <pod-name> env=staging --overwrite
+
+# 删除标签
+kubectl label pod <pod-name> env-
+
+# 添加注解
+kubectl annotate pod <pod-name> description="This is my pod"
+
+# 删除注解
+kubectl annotate pod <pod-name> description-
+
+# 显示标签
+kubectl get pods --show-labels
+
+# 按标签列显示
+kubectl get pods -L app,env
+```
+
+### 快捷查看
+
+```bash
+# 使用短命令
+kubectl get po          # pods
+kubectl get svc         # services
+kubectl get deploy      # deployments
+kubectl get rs          # replicasets
+kubectl get ns          # namespaces
+kubectl get cm          # configmaps
+kubectl get no          # nodes
+
+# 组合使用
+kubectl get po,svc,deploy -n <namespace>
+```
+
+## 常见问题
+
+### 1. 如何快速排查 Pod 无法启动的问题?
+
+当 Pod 无法正常启动时,可以按以下步骤排查:
+
+```bash
+# 第一步: 查看 Pod 状态
+kubectl get pods
+kubectl describe pod <pod-name>
+
+# 第二步: 查看事件信息
+kubectl get events --sort-by=.metadata.creationTimestamp | grep <pod-name>
+
+# 第三步: 查看容器日志
+kubectl logs <pod-name>
+kubectl logs <pod-name> --previous  # 如果容器已重启
+
+# 第四步: 检查资源配额
+kubectl describe nodes
+kubectl top nodes
+kubectl describe pod <pod-name> | grep -A 5 "Limits"
+```
+
+常见问题包括:
+- **ImagePullBackOff**: 镜像拉取失败,检查镜像名称、网络或认证信息
+- **CrashLoopBackOff**: 容器启动后立即崩溃,检查应用日志和启动命令
+- **Pending**: Pod 无法调度,检查资源是否充足、节点选择器或污点容忍
+- **OOMKilled**: 内存不足被杀死,需要增加内存限制
+
+### 2. 如何在不影响服务的情况下更新应用?
+
+Kubernetes 提供了多种零停机更新策略:
+
+```bash
+# 滚动更新(默认策略)
+kubectl set image deployment/<deployment-name> <container-name>=<new-image>:v2
+kubectl rollout status deployment/<deployment-name>
+
+# 配置更新策略
+# 在 Deployment YAML 中设置:
+# strategy:
+#   type: RollingUpdate
+#   rollingUpdate:
+#     maxSurge: 1        # 最多超出期望 Pod 数
+#     maxUnavailable: 0  # 最多不可用 Pod 数
+
+# 如果更新出现问题,快速回滚
+kubectl rollout undo deployment/<deployment-name>
+
+# 使用金丝雀发布
+# 1. 创建新版本 Deployment 但副本数较少
+kubectl scale deployment <deployment-name-v2> --replicas=1
+# 2. 观察新版本表现
+# 3. 逐步增加新版本副本,减少旧版本副本
+```
+
+最佳实践:
+- 设置合理的就绪探针(Readiness Probe)
+- 配置适当的 PodDisruptionBudget
+- 使用健康检查确保新 Pod 完全就绪后再继续更新
+
+### 3. 如何有效管理多个 Kubernetes 集群?
+
+管理多集群的推荐方法:
+
+```bash
+# 查看所有配置的集群
+kubectl config get-contexts
+
+# 切换集群
+kubectl config use-context <context-name>
+
+# 为不同集群设置别名
+alias k8s-prod='kubectl --context=production'
+alias k8s-dev='kubectl --context=development'
+
+# 使用 kubectx 工具(推荐安装)
+# 快速切换上下文
+kubectx production
+kubectx development
+
+# 使用 kubens 切换命名空间
+kubens staging
+
+# 查看当前上下文和命名空间
+kubectx -c
+kubens -c
+```
+
+配置文件管理:
+```bash
+# 合并多个 kubeconfig 文件
+export KUBECONFIG=~/.kube/config:~/.kube/config-prod:~/.kube/config-dev
+kubectl config view --flatten > ~/.kube/merged-config
+
+# 使用环境变量临时切换
+export KUBECONFIG=~/.kube/config-prod
+kubectl get nodes
+```
+
+### 4. 如何限制和监控 Kubernetes 资源使用?
+
+资源管理是集群稳定运行的关键:
+
+```bash
+# 为 Pod 设置资源请求和限制
+# 在 Pod/Deployment YAML 中:
+# resources:
+#   requests:
+#     memory: "64Mi"
+#     cpu: "250m"
+#   limits:
+#     memory: "128Mi"
+#     cpu: "500m"
+
+# 创建 ResourceQuota 限制命名空间资源
+kubectl create quota my-quota \
+  --hard=pods=10,requests.cpu=4,requests.memory=8Gi,limits.cpu=8,limits.memory=16Gi \
+  -n <namespace>
+
+# 查看配额使用情况
+kubectl describe quota -n <namespace>
+
+# 创建 LimitRange 设置默认限制
+# 应用 LimitRange YAML 文件
+kubectl apply -f limitrange.yaml
+
+# 监控资源使用
+kubectl top nodes
+kubectl top pods --all-namespaces --sort-by=memory
+kubectl top pods --all-namespaces --sort-by=cpu
+
+# 查看特定 Pod 的资源使用历史
+kubectl describe pod <pod-name> | grep -A 10 "Resource"
+```
+
+最佳实践:
+- 始终为生产环境的容器设置 requests 和 limits
+- 使用 VerticalPodAutoscaler 自动调整资源配置
+- 定期审查和优化资源分配
+- 使用监控工具(如 Prometheus + Grafana)进行长期追踪
+
+### 5. 如何备份和恢复 Kubernetes 资源?
+
+定期备份是灾难恢复的关键:
+
+```bash
+# 备份单个资源
+kubectl get deployment <deployment-name> -o yaml > deployment-backup.yaml
+kubectl get service <service-name> -o yaml > service-backup.yaml
+
+# 备份命名空间下所有资源
+kubectl get all -n <namespace> -o yaml > namespace-backup.yaml
+
+# 备份整个集群的资源(不包括 cluster-scoped 资源)
+kubectl get all --all-namespaces -o yaml > cluster-backup.yaml
+
+# 备份特定类型的所有资源
+kubectl get deployments --all-namespaces -o yaml > all-deployments.yaml
+kubectl get configmaps --all-namespaces -o yaml > all-configmaps.yaml
+kubectl get secrets --all-namespaces -o yaml > all-secrets.yaml
+
+# 使用脚本批量备份
+for resource in deployment service configmap secret; do
+  kubectl get $resource --all-namespaces -o yaml > ${resource}-backup.yaml
+done
+
+# 恢复资源
+kubectl apply -f deployment-backup.yaml
+kubectl apply -f namespace-backup.yaml
+
+# 使用 Velero 进行企业级备份(推荐)
+# 安装 Velero
+velero install --provider aws --bucket mybucket --secret-file ./credentials
+
+# 备份整个命名空间
+velero backup create my-backup --include-namespaces <namespace>
+
+# 备份特定资源
+velero backup create my-backup --include-resources deployments,services
+
+# 恢复备份
+velero restore create --from-backup my-backup
+
+# 定期备份(使用 schedule)
+velero schedule create daily-backup --schedule="0 2 * * *" --include-namespaces production
+```
+
+注意事项:
+- 敏感信息(Secrets)应加密存储
+- PersistentVolume 数据需要单独备份
+- 定期测试恢复流程确保备份可用
+- 考虑使用版本控制(Git)管理配置文件
+
+---
+
+## 总结
+
+Kubernetes 命令行工具 kubectl 功能强大且灵活,掌握这些常用命令可以大大提高日常运维和开发效率。建议:
+
+1. **循序渐进**: 从基础命令开始,逐步掌握高级特性
+2. **实践为主**: 在测试环境多练习,熟能生巧
+3. **善用工具**: 配置别名、命令补全和辅助工具(kubectx、k9s 等)
+4. **查阅文档**: 使用 `kubectl help` 和官方文档获取详细信息
+5. **安全第一**: 在生产环境操作时务必谨慎,建议使用 `--dry-run` 先验证
+
+持续学习和实践是精通 Kubernetes 的关键,希望本文能成为你的实用参考手册!
+
+## 参考资源
+
+- [Kubernetes 官方文档](https://kubernetes.io/docs/)
+- [kubectl 命令行参考](https://kubernetes.io/docs/reference/kubectl/)
+- [kubectl Cheat Sheet](https://kubernetes.io/docs/reference/kubectl/cheatsheet/)

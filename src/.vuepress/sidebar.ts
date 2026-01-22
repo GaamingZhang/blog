@@ -53,6 +53,13 @@ export default sidebar({
           children: "structure",
         },
         {
+          text: "Redis",
+          icon: "devicon-plain:redis",
+          prefix: "redis/",
+          collapsible: true,
+          children: "structure",
+        },
+        {
           text: "Docker",
           icon: "mdi:docker",
           prefix: "docker/",
