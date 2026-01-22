@@ -255,7 +255,7 @@ db.users.insertOne(
 - ⚠️ 性能较低
 - ✅ 防止数据丢失和回滚
 
-#### w: <number> - 指定节点数量
+#### 指定节点数量
 
 ```javascript
 db.users.insertOne(
