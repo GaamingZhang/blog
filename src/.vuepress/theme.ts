@@ -1,7 +1,7 @@
 import { hopeTheme } from "vuepress-theme-hope";
 
-import navbar from "./navbar.js";
-import sidebar from "./sidebar.js";
+import navbar from "./navbar";
+import sidebar from "./sidebar";
 
 export default hopeTheme({
   hostname: "https://www.gaaming.com.cn",
@@ -45,7 +45,7 @@ export default hopeTheme({
         link: "https://theme-hope.vuejs.press",
       },
     },
-    timeline:"昨日不再"
+    timeline: "昨日不再",
   },
 
   // 加密配置

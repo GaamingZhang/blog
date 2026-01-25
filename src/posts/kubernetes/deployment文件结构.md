@@ -1,5 +1,5 @@
 ---
-date: 2026-01-06
+date: 2026-01-25
 author: Gaaming Zhang
 isOriginal: false
 article: true
@@ -7,6 +7,7 @@ category:
   - Kubernetes
 tag:
   - Kubernetes
+  - ClaudeCode
 ---
 
 # Deployment文件结构
