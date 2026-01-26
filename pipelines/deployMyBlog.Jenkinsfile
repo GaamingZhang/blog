@@ -13,10 +13,10 @@ pipeline {
     BLOG_DEPLOY_PATH = '/var/www/vuepress-blog'
     NGINX_CONF_REMOTE = '/etc/nginx/conf.d/myBlog.conf'
     TENCENT_NODE_IP = 'TencentNodeIP'
-    TENCENT_NODE_DEPLOY_USER = 'ubuntu'
+    TENCENT_NODE_DEPLOY_USER = 'TencentNodeDeployUser'
     TENCENT_NODE_SSH_KEY_CREDENTIAL = 'TencentNodeSSHKey'
     TENCENT_GUANGZHOU_NODE_IP = 'TencentGuangzhouNodeIP'
-    TENCENT_GUANGZHOU_NODE_DEPLOY_USER = 'ubuntu'
+    TENCENT_GUANGZHOU_NODE_DEPLOY_USER = 'TencentGuangzhouNodeDeployUser'
     TENCENT_GUANGZHOU_NODE_SSH_KEY_CREDENTIAL = 'TencentGuangzhouNodeSSH'
     VERSION = "${BUILD_NUMBER}"
     MAX_BACKUPS = 10
