@@ -77,20 +77,27 @@ pipeline {
         expression { params.SKIP_ACCESS_LOG_PROCESSOR != true }
       }
       steps {
-        withCredentials([
-          string(credentialsId: TENCENT_NODE_IP, variable: 'DEPLOY_HOST'),
-          sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
-        ]) {
-          sh '''
-            set -e
-            REMOTE="$TENCENT_NODE_DEPLOY_USER@$DEPLOY_HOST"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo chmod +x $LOG_PROCESS_SCRIPTS/process_blog_access.sh"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo cp $LOG_PROCESS_SCRIPTS/process_blog_access.service /etc/systemd/system/"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo cp $LOG_PROCESS_SCRIPTS/process_blog_access.timer /etc/systemd/system/"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo systemctl daemon-reload"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo systemctl disable process_blog_access.timer"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo systemctl stop process_blog_access.timer"
-          '''
+        script {
+          parallel(
+            "Process Blog Access Log on Tencent Node": {
+            withCredentials([
+              string(credentialsId: TENCENT_NODE_IP, variable: 'DEPLOY_HOST'),
+              string(credentialsId: TENCENT_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+              sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+            ]) {
+              processBlogAccessLog()
+            }
+          },
+          "Process Blog Access Log on Tencent Guangzhou Node": {
+            withCredentials([
+              string(credentialsId: TENCENT_GUANGZHOU_NODE_IP, variable: 'DEPLOY_HOST'),
+              string(credentialsId: TENCENT_GUANGZHOU_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+              sshUserPrivateKey(credentialsId: TENCENT_GUANGZHOU_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+            ]) {
+              processBlogAccessLog()
+            }
+          }
+          )
         }
       }
     }
@@ -194,6 +201,30 @@ def deployNginxConfig() {
         ssh -i "\${SSH_KEY}" -o StrictHostKeyChecking=no "\$REMOTE" "sudo systemctl reload nginx"
         
         echo "Nginx配置已部署并重新加载"
+    """
+}
+
+def processBlogAccessLog() {
+    sh """
+        set -e
+        REMOTE="\${DEPLOY_USER}@\${DEPLOY_HOST}"
+        echo "处理博客访问日志服务: \$REMOTE"
+        
+        # 设置脚本权限
+        ssh -i "\${SSH_KEY}" -o StrictHostKeyChecking=no "\$REMOTE" "sudo chmod +x $LOG_PROCESS_SCRIPTS/process_blog_access.sh"
+        
+        # 复制服务文件
+        ssh -i "\${SSH_KEY}" -o StrictHostKeyChecking=no "\$REMOTE" "sudo cp $LOG_PROCESS_SCRIPTS/process_blog_access.service /etc/systemd/system/"
+        ssh -i "\${SSH_KEY}" -o StrictHostKeyChecking=no "\$REMOTE" "sudo cp $LOG_PROCESS_SCRIPTS/process_blog_access.timer /etc/systemd/system/"
+        
+        # 重新加载systemd配置
+        ssh -i "\${SSH_KEY}" -o StrictHostKeyChecking=no "\$REMOTE" "sudo systemctl daemon-reload"
+        
+        # 禁用并停止定时器
+        ssh -i "\${SSH_KEY}" -o StrictHostKeyChecking=no "\$REMOTE" "sudo systemctl disable process_blog_access.timer"
+        ssh -i "\${SSH_KEY}" -o StrictHostKeyChecking=no "\$REMOTE" "sudo systemctl stop process_blog_access.timer"
+        
+        echo "博客访问日志服务处理完成"
     """
 }
 
