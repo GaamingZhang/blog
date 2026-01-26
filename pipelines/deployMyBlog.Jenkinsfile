@@ -7,6 +7,8 @@ pipeline {
 
   parameters {
     booleanParam(name: 'SKIP_ACCESS_LOG_PROCESSOR', defaultValue: false, description: '是否跳过博客访问日志处理服务的部署')
+    booleanParam(name: 'DEPLOY_TO_TENCENT_NODE', defaultValue: false, description: '是否部署到Tencent Node')
+    booleanParam(name: 'DEPLOY_TO_TENCENT_GUANGZHOU_NODE', defaultValue: false, description: '是否部署到Tencent Guangzhou Node')
   }
 
   environment {
@@ -48,26 +50,40 @@ pipeline {
     stage('Deploy Static Site') {
       steps {
         script {
-          parallel(
-            "Deploy to Tencent Node": {
-            withCredentials([
-              string(credentialsId: TENCENT_NODE_IP, variable: 'DEPLOY_HOST'),
-              string(credentialsId: TENCENT_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
-              sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
-            ]) {
-              deployToRemote()
-            }
-          },
-          "Deploy to Tencent Guangzhou Node": {
-            withCredentials([
-              string(credentialsId: TENCENT_GUANGZHOU_NODE_IP, variable: 'DEPLOY_HOST'),
-              string(credentialsId: TENCENT_GUANGZHOU_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
-              sshUserPrivateKey(credentialsId: TENCENT_GUANGZHOU_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
-            ]) {
-              deployToRemote()
+          def deployJobs = [:]
+          
+          // 只有当DEPLOY_TO_TENCENT_NODE为true时才添加Tencent Node的部署任务
+          if (params.DEPLOY_TO_TENCENT_NODE) {
+            deployJobs["Deploy to Tencent Node"] = {
+              withCredentials([
+                string(credentialsId: TENCENT_NODE_IP, variable: 'DEPLOY_HOST'),
+                string(credentialsId: TENCENT_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+                sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+              ]) {
+                deployToRemote()
+              }
             }
           }
-          )
+          
+          // 只有当DEPLOY_TO_TENCENT_GUANGZHOU_NODE为true时才添加Tencent Guangzhou Node的部署任务
+          if (params.DEPLOY_TO_TENCENT_GUANGZHOU_NODE) {
+            deployJobs["Deploy to Tencent Guangzhou Node"] = {
+              withCredentials([
+                string(credentialsId: TENCENT_GUANGZHOU_NODE_IP, variable: 'DEPLOY_HOST'),
+                string(credentialsId: TENCENT_GUANGZHOU_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+                sshUserPrivateKey(credentialsId: TENCENT_GUANGZHOU_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+              ]) {
+                deployToRemote()
+              }
+            }
+          }
+          
+          // 执行部署任务
+          if (!deployJobs.isEmpty()) {
+            parallel(deployJobs)
+          } else {
+            echo "没有启用任何部署任务"
+          }
         }
       }
     }
@@ -78,26 +94,40 @@ pipeline {
       }
       steps {
         script {
-          parallel(
-            "Process Blog Access Log on Tencent Node": {
-            withCredentials([
-              string(credentialsId: TENCENT_NODE_IP, variable: 'DEPLOY_HOST'),
-              string(credentialsId: TENCENT_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
-              sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
-            ]) {
-              processBlogAccessLog()
-            }
-          },
-          "Process Blog Access Log on Tencent Guangzhou Node": {
-            withCredentials([
-              string(credentialsId: TENCENT_GUANGZHOU_NODE_IP, variable: 'DEPLOY_HOST'),
-              string(credentialsId: TENCENT_GUANGZHOU_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
-              sshUserPrivateKey(credentialsId: TENCENT_GUANGZHOU_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
-            ]) {
-              processBlogAccessLog()
+          def processJobs = [:]
+          
+          // 只有当DEPLOY_TO_TENCENT_NODE为true时才添加Tencent Node的处理任务
+          if (params.DEPLOY_TO_TENCENT_NODE) {
+            processJobs["Process Blog Access Log on Tencent Node"] = {
+              withCredentials([
+                string(credentialsId: TENCENT_NODE_IP, variable: 'DEPLOY_HOST'),
+                string(credentialsId: TENCENT_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+                sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+              ]) {
+                processBlogAccessLog()
+              }
             }
           }
-          )
+          
+          // 只有当DEPLOY_TO_TENCENT_GUANGZHOU_NODE为true时才添加Tencent Guangzhou Node的处理任务
+          if (params.DEPLOY_TO_TENCENT_GUANGZHOU_NODE) {
+            processJobs["Process Blog Access Log on Tencent Guangzhou Node"] = {
+              withCredentials([
+                string(credentialsId: TENCENT_GUANGZHOU_NODE_IP, variable: 'DEPLOY_HOST'),
+                string(credentialsId: TENCENT_GUANGZHOU_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+                sshUserPrivateKey(credentialsId: TENCENT_GUANGZHOU_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+              ]) {
+                processBlogAccessLog()
+              }
+            }
+          }
+          
+          // 执行处理任务
+          if (!processJobs.isEmpty()) {
+            parallel(processJobs)
+          } else {
+            echo "没有启用任何博客访问日志处理任务"
+          }
         }
       }
     }
@@ -108,26 +138,40 @@ pipeline {
     stage('Deploy Nginx Config') {
       steps {
         script {
-          parallel(
-            "Deploy Nginx Config to Tencent Node": {
-            withCredentials([
-              string(credentialsId: TENCENT_NODE_IP, variable: 'DEPLOY_HOST'),
-              string(credentialsId: TENCENT_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
-              sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
-            ]) {
-              deployNginxConfig()
-            }
-          },
-          "Deploy Nginx Config to Tencent Guangzhou Node": {
-            withCredentials([
-              string(credentialsId: TENCENT_GUANGZHOU_NODE_IP, variable: 'DEPLOY_HOST'),
-              string(credentialsId: TENCENT_GUANGZHOU_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
-              sshUserPrivateKey(credentialsId: TENCENT_GUANGZHOU_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
-            ]) {
-              deployNginxConfig()
+          def nginxJobs = [:]
+          
+          // 只有当DEPLOY_TO_TENCENT_NODE为true时才添加Tencent Node的Nginx配置部署任务
+          if (params.DEPLOY_TO_TENCENT_NODE) {
+            nginxJobs["Deploy Nginx Config to Tencent Node"] = {
+              withCredentials([
+                string(credentialsId: TENCENT_NODE_IP, variable: 'DEPLOY_HOST'),
+                string(credentialsId: TENCENT_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+                sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+              ]) {
+                deployNginxConfig()
+              }
             }
           }
-          )
+          
+          // 只有当DEPLOY_TO_TENCENT_GUANGZHOU_NODE为true时才添加Tencent Guangzhou Node的Nginx配置部署任务
+          if (params.DEPLOY_TO_TENCENT_GUANGZHOU_NODE) {
+            nginxJobs["Deploy Nginx Config to Tencent Guangzhou Node"] = {
+              withCredentials([
+                string(credentialsId: TENCENT_GUANGZHOU_NODE_IP, variable: 'DEPLOY_HOST'),
+                string(credentialsId: TENCENT_GUANGZHOU_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+                sshUserPrivateKey(credentialsId: TENCENT_GUANGZHOU_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+              ]) {
+                deployNginxConfig()
+              }
+            }
+          }
+          
+          // 执行Nginx配置部署任务
+          if (!nginxJobs.isEmpty()) {
+            parallel(nginxJobs)
+          } else {
+            echo "没有启用任何Nginx配置部署任务"
+          }
         }
       }
     }
