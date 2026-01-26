@@ -12,8 +12,12 @@ pipeline {
   environment {
     BLOG_DEPLOY_PATH = '/var/www/vuepress-blog'
     NGINX_CONF_REMOTE = '/etc/nginx/conf.d/myBlog.conf'
+    TENCENT_NODE_IP = 'TencentNodeIP'
     TENCENT_NODE_DEPLOY_USER = 'ubuntu'
     TENCENT_NODE_SSH_KEY_CREDENTIAL = 'TencentNodeSSHKey'
+    TENCENT_GUANGZHOU_NODE_IP = 'TencentGuangzhouNodeIP'
+    TENCENT_GUANGZHOU_NODE_DEPLOY_USER = 'ubuntu'
+    TENCENT_GUANGZHOU_NODE_SSH_KEY_CREDENTIAL = 'TencentGuangzhouNodeSSH'
     VERSION = "${BUILD_NUMBER}"
     MAX_BACKUPS = 10
     LOG_PROCESS_SCRIPTS = "${BLOG_DEPLOY_PATH}/scripts"
@@ -44,12 +48,26 @@ pipeline {
     stage('Deploy Static Site') {
       steps {
         script {
-          withCredentials([
-            string(credentialsId: 'TencentNodeIP', variable: 'DEPLOY_HOST'),
-            sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
-          ]) {
-            deployToRemote()
+          parallel(
+            "Deploy to Tencent Node": {
+            withCredentials([
+              string(credentialsId: TENCENT_NODE_IP, variable: 'DEPLOY_HOST'),
+              string(credentialsId: TENCENT_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+              sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+            ]) {
+              deployToRemote()
+            }
+          },
+          "Deploy to Tencent Guangzhou Node": {
+            withCredentials([
+              string(credentialsId: TENCENT_GUANGZHOU_NODE_IP, variable: 'DEPLOY_HOST'),
+              string(credentialsId: TENCENT_GUANGZHOU_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+              sshUserPrivateKey(credentialsId: TENCENT_GUANGZHOU_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+            ]) {
+              deployToRemote()
+            }
           }
+          )
         }
       }
     }
@@ -60,7 +78,7 @@ pipeline {
       }
       steps {
         withCredentials([
-          string(credentialsId: 'TencentNodeIP', variable: 'DEPLOY_HOST'),
+          string(credentialsId: TENCENT_NODE_IP, variable: 'DEPLOY_HOST'),
           sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
         ]) {
           sh '''
@@ -82,18 +100,27 @@ pipeline {
     // TODO: 增加回滚 stage
     stage('Deploy Nginx Config') {
       steps {
-        withCredentials([
-          string(credentialsId: 'TencentNodeIP', variable: 'DEPLOY_HOST'),
-          sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
-        ]) {
-          sh '''
-            set -e
-            REMOTE="$TENCENT_NODE_DEPLOY_USER@$DEPLOY_HOST"
-            scp -i "$SSH_KEY" -o StrictHostKeyChecking=no pipelines/nginx/myBlog.conf "$REMOTE:/tmp/myBlog.conf"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo mv /tmp/myBlog.conf $NGINX_CONF_REMOTE"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo nginx -t"
-            ssh -i "$SSH_KEY" -o StrictHostKeyChecking=no "$REMOTE" "sudo systemctl reload nginx"
-          '''
+        script {
+          parallel(
+            "Deploy Nginx Config to Tencent Node": {
+            withCredentials([
+              string(credentialsId: TENCENT_NODE_IP, variable: 'DEPLOY_HOST'),
+              string(credentialsId: TENCENT_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+              sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+            ]) {
+              deployNginxConfig()
+            }
+          },
+          "Deploy Nginx Config to Tencent Guangzhou Node": {
+            withCredentials([
+              string(credentialsId: TENCENT_GUANGZHOU_NODE_IP, variable: 'DEPLOY_HOST'),
+              string(credentialsId: TENCENT_GUANGZHOU_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+              sshUserPrivateKey(credentialsId: TENCENT_GUANGZHOU_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+            ]) {
+              deployNginxConfig()
+            }
+          }
+          )
         }
       }
     }
@@ -130,7 +157,7 @@ pipeline {
 def deployToRemote() {
     sh """
         set -e
-        REMOTE="${TENCENT_NODE_DEPLOY_USER}@\${DEPLOY_HOST}"
+        REMOTE="\${DEPLOY_USER}@\${DEPLOY_HOST}"
         echo "连接远程服务器: \$REMOTE"
         echo "部署版本: ${VERSION}"
         
@@ -145,6 +172,28 @@ def deployToRemote() {
         ssh -i "\${SSH_KEY}" -o StrictHostKeyChecking=no "\$REMOTE" bash <<'ENDSSH'
 ${deploy()}
 ENDSSH
+    """
+}
+
+def deployNginxConfig() {
+    sh """
+        set -e
+        REMOTE="\${DEPLOY_USER}@\${DEPLOY_HOST}"
+        echo "部署Nginx配置到: \$REMOTE"
+        
+        # 上传Nginx配置文件
+        scp -i "\${SSH_KEY}" -o StrictHostKeyChecking=no pipelines/nginx/myBlog.conf "\$REMOTE:/tmp/myBlog.conf"
+        
+        # 替换Nginx配置文件
+        ssh -i "\${SSH_KEY}" -o StrictHostKeyChecking=no "\$REMOTE" "sudo mv /tmp/myBlog.conf $NGINX_CONF_REMOTE"
+        
+        # 测试Nginx配置
+        ssh -i "\${SSH_KEY}" -o StrictHostKeyChecking=no "\$REMOTE" "sudo nginx -t"
+        
+        # 重新加载Nginx
+        ssh -i "\${SSH_KEY}" -o StrictHostKeyChecking=no "\$REMOTE" "sudo systemctl reload nginx"
+        
+        echo "Nginx配置已部署并重新加载"
     """
 }
 
