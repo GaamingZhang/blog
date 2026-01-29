@@ -1,0 +1,339 @@
+# Docker架构与组件
+
+## 概述
+
+Docker是一个开源的容器化平台，用于开发、交付和运行应用程序。理解Docker的架构和核心组件是掌握容器技术的基础。本文将深入解析Docker的整体架构、各组件的职责以及它们之间的协作关系。
+
+## Docker整体架构
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      Docker Client                           │
+│                   (docker CLI / API)                         │
+└─────────────────────────┬───────────────────────────────────┘
+                          │ REST API
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      Docker Daemon                           │
+│                       (dockerd)                              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
+│  │   Images    │  │  Containers │  │      Networks       │ │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────┐ │
+│  │   Volumes   │  │   Plugins   │  │      Builds         │ │
+│  └─────────────┘  └─────────────┘  └─────────────────────┘ │
+└─────────────────────────┬───────────────────────────────────┘
+                          │ gRPC
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                      containerd                              │
+│              (容器运行时管理守护进程)                          │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    containerd-shim                           │
+│                  (容器进程的父进程)                           │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                         runc                                 │
+│                 (OCI容器运行时实现)                           │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     Linux Kernel                             │
+│          (Namespaces, Cgroups, UnionFS, etc.)               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## 核心组件详解
+
+### 1. Docker Client（客户端）
+
+Docker Client是用户与Docker交互的主要方式，通过命令行或API发送请求到Docker Daemon。
+
+```bash
+# 常见的docker命令都是通过Client发送到Daemon
+docker run nginx
+docker build -t myapp .
+docker ps
+```
+
+**主要特点**：
+- 可以与本地或远程的Docker Daemon通信
+- 支持REST API和Unix Socket两种通信方式
+- 一个Client可以连接多个Daemon
+
+```bash
+# 连接远程Docker Daemon
+docker -H tcp://192.168.1.100:2375 ps
+
+# 使用环境变量
+export DOCKER_HOST=tcp://192.168.1.100:2375
+docker ps
+```
+
+### 2. Docker Daemon（dockerd）
+
+Docker Daemon是Docker的核心服务进程，负责管理Docker对象（镜像、容器、网络、卷等）。
+
+**主要职责**：
+- 监听Docker API请求
+- 管理镜像的构建、拉取、推送
+- 管理容器的创建、运行、停止
+- 管理网络和存储卷
+- 与containerd通信
+
+```bash
+# 查看dockerd进程
+ps aux | grep dockerd
+
+# dockerd配置文件
+cat /etc/docker/daemon.json
+```
+
+**daemon.json配置示例**：
+```json
+{
+  "data-root": "/var/lib/docker",
+  "storage-driver": "overlay2",
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "100m",
+    "max-file": "3"
+  },
+  "registry-mirrors": ["https://mirror.example.com"],
+  "insecure-registries": ["192.168.1.100:5000"],
+  "exec-opts": ["native.cgroupdriver=systemd"],
+  "default-address-pools": [
+    {"base": "172.17.0.0/16", "size": 24}
+  ]
+}
+```
+
+### 3. containerd
+
+containerd是一个工业级的容器运行时，负责容器的生命周期管理。Docker将容器运行时的核心功能抽离出来形成了containerd。
+
+**主要功能**：
+- 镜像的推送和拉取
+- 容器的创建、启动、停止
+- 存储和网络的管理
+- 快照管理
+
+```bash
+# 查看containerd进程
+ps aux | grep containerd
+
+# 使用ctr命令直接与containerd交互
+ctr version
+ctr images list
+ctr containers list
+```
+
+**containerd与Docker的关系**：
+```
+Docker CLI → Docker Daemon → containerd → runc → Container
+```
+
+### 4. containerd-shim
+
+containerd-shim是容器进程的父进程，它的存在使得容器可以独立于containerd运行。
+
+**主要作用**：
+- 允许runc在创建容器后退出
+- 保持容器的stdin/stdout开放
+- 向containerd报告容器退出状态
+- 允许在不影响容器的情况下升级containerd
+
+```bash
+# 查看shim进程（每个容器一个）
+ps aux | grep containerd-shim
+```
+
+### 5. runc
+
+runc是OCI（Open Container Initiative）容器运行时规范的参考实现，负责实际创建和运行容器。
+
+**主要功能**：
+- 创建容器进程
+- 配置Namespace隔离
+- 配置Cgroups资源限制
+- 设置容器的根文件系统
+
+```bash
+# runc版本
+runc --version
+
+# 直接使用runc创建容器（需要OCI bundle）
+runc create mycontainer
+runc start mycontainer
+```
+
+## 组件间通信流程
+
+### 容器创建流程
+
+```
+1. 用户执行: docker run nginx
+
+2. Docker Client
+   └── 发送HTTP请求到Docker Daemon
+
+3. Docker Daemon (dockerd)
+   ├── 解析命令参数
+   ├── 检查本地是否有nginx镜像
+   ├── 如果没有，从Registry拉取镜像
+   └── 调用containerd创建容器
+
+4. containerd
+   ├── 准备容器的rootfs（从镜像）
+   ├── 生成OCI规范的config.json
+   └── 启动containerd-shim
+
+5. containerd-shim
+   └── 调用runc创建并启动容器
+
+6. runc
+   ├── 创建Namespace
+   ├── 配置Cgroups
+   ├── 设置rootfs
+   ├── 执行容器入口命令
+   └── 退出（容器由shim接管）
+
+7. 容器运行中
+   └── containerd-shim作为容器的父进程
+```
+
+## Docker对象
+
+### 镜像（Images）
+
+镜像是只读的模板，用于创建容器。
+
+```bash
+# 镜像相关命令
+docker images
+docker pull nginx:latest
+docker build -t myapp:v1 .
+docker push myregistry/myapp:v1
+docker rmi nginx:latest
+```
+
+### 容器（Containers）
+
+容器是镜像的运行实例。
+
+```bash
+# 容器相关命令
+docker ps
+docker run -d --name web nginx
+docker stop web
+docker start web
+docker rm web
+```
+
+### 网络（Networks）
+
+Docker网络允许容器之间以及容器与外部世界通信。
+
+```bash
+# 网络相关命令
+docker network ls
+docker network create mynet
+docker network connect mynet web
+docker network inspect mynet
+```
+
+### 卷（Volumes）
+
+卷用于持久化容器数据。
+
+```bash
+# 卷相关命令
+docker volume ls
+docker volume create mydata
+docker run -v mydata:/data nginx
+docker volume inspect mydata
+```
+
+## Docker版本演进
+
+| 版本 | 架构变化 |
+|------|----------|
+| Docker 1.11之前 | Docker Daemon直接管理容器 |
+| Docker 1.11 | 引入containerd和runc |
+| Docker 17.03+ | containerd成为独立项目 |
+| Docker 20.10+ | 支持cgroup v2 |
+
+## 实用命令
+
+```bash
+# 查看Docker系统信息
+docker info
+docker version
+
+# 查看各组件版本
+docker version --format '{{.Server.Components}}'
+containerd --version
+runc --version
+
+# 查看Docker事件
+docker events
+
+# 查看资源使用
+docker stats
+
+# 清理系统
+docker system prune -a
+docker system df
+```
+
+## 常见问题
+
+### Q1: Docker Daemon和containerd的区别是什么？
+
+| 组件 | 职责 |
+|------|------|
+| Docker Daemon | 高层管理（API、镜像构建、网络、卷等） |
+| containerd | 底层容器运行时（容器生命周期、镜像管理） |
+
+Docker Daemon更像是"管理者"，containerd更像是"执行者"。
+
+### Q2: 为什么需要containerd-shim？
+
+1. **解耦**：允许containerd重启而不影响运行中的容器
+2. **进程管理**：作为容器进程的父进程，收集退出状态
+3. **IO处理**：保持容器的stdin/stdout/stderr开放
+
+### Q3: runc创建容器后为什么会退出？
+
+runc遵循"fork-exec"模式：
+1. 创建容器进程并配置隔离环境
+2. 将容器进程交给containerd-shim
+3. 自己退出，释放资源
+
+这种设计使得runc可以作为一个简单的CLI工具。
+
+### Q4: 如何直接使用containerd而不通过Docker？
+
+```bash
+# 使用ctr（containerd CLI）
+ctr images pull docker.io/library/nginx:latest
+ctr run docker.io/library/nginx:latest nginx-container
+
+# 使用nerdctl（更接近docker CLI的体验）
+nerdctl run -d --name web nginx
+```
+
+### Q5: Docker Desktop和Docker Engine有什么区别？
+
+| 产品 | 描述 |
+|------|------|
+| Docker Engine | 核心容器运行时（免费、开源） |
+| Docker Desktop | 桌面应用，包含Engine+GUI+VM（个人免费，企业收费） |
+
+Docker Desktop在Mac/Windows上通过Linux VM运行Docker Engine。

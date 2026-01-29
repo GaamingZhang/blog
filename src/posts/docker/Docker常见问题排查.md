@@ -1,0 +1,689 @@
+# Docker常见问题排查
+
+## 概述
+
+在使用Docker过程中，会遇到各种各样的问题。本文整理了Docker使用中最常见的问题及其排查和解决方法，涵盖容器、镜像、网络、存储等多个方面。
+
+## 容器问题
+
+### 容器无法启动
+
+**问题表现**：容器创建后立即退出或启动失败。
+
+```bash
+# 排查步骤
+
+# 1. 查看容器状态和退出码
+docker ps -a
+docker inspect --format='{{.State.ExitCode}}' mycontainer
+
+# 2. 查看容器日志
+docker logs mycontainer
+
+# 3. 查看容器启动命令
+docker inspect --format='{{.Config.Cmd}}' mycontainer
+docker inspect --format='{{.Config.Entrypoint}}' mycontainer
+
+# 4. 交互式运行调试
+docker run -it --entrypoint bash myimage
+
+# 常见退出码含义：
+# 0: 正常退出（命令执行完成）
+# 1: 应用错误
+# 137: 收到SIGKILL（OOM或手动kill）
+# 139: 段错误（SIGSEGV）
+# 143: 收到SIGTERM
+# 126: 命令无法执行
+# 127: 命令未找到
+```
+
+**常见原因和解决**：
+
+```bash
+# 原因1: CMD命令执行完就退出
+# 解决: 使用前台运行的命令
+CMD ["nginx", "-g", "daemon off;"]
+
+# 原因2: 启动脚本有错误
+# 解决: 检查脚本权限和语法
+chmod +x entrypoint.sh
+bash -n entrypoint.sh  # 语法检查
+
+# 原因3: 找不到命令或文件
+# 解决: 检查路径和依赖
+docker run -it myimage ls -la /app
+docker run -it myimage which python
+
+# 原因4: 权限问题
+# 解决: 检查用户和文件权限
+docker run -it myimage id
+docker run -it myimage ls -la /app
+```
+
+### 容器无法停止
+
+**问题表现**：`docker stop`命令超时，容器无法正常停止。
+
+```bash
+# 排查步骤
+
+# 1. 查看容器进程
+docker top mycontainer
+
+# 2. 检查应用是否正确处理SIGTERM
+docker exec mycontainer ps aux
+
+# 3. 强制停止
+docker kill mycontainer
+
+# 4. 如果还是无法停止
+# 在主机上找到进程并kill
+PID=$(docker inspect --format '{{.State.Pid}}' mycontainer)
+sudo kill -9 $PID
+```
+
+**解决方案**：
+
+```bash
+# 确保应用正确处理信号
+# 使用exec形式的CMD，确保应用是PID 1
+CMD ["python", "app.py"]  # 正确
+CMD python app.py          # 错误，会通过shell启动
+
+# 使用tini作为init进程
+docker run --init myapp
+
+# 或在Dockerfile中
+FROM alpine
+RUN apk add --no-cache tini
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["./app"]
+```
+
+### 容器资源不足
+
+**问题表现**：容器运行缓慢或被OOM Killer杀死。
+
+```bash
+# 排查步骤
+
+# 1. 查看资源使用
+docker stats mycontainer
+
+# 2. 检查是否被OOM
+docker inspect --format='{{.State.OOMKilled}}' mycontainer
+dmesg | grep -i "out of memory"
+
+# 3. 查看资源限制
+docker inspect --format='{{.HostConfig.Memory}}' mycontainer
+docker inspect --format='{{.HostConfig.NanoCpus}}' mycontainer
+
+# 解决方案
+# 增加内存限制
+docker update --memory=1g mycontainer
+
+# 增加CPU限制
+docker update --cpus=2 mycontainer
+```
+
+## 镜像问题
+
+### 镜像拉取失败
+
+**问题表现**：`docker pull`超时或失败。
+
+```bash
+# 排查步骤
+
+# 1. 检查网络连接
+ping docker.io
+curl -I https://registry-1.docker.io/v2/
+
+# 2. 检查DNS
+nslookup registry-1.docker.io
+
+# 解决方案
+
+# 方案1: 使用镜像加速器
+# /etc/docker/daemon.json
+{
+  "registry-mirrors": [
+    "https://mirror.ccs.tencentyun.com",
+    "https://registry.docker-cn.com"
+  ]
+}
+sudo systemctl restart docker
+
+# 方案2: 配置代理
+# /etc/systemd/system/docker.service.d/proxy.conf
+[Service]
+Environment="HTTP_PROXY=http://proxy.example.com:8080"
+Environment="HTTPS_PROXY=http://proxy.example.com:8080"
+Environment="NO_PROXY=localhost,127.0.0.1"
+
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+
+# 方案3: 使用备用仓库
+docker pull quay.io/library/nginx
+```
+
+### 镜像构建失败
+
+**问题表现**：`docker build`过程中出错。
+
+```bash
+# 排查步骤
+
+# 1. 查看详细构建日志
+docker build --progress=plain -t myapp .
+
+# 2. 定位失败的层
+# 构建会显示每一步的结果，找到失败的步骤
+
+# 3. 从失败点调试
+# 找到最后成功的层ID，从那里开始调试
+docker run -it <last-success-layer-id> bash
+
+# 常见问题
+
+# 问题1: 包下载失败
+# 解决: 更换软件源
+RUN sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+
+# 问题2: 找不到文件
+# 解决: 检查.dockerignore和COPY路径
+cat .dockerignore
+docker build --no-cache -t myapp .
+
+# 问题3: 权限问题
+# 解决: 添加必要的权限
+RUN chmod +x /app/entrypoint.sh
+```
+
+### 镜像过大
+
+**问题表现**：构建的镜像体积过大。
+
+```bash
+# 分析镜像大小
+
+# 1. 查看每层大小
+docker history myimage
+
+# 2. 使用dive分析
+dive myimage
+
+# 优化方案
+
+# 1. 使用小基础镜像
+FROM alpine:3.18          # ~5MB
+FROM python:3.11-slim     # ~150MB vs ~1GB
+
+# 2. 多阶段构建
+FROM node:18 AS builder
+WORKDIR /app
+COPY . .
+RUN npm ci && npm run build
+
+FROM nginx:alpine
+COPY --from=builder /app/dist /usr/share/nginx/html
+
+# 3. 合并RUN命令，清理缓存
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends nginx && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# 4. 使用.dockerignore
+# .dockerignore
+node_modules
+.git
+*.md
+Dockerfile
+```
+
+## 网络问题
+
+### 容器无法访问外网
+
+**问题表现**：容器内无法ping外部地址或DNS解析失败。
+
+```bash
+# 排查步骤
+
+# 1. 检查IP连通性
+docker exec mycontainer ping -c 3 8.8.8.8
+
+# 2. 检查DNS
+docker exec mycontainer cat /etc/resolv.conf
+docker exec mycontainer nslookup google.com
+
+# 3. 检查主机IP转发
+sysctl net.ipv4.ip_forward
+# 如果是0，开启它
+sudo sysctl -w net.ipv4.ip_forward=1
+
+# 4. 检查iptables
+sudo iptables -t nat -L POSTROUTING -n -v
+
+# 解决方案
+
+# 方案1: 配置DNS
+docker run --dns 8.8.8.8 myapp
+
+# 或全局配置
+# /etc/docker/daemon.json
+{
+  "dns": ["8.8.8.8", "8.8.4.4"]
+}
+
+# 方案2: 重建Docker网络
+docker network rm bridge
+sudo systemctl restart docker
+```
+
+### 容器间无法通信
+
+**问题表现**：同一网络的容器无法通过名称访问。
+
+```bash
+# 排查步骤
+
+# 1. 检查容器是否在同一网络
+docker inspect --format='{{json .NetworkSettings.Networks}}' container1 | jq
+docker inspect --format='{{json .NetworkSettings.Networks}}' container2 | jq
+
+# 2. 检查是否能通过IP访问
+docker exec container1 ping <container2-ip>
+
+# 3. 检查DNS解析
+docker exec container1 nslookup container2
+
+# 解决方案
+
+# 默认bridge网络不支持DNS，使用自定义网络
+docker network create mynet
+docker run -d --name app1 --network mynet myapp
+docker run -d --name app2 --network mynet myapp
+
+# 现在可以通过名称访问
+docker exec app1 ping app2
+```
+
+### 端口映射不生效
+
+**问题表现**：配置了端口映射但无法访问。
+
+```bash
+# 排查步骤
+
+# 1. 确认端口映射配置
+docker port mycontainer
+
+# 2. 检查容器内应用是否监听
+docker exec mycontainer netstat -tlnp
+
+# 3. 检查主机端口是否被占用
+sudo netstat -tlnp | grep :8080
+
+# 4. 检查防火墙
+sudo iptables -L -n
+sudo firewall-cmd --list-all
+
+# 解决方案
+
+# 确保应用监听0.0.0.0而不是127.0.0.1
+# 在容器内
+docker exec mycontainer netstat -tlnp
+# 应该看到 0.0.0.0:8080 而不是 127.0.0.1:8080
+
+# 检查应用配置
+# Node.js: app.listen(8080, '0.0.0.0')
+# Python Flask: app.run(host='0.0.0.0', port=8080)
+```
+
+## 存储问题
+
+### 磁盘空间不足
+
+**问题表现**：Docker报错"no space left on device"。
+
+```bash
+# 排查步骤
+
+# 1. 查看Docker磁盘使用
+docker system df
+docker system df -v
+
+# 2. 查看具体占用
+sudo du -sh /var/lib/docker/*
+
+# 解决方案
+
+# 1. 清理未使用的资源
+docker system prune -a --volumes
+
+# 2. 清理特定资源
+docker container prune    # 清理停止的容器
+docker image prune -a     # 清理未使用的镜像
+docker volume prune       # 清理未使用的卷
+docker network prune      # 清理未使用的网络
+
+# 3. 清理构建缓存
+docker builder prune -a
+
+# 4. 清理日志
+# 清空所有容器日志
+docker ps -q | xargs -I {} sh -c 'truncate -s 0 $(docker inspect --format="{{.LogPath}}" {})'
+
+# 5. 配置日志轮转
+# /etc/docker/daemon.json
+{
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  }
+}
+```
+
+### 数据卷权限问题
+
+**问题表现**：容器内无法读写挂载的卷。
+
+```bash
+# 排查步骤
+
+# 1. 检查挂载
+docker inspect --format='{{json .Mounts}}' mycontainer | jq
+
+# 2. 检查容器内用户
+docker exec mycontainer id
+
+# 3. 检查主机目录权限
+ls -la /path/to/volume
+
+# 解决方案
+
+# 方案1: 运行时指定用户
+docker run -u $(id -u):$(id -g) -v $(pwd)/data:/app/data myapp
+
+# 方案2: 修改主机目录权限
+sudo chown -R 1000:1000 ./data
+# 或
+sudo chmod 777 ./data
+
+# 方案3: Dockerfile中使用相同的UID
+FROM alpine
+ARG UID=1000
+RUN adduser -D -u $UID appuser
+USER appuser
+```
+
+### 卷数据丢失
+
+**问题表现**：容器重启后数据丢失。
+
+```bash
+# 排查步骤
+
+# 1. 确认使用的是卷而不是容器层
+docker inspect --format='{{json .Mounts}}' mycontainer | jq
+
+# 2. 检查卷是否存在
+docker volume ls
+docker volume inspect myvolume
+
+# 常见原因
+
+# 原因1: 使用了匿名卷但容器被删除
+# 解决: 使用命名卷
+docker run -v mydata:/app/data myapp
+
+# 原因2: 使用了--rm标志
+# 解决: 不使用--rm或配合命名卷
+docker run --rm -v mydata:/app/data myapp
+
+# 原因3: 混淆了绑定挂载和卷
+# 绑定挂载使用绝对路径
+docker run -v /host/path:/container/path myapp
+# 命名卷使用名称
+docker run -v myvolume:/container/path myapp
+```
+
+## Docker Daemon问题
+
+### Docker服务无法启动
+
+**问题表现**：`docker`命令报错无法连接到daemon。
+
+```bash
+# 排查步骤
+
+# 1. 检查Docker服务状态
+sudo systemctl status docker
+
+# 2. 查看详细日志
+sudo journalctl -u docker -n 100
+
+# 3. 检查配置文件语法
+sudo dockerd --validate
+
+# 常见原因和解决
+
+# 原因1: 配置文件语法错误
+# 解决: 检查JSON格式
+cat /etc/docker/daemon.json | jq
+
+# 原因2: 存储驱动问题
+# 解决: 重置存储
+sudo rm -rf /var/lib/docker
+sudo systemctl start docker
+
+# 原因3: 磁盘空间不足
+# 解决: 清理空间
+df -h /var/lib/docker
+```
+
+### Docker变慢
+
+**问题表现**：Docker命令响应慢，容器启动慢。
+
+```bash
+# 排查步骤
+
+# 1. 检查系统资源
+top
+iostat -x 1
+free -h
+
+# 2. 检查Docker信息
+docker info
+docker system df
+
+# 解决方案
+
+# 1. 清理资源
+docker system prune -a --volumes
+
+# 2. 重启Docker服务
+sudo systemctl restart docker
+
+# 3. 检查存储驱动
+docker info | grep "Storage Driver"
+# 建议使用overlay2
+
+# 4. 优化daemon配置
+# /etc/docker/daemon.json
+{
+  "storage-driver": "overlay2",
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  }
+}
+```
+
+## Docker Compose问题
+
+### 服务启动顺序问题
+
+**问题表现**：依赖的服务还未就绪，应用就尝试连接。
+
+```bash
+# 解决方案
+
+# 方案1: 使用healthcheck
+services:
+  db:
+    image: postgres
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    depends_on:
+      db:
+        condition: service_healthy
+
+# 方案2: 应用内重试
+# 在应用代码中实现连接重试逻辑
+
+# 方案3: 使用wait-for-it脚本
+COPY wait-for-it.sh /wait-for-it.sh
+CMD ["/wait-for-it.sh", "db:5432", "--", "python", "app.py"]
+```
+
+### 环境变量不生效
+
+**问题表现**：配置的环境变量在容器中看不到。
+
+```bash
+# 排查步骤
+
+# 1. 验证compose配置
+docker-compose config
+
+# 2. 查看容器环境变量
+docker-compose exec app env
+
+# 常见原因
+
+# 原因1: .env文件位置错误
+# .env文件应与docker-compose.yml同目录
+
+# 原因2: 变量名拼写错误
+# 检查大小写
+
+# 原因3: 引号使用错误
+environment:
+  - API_KEY=secret123      # 正确
+  - API_KEY="secret123"    # 有时会有问题
+```
+
+## 实用排查命令
+
+```bash
+# 系统状态
+docker info
+docker system df
+docker system events
+
+# 容器状态
+docker ps -a
+docker logs mycontainer
+docker inspect mycontainer
+
+# 资源使用
+docker stats
+
+# 网络调试
+docker network ls
+docker network inspect bridge
+docker exec mycontainer ping target
+
+# 清理
+docker system prune -a --volumes
+```
+
+## 常见问题
+
+### Q1: 如何查看Docker的详细日志？
+
+```bash
+# Docker daemon日志
+sudo journalctl -u docker -f
+
+# 容器日志
+docker logs -f mycontainer
+
+# 构建日志
+docker build --progress=plain -t myapp .
+```
+
+### Q2: 容器时区不对怎么办？
+
+```bash
+# 方法1: 挂载时区文件
+docker run -v /etc/localtime:/etc/localtime:ro myapp
+
+# 方法2: 设置环境变量
+docker run -e TZ=Asia/Shanghai myapp
+
+# 方法3: Dockerfile中设置
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime
+```
+
+### Q3: 如何限制容器的日志大小？
+
+```bash
+# 运行时指定
+docker run --log-opt max-size=10m --log-opt max-file=3 myapp
+
+# 全局配置
+# /etc/docker/daemon.json
+{
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  }
+}
+```
+
+### Q4: 如何备份和恢复Docker数据？
+
+```bash
+# 备份卷
+docker run --rm -v myvolume:/source -v $(pwd):/backup alpine \
+  tar czf /backup/volume-backup.tar.gz -C /source .
+
+# 恢复卷
+docker volume create myvolume
+docker run --rm -v myvolume:/target -v $(pwd):/backup alpine \
+  tar xzf /backup/volume-backup.tar.gz -C /target
+
+# 备份容器
+docker export mycontainer > container-backup.tar
+
+# 导入容器
+docker import container-backup.tar myimage:backup
+```
+
+### Q5: Docker Desktop性能优化？
+
+```bash
+# macOS/Windows
+# 1. 减少文件共享目录
+# 2. 使用delegated/cached模式
+docker run -v $(pwd):/app:delegated myapp
+
+# 3. 调整资源分配
+# Docker Desktop Settings -> Resources
+
+# 4. 使用命名卷代替绑定挂载（对于node_modules等）
+docker run -v $(pwd):/app -v node_modules:/app/node_modules myapp
+```

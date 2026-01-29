@@ -1,12 +1,13 @@
 ---
-date: 2025-07-01
+date: 2026-01-26
 author: Gaaming Zhang
 isOriginal: false
 article: true
 category:
-  - docker
+  - Docker
 tag:
-  - docker
+  - Docker
+  - ClaudeCode
 ---
 
 # Docker容器创建过程

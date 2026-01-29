@@ -1,5 +1,5 @@
 ---
-date: 2026-01-06
+date: 2026-01-26
 author: Gaaming Zhang
 isOriginal: false
 article: true
@@ -7,6 +7,7 @@ category:
   - Docker
 tag:
   - Docker
+  - ClaudeCode
 ---
 
 # Docker Compose 文件结构

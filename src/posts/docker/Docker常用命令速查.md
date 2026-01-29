@@ -1,0 +1,510 @@
+# Docker常用命令速查
+
+## 概述
+
+本文整理Docker日常使用中最常用的命令，按功能分类，方便快速查阅。每个命令都附带常用选项和实际示例。
+
+## 镜像操作
+
+### 镜像获取与管理
+
+```bash
+# 搜索镜像
+docker search nginx
+docker search --filter stars=100 nginx    # 过滤星数>100
+
+# 拉取镜像
+docker pull nginx                          # 拉取latest
+docker pull nginx:1.25                     # 指定版本
+docker pull nginx:1.25-alpine              # 指定变体
+docker pull --platform linux/arm64 nginx   # 指定平台
+
+# 列出本地镜像
+docker images                              # 列出所有镜像
+docker images nginx                        # 列出特定镜像
+docker images -q                           # 只显示镜像ID
+docker images --filter dangling=true       # 显示悬空镜像
+
+# 删除镜像
+docker rmi nginx:1.25                      # 删除指定镜像
+docker rmi $(docker images -q)             # 删除所有镜像
+docker image prune                         # 删除悬空镜像
+docker image prune -a                      # 删除所有未使用镜像
+
+# 镜像标签
+docker tag nginx:latest myregistry/nginx:v1
+
+# 推送镜像
+docker push myregistry/nginx:v1
+```
+
+### 镜像构建
+
+```bash
+# 基本构建
+docker build -t myapp:v1 .
+
+# 指定Dockerfile
+docker build -f Dockerfile.prod -t myapp:prod .
+
+# 构建参数
+docker build --build-arg NODE_ENV=production -t myapp .
+
+# 多阶段构建指定目标
+docker build --target builder -t myapp:builder .
+
+# 不使用缓存
+docker build --no-cache -t myapp .
+
+# 查看构建历史
+docker history myapp:v1
+```
+
+### 镜像导入导出
+
+```bash
+# 导出镜像
+docker save -o nginx.tar nginx:latest
+docker save nginx:latest | gzip > nginx.tar.gz
+
+# 导入镜像
+docker load -i nginx.tar
+docker load < nginx.tar.gz
+```
+
+## 容器操作
+
+### 容器生命周期
+
+```bash
+# 创建容器（不启动）
+docker create --name web nginx
+
+# 启动容器
+docker start web
+
+# 运行容器（创建+启动）
+docker run -d --name web nginx            # 后台运行
+docker run -it --name test alpine sh      # 交互式运行
+docker run --rm alpine echo "hello"       # 运行后自动删除
+
+# 停止容器
+docker stop web                           # 优雅停止
+docker stop -t 30 web                     # 30秒超时
+docker kill web                           # 强制停止
+
+# 重启容器
+docker restart web
+docker restart -t 10 web
+
+# 暂停/恢复容器
+docker pause web
+docker unpause web
+
+# 删除容器
+docker rm web                             # 删除已停止容器
+docker rm -f web                          # 强制删除运行中容器
+docker rm -v web                          # 删除容器和关联卷
+docker container prune                     # 删除所有已停止容器
+```
+
+### 容器运行选项
+
+```bash
+# 完整运行示例
+docker run -d \
+  --name myapp \
+  --hostname myhost \
+  --restart=unless-stopped \
+  -p 8080:80 \
+  -p 8443:443 \
+  -v /data:/app/data \
+  -v config:/app/config \
+  -e NODE_ENV=production \
+  -e "API_KEY=secret" \
+  --env-file .env \
+  -w /app \
+  -u 1000:1000 \
+  --memory=512m \
+  --cpus=1 \
+  --network mynet \
+  --dns 8.8.8.8 \
+  --add-host db:192.168.1.100 \
+  myapp:v1
+
+# 常用选项说明
+# -d         后台运行
+# --name     容器名称
+# --rm       运行后删除
+# -it        交互式 + tty
+# -p         端口映射
+# -v         卷挂载
+# -e         环境变量
+# -w         工作目录
+# -u         运行用户
+# --restart  重启策略
+# --network  网络
+```
+
+### 容器信息查看
+
+```bash
+# 列出容器
+docker ps                                  # 运行中的容器
+docker ps -a                               # 所有容器
+docker ps -q                               # 只显示ID
+docker ps -s                               # 显示大小
+docker ps --filter status=exited           # 按状态过滤
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+# 容器详情
+docker inspect web
+docker inspect --format '{{.State.Status}}' web
+docker inspect --format '{{.NetworkSettings.IPAddress}}' web
+
+# 容器日志
+docker logs web
+docker logs -f web                         # 跟踪输出
+docker logs --tail 100 web                 # 最后100行
+docker logs --since 1h web                 # 最近1小时
+docker logs -t web                         # 显示时间戳
+
+# 容器进程
+docker top web
+docker top web aux
+
+# 容器资源使用
+docker stats
+docker stats web
+docker stats --no-stream                   # 一次性输出
+
+# 容器文件变化
+docker diff web
+```
+
+### 容器交互
+
+```bash
+# 执行命令
+docker exec web ls /app
+docker exec -it web bash                   # 进入容器
+docker exec -it web sh                     # Alpine等无bash的镜像
+docker exec -u root web whoami             # 以root执行
+docker exec -w /app web pwd                # 指定工作目录
+docker exec -e VAR=value web env           # 设置环境变量
+
+# 附加到容器
+docker attach web                          # Ctrl+P, Ctrl+Q 分离
+
+# 文件复制
+docker cp web:/app/config.json ./          # 从容器复制
+docker cp ./config.json web:/app/          # 复制到容器
+docker cp web:/app/logs/ ./logs/           # 复制目录
+```
+
+### 容器导出导入
+
+```bash
+# 导出容器（文件系统）
+docker export web > web.tar
+docker export -o web.tar web
+
+# 导入为镜像
+docker import web.tar myapp:imported
+```
+
+## 网络操作
+
+```bash
+# 列出网络
+docker network ls
+
+# 创建网络
+docker network create mynet
+docker network create --driver bridge --subnet 192.168.100.0/24 mynet
+
+# 查看网络详情
+docker network inspect mynet
+
+# 连接/断开网络
+docker network connect mynet web
+docker network disconnect mynet web
+
+# 删除网络
+docker network rm mynet
+docker network prune                       # 删除未使用网络
+```
+
+## 卷操作
+
+```bash
+# 列出卷
+docker volume ls
+
+# 创建卷
+docker volume create mydata
+
+# 查看卷详情
+docker volume inspect mydata
+
+# 删除卷
+docker volume rm mydata
+docker volume prune                        # 删除未使用卷
+```
+
+## 系统操作
+
+```bash
+# Docker信息
+docker info
+docker version
+
+# 磁盘使用
+docker system df
+docker system df -v                        # 详细信息
+
+# 系统清理
+docker system prune                        # 清理未使用资源
+docker system prune -a                     # 包括未使用镜像
+docker system prune --volumes              # 包括卷
+
+# 事件监控
+docker events
+docker events --since 1h
+docker events --filter type=container
+```
+
+## Docker Compose
+
+```bash
+# 启动服务
+docker-compose up
+docker-compose up -d                       # 后台启动
+docker-compose up --build                  # 重新构建
+docker-compose up --scale web=3            # 扩展实例
+
+# 停止服务
+docker-compose down
+docker-compose down -v                     # 删除卷
+docker-compose down --rmi all              # 删除镜像
+
+# 查看状态
+docker-compose ps
+docker-compose logs
+docker-compose logs -f web
+
+# 执行命令
+docker-compose exec web bash
+docker-compose run --rm web npm test
+
+# 其他操作
+docker-compose build                       # 构建服务
+docker-compose pull                        # 拉取镜像
+docker-compose restart                     # 重启服务
+docker-compose config                      # 验证配置
+```
+
+## 常用组合命令
+
+### 清理操作
+
+```bash
+# 停止所有容器
+docker stop $(docker ps -q)
+
+# 删除所有容器
+docker rm $(docker ps -aq)
+
+# 删除所有镜像
+docker rmi $(docker images -q)
+
+# 删除所有悬空镜像
+docker image prune -f
+
+# 删除未使用的卷
+docker volume prune -f
+
+# 完整清理
+docker system prune -a --volumes -f
+
+# 删除特定状态的容器
+docker rm $(docker ps -aq -f status=exited)
+
+# 删除特定镜像
+docker rmi $(docker images -q -f dangling=true)
+```
+
+### 批量操作
+
+```bash
+# 重启所有容器
+docker restart $(docker ps -q)
+
+# 更新所有容器
+docker-compose pull && docker-compose up -d
+
+# 查看所有容器IP
+docker ps -q | xargs -I {} docker inspect --format '{{.Name}} - {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' {}
+
+# 进入最近创建的容器
+docker exec -it $(docker ps -lq) bash
+
+# 查看所有容器日志大小
+docker ps -q | xargs -I {} sh -c 'echo "$(docker inspect --format="{{.Name}}" {}): $(du -sh $(docker inspect --format="{{.LogPath}}" {}) 2>/dev/null | cut -f1)"'
+```
+
+### 调试命令
+
+```bash
+# 查看容器启动命令
+docker inspect --format '{{.Config.Cmd}}' container
+
+# 查看容器环境变量
+docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' container
+
+# 查看容器挂载
+docker inspect --format '{{range .Mounts}}{{.Source}} -> {{.Destination}}{{"\n"}}{{end}}' container
+
+# 查看容器网络
+docker inspect --format '{{json .NetworkSettings.Networks}}' container | jq
+
+# 查看容器端口映射
+docker inspect --format '{{range $p, $conf := .NetworkSettings.Ports}}{{$p}} -> {{(index $conf 0).HostPort}}{{"\n"}}{{end}}' container
+
+# 实时监控容器事件
+docker events --filter container=web
+
+# 查看容器进程树
+docker exec container pstree -p
+
+# 检查容器健康状态
+docker inspect --format '{{json .State.Health}}' container | jq
+```
+
+### 镜像分析
+
+```bash
+# 查看镜像层
+docker history myimage
+
+# 查看镜像详细层信息
+docker history --no-trunc myimage
+
+# 分析镜像大小
+docker images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}"
+
+# 查看镜像的Dockerfile命令
+docker history --no-trunc --format "{{.CreatedBy}}" myimage
+```
+
+## 格式化输出
+
+```bash
+# 容器列表自定义格式
+docker ps --format "table {{.ID}}\t{{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+# 镜像列表自定义格式
+docker images --format "{{.Repository}}:{{.Tag}} - {{.Size}}"
+
+# JSON输出
+docker inspect container | jq '.[0].NetworkSettings'
+
+# 只获取特定字段
+docker inspect --format '{{.State.Status}}' container
+docker inspect --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' container
+```
+
+## 环境变量
+
+```bash
+# 设置Docker主机（远程Docker）
+export DOCKER_HOST=tcp://192.168.1.100:2376
+
+# 设置Docker TLS
+export DOCKER_TLS_VERIFY=1
+export DOCKER_CERT_PATH=/path/to/certs
+
+# 设置Compose项目名
+export COMPOSE_PROJECT_NAME=myproject
+
+# 设置Compose文件
+export COMPOSE_FILE=docker-compose.prod.yml
+```
+
+## 别名建议
+
+```bash
+# 添加到 ~/.bashrc 或 ~/.zshrc
+
+# Docker
+alias d='docker'
+alias dps='docker ps'
+alias dpsa='docker ps -a'
+alias di='docker images'
+alias dex='docker exec -it'
+alias dlogs='docker logs -f'
+alias dstop='docker stop $(docker ps -q)'
+alias drm='docker rm $(docker ps -aq)'
+alias drmi='docker rmi $(docker images -q)'
+alias dprune='docker system prune -a --volumes -f'
+
+# Docker Compose
+alias dc='docker-compose'
+alias dcu='docker-compose up -d'
+alias dcd='docker-compose down'
+alias dcl='docker-compose logs -f'
+alias dcps='docker-compose ps'
+alias dcr='docker-compose restart'
+alias dcb='docker-compose build'
+
+# 快速进入容器
+dsh() {
+    docker exec -it $1 ${2:-bash}
+}
+```
+
+## 常见问题快速解决
+
+```bash
+# 容器无法启动 - 查看日志
+docker logs container
+
+# 容器无法访问 - 检查网络
+docker inspect --format '{{.NetworkSettings.IPAddress}}' container
+docker exec container ping target
+
+# 磁盘空间不足 - 清理
+docker system prune -a --volumes
+
+# 权限问题 - 检查用户
+docker exec container id
+docker exec container ls -la /path
+
+# 端口冲突 - 检查占用
+netstat -tlnp | grep :8080
+docker ps --format "{{.Ports}}"
+
+# 容器无法删除 - 强制删除
+docker rm -f container
+docker rm -v container
+```
+
+## 命令速查表
+
+| 操作 | 命令 |
+|------|------|
+| 运行容器 | `docker run -d --name web nginx` |
+| 进入容器 | `docker exec -it web bash` |
+| 查看日志 | `docker logs -f web` |
+| 停止容器 | `docker stop web` |
+| 删除容器 | `docker rm web` |
+| 构建镜像 | `docker build -t myapp .` |
+| 拉取镜像 | `docker pull nginx` |
+| 推送镜像 | `docker push myregistry/myapp` |
+| 查看容器 | `docker ps -a` |
+| 查看镜像 | `docker images` |
+| 查看网络 | `docker network ls` |
+| 查看卷 | `docker volume ls` |
+| 清理系统 | `docker system prune -a` |
+| 查看资源 | `docker stats` |
+| 复制文件 | `docker cp web:/app/file .` |

@@ -1,5 +1,5 @@
 ---
-date: 2026-01-06
+date: 2026-01-26
 author: Gaaming Zhang
 isOriginal: false
 article: true
@@ -7,9 +7,10 @@ category:
   - Docker
 tag:
   - Docker
+  - ClaudeCode
 ---
 
-# 怎么创建Docker镜像
+# 如何创建Docker镜像
 
 ## 1. 引言和概述
 
