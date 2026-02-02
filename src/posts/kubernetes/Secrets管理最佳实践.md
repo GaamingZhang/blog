@@ -1,3 +1,15 @@
+---
+date: 2026-01-30
+author: Gaaming Zhang
+isOriginal: true
+article: true
+category:
+  - Kubernetes
+tag:
+  - Kubernetes
+  - ClaudeCode
+---
+
 # Secrets管理最佳实践
 
 ## 为什么Secret管理这么重要？

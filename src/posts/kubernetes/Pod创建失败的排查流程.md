@@ -1,3 +1,15 @@
+---
+date: 2026-01-30
+author: Gaaming Zhang
+isOriginal: true
+article: true
+category:
+  - Kubernetes
+tag:
+  - Kubernetes
+  - ClaudeCode
+---
+
 # 如何排查Kubernetes集群中Pod启动失败
 
 ## 概述

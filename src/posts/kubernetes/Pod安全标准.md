@@ -1,3 +1,15 @@
+---
+date: 2026-01-30
+author: Gaaming Zhang
+isOriginal: true
+article: true
+category:
+  - Kubernetes
+tag:
+  - Kubernetes
+  - ClaudeCode
+---
+
 # Pod安全标准
 
 ## 为什么需要Pod安全限制？

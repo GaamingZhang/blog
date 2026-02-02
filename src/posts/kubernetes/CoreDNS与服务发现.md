@@ -1,3 +1,15 @@
+---
+date: 2026-01-30
+author: Gaaming Zhang
+isOriginal: true
+article: true
+category:
+  - Kubernetes
+tag:
+  - Kubernetes
+  - ClaudeCode
+---
+
 # CoreDNS与服务发现
 
 ## 为什么需要服务发现？

@@ -1,3 +1,15 @@
+---
+date: 2026-01-30
+author: Gaaming Zhang
+isOriginal: true
+article: true
+category:
+  - Kubernetes
+tag:
+  - Kubernetes
+  - ClaudeCode
+---
+
 # Pod基础与生命周期
 
 ## 什么是Pod

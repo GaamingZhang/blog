@@ -4,7 +4,6 @@ export default sidebar({
   "/": [
     "",
     "intro",
-    "quickReview",
     {
       text: "文档",
       icon: "book",
