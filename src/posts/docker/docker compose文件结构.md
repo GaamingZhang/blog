@@ -10,550 +10,667 @@ tag:
   - ClaudeCode
 ---
 
-# Docker Compose 文件结构
+# Docker Compose：多容器编排的原理
 
-## 基本概念
+## 为什么需要Docker Compose
 
-Docker Compose 是 Docker 官方提供的用于定义和运行多容器 Docker 应用程序的工具。通过 Compose 文件（通常命名为 `docker-compose.yml`），用户可以使用 YAML 格式定义应用程序的服务、网络和存储卷等配置，然后通过单一命令启动、停止和管理整个应用程序栈。
+想象你要部署一个Web应用，它包含：
+- 一个Nginx反向代理
+- 两个Node.js应用服务器
+- 一个PostgreSQL数据库
+- 一个Redis缓存
+- 一个Prometheus监控
 
-### 核心优势
-- **简化配置**：使用 YAML 文件统一管理多容器应用的所有配置
-- **一键部署**：通过 `docker-compose up` 命令快速部署整个应用栈
-- **环境一致性**：确保开发、测试和生产环境的配置一致性
-- **版本控制**：Compose 文件可以纳入版本控制系统，便于团队协作和版本管理
-- **扩展灵活**：支持通过环境变量和配置文件进行灵活的配置管理
+如果用`docker run`命令逐个启动，你需要：
 
-## 文件格式与命名规范
+```bash
+docker network create myapp-net
+docker run -d --name redis --network myapp-net redis
+docker run -d --name postgres --network myapp-net -e POSTGRES_PASSWORD=secret postgres
+docker run -d --name app1 --network myapp-net -e DB_HOST=postgres myapp:v1
+docker run -d --name app2 --network myapp-net -e DB_HOST=postgres myapp:v1
+docker run -d --name nginx --network myapp-net -p 80:80 nginx
+docker run -d --name prometheus --network myapp-net prometheus
+```
 
-### 文件格式
-Docker Compose 文件使用 YAML 格式编写，需要遵循 YAML 的语法规则：
-- 使用缩进表示层级关系（推荐使用 2 个空格）
-- 使用 `#` 表示注释
-- 使用键值对 `key: value` 表示配置项
-- 使用短横线 `-` 表示列表项
+**问题**：
+- 命令太多，容易出错
+- 启动顺序难以控制
+- 环境变量到处重复
+- 团队协作时难以同步配置
 
-### 命名规范
-- **默认文件名**：`docker-compose.yml`（推荐使用）
-- **替代文件名**：`docker-compose.yaml`（与默认文件名等效）
-- **环境特定文件**：
-  - `docker-compose.override.yml`：默认覆盖文件
-  - `docker-compose.prod.yml`：生产环境配置
-  - `docker-compose.dev.yml`：开发环境配置
+**Docker Compose的解决方案**：用一个YAML文件描述所有服务，一条命令启动全部。
 
-### 文件版本
-Compose 文件支持多个版本，不同版本对应不同的 Docker Engine 版本要求：
+---
 
-| Compose 文件版本 | Docker Engine 版本要求 |
-|----------------|----------------------|
-| 3.x            | 17.06.0+             |
-| 2.4            | 17.12.0+             |
-| 2.3            | 17.06.0+             |
-| 2.2            | 1.13.0+              |
-| 2.1            | 1.12.0+              |
-| 2.0            | 1.10.0+              |
-| 1.x            | 1.9.1+               |
+## Compose的核心概念
 
-**注意**：建议使用最新的 3.x 版本，以获得最完整的功能支持。
+### Project（项目）
 
-## 核心结构
+Compose会自动为你的应用创建一个"项目"，默认使用文件夹名：
 
-Docker Compose 文件的核心结构由以下几个顶级配置部分组成：
+```
+/home/user/myapp/
+  ├─ docker-compose.yml
+  └─ app/
+
+项目名：myapp
+```
+
+**项目的作用**：
+- 所有资源都有项目前缀（`myapp_web_1`）
+- 同一项目的容器共享专用网络
+- 可以通过项目名隔离不同环境
+
+### Service（服务）
+
+服务不是容器，而是**容器的定义模板**。一个服务可以运行多个容器实例。
+
+```
+服务定义：web
+  ↓
+实际容器：myapp_web_1, myapp_web_2, myapp_web_3
+```
+
+### 自动网络
+
+Compose自动创建一个网络，所有服务默认加入：
+
+```
+网络名：myapp_default
+
+容器可以用服务名互相访问：
+app → http://db:5432
+app → redis://cache:6379
+```
+
+---
+
+## Compose文件的基本结构
+
+一个Compose文件由几个顶级键组成：
 
 ```yaml
-# Compose 文件版本
-version: '3.8'
+version: '3.8'     # Compose文件格式版本
 
-# 服务定义
-services:
-  # 服务名称
-  service_name:
-    # 服务配置
-    build: .
-    image: service_image
+services:          # 服务定义（核心）
+  web:
+    ...
+  db:
     ...
 
-# 网络配置
-networks:
-  # 网络名称
-  network_name:
-    # 网络配置
-    driver: bridge
+networks:          # 自定义网络（可选）
+  frontend:
     ...
 
-# 存储卷配置
-volumes:
-  # 卷名称
-  volume_name:
-    # 卷配置
-    driver: local
-    ...
-
-# 配置文件
-configs:
-  # 配置名称
-  config_name:
-    # 配置内容
-    file: ./config.ini
-    ...
-
-# 机密信息
-secrets:
-  # 机密名称
-  secret_name:
-    # 机密内容
-    file: ./secret.txt
+volumes:           # 持久化卷（可选）
+  db_data:
     ...
 ```
 
-### Services（核心配置）
-`services` 是 Compose 文件中最重要的部分，用于定义应用程序的各个服务容器。每个服务可以包含以下配置项：
+---
 
-#### 镜像与构建
+## Services：应用的组件定义
+
+### 镜像来源：image vs build
+
+每个服务需要指定镜像来源：
+
+**方式1：使用现成的镜像**
+
 ```yaml
 services:
-  web:
-    # 使用已存在的镜像
-    image: nginx:latest
-    
-    # 或从 Dockerfile 构建镜像
-    build:
-      context: .
-      dockerfile: Dockerfile.prod
-      args:
-        - BUILD_ARG=value
+  db:
+    image: postgres:15
 ```
 
-#### 容器配置
+**工作原理**：Compose直接使用这个镜像，不需要构建。
+
+**方式2：从Dockerfile构建**
+
 ```yaml
 services:
-  web:
-    # 容器名称
-    container_name: my_nginx
-    
-    # 重启策略
-    restart: always  # always, on-failure, unless-stopped, no
-    
-    # 容器命令
-    command: ["nginx", "-g", "daemon off;"]
-    
-    # 入口点
-    entrypoint: ["/app/entrypoint.sh"]
-    
-    # 工作目录
-    working_dir: /app
+  app:
+    build: ./app
 ```
 
-#### 网络配置
+**工作原理**：
+1. Compose查找`./app/Dockerfile`
+2. 执行`docker build`构建镜像
+3. 使用构建的镜像创建容器
+
+**方式3：构建并命名镜像**
+
 ```yaml
 services:
-  web:
-    # 端口映射
-    ports:
-      - "80:80"  # 主机端口:容器端口
-      - "443:443"
-      - "127.0.0.1:8080:80"  # 指定主机 IP
-    
-    # 网络连接
+  app:
+    build: ./app
+    image: myapp:latest
+```
+
+**工作原理**：构建后给镜像打上`myapp:latest`标签，可以推送到仓库。
+
+---
+
+## 环境变量：三种传递方式
+
+### 方式1：直接定义
+
+```yaml
+services:
+  app:
+    environment:
+      - DEBUG=true
+      - DB_HOST=postgres
+```
+
+**优点**：简单直观
+**缺点**：敏感信息暴露在配置文件中
+
+### 方式2：从.env文件读取
+
+```yaml
+# docker-compose.yml
+services:
+  app:
+    environment:
+      - API_KEY=${API_KEY}
+```
+
+```bash
+# .env文件
+API_KEY=secret123
+DB_PASSWORD=password
+```
+
+**工作原理**：
+1. Compose自动读取`.env`文件
+2. 变量替换：`${API_KEY}` → `secret123`
+3. 传递给容器
+
+**优点**：敏感信息不入版本控制（.gitignore添加.env）
+
+### 方式3：从文件加载多个变量
+
+```yaml
+services:
+  app:
+    env_file:
+      - .env.common
+      - .env.production
+```
+
+**工作原理**：按顺序读取多个env文件，后面的覆盖前面的。
+
+---
+
+## 网络：容器间通信的桥梁
+
+### 默认网络行为
+
+Compose自动做了三件事：
+
+1. **创建网络**：`项目名_default`
+2. **连接所有服务**：每个容器都加入这个网络
+3. **DNS解析**：服务名自动解析为容器IP
+
+```
+容器web尝试访问：http://api:3000
+         ↓
+Compose内置DNS：
+"api" → 172.18.0.3
+         ↓
+连接成功
+```
+
+### 自定义网络：服务分组
+
+```yaml
+services:
+  nginx:
+    networks:
+      - frontend
+
+  app:
     networks:
       - frontend
       - backend
-    
-    # 主机名
-    hostname: web-server
-    
-    # 域名解析
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-      - "api.example.com:192.168.1.100"
-```
 
-#### 存储配置
-```yaml
-services:
-  web:
-    # 存储卷挂载
-    volumes:
-      - ./html:/usr/share/nginx/html  # 主机目录:容器目录
-      - nginx_config:/etc/nginx/conf.d  # 命名卷:容器目录
-      - type: bind
-        source: ./logs
-        target: /var/log/nginx
-      - type: volume
-        source: nginx_data
-        target: /data
-        read_only: true
-    
-    # 临时文件系统
-    tmpfs:
-      - /run
-      - /tmp
-```
-
-#### 环境配置
-```yaml
-services:
-  web:
-    # 环境变量
-    environment:
-      - DEBUG=True
-      - DATABASE_URL=postgres://user:password@db:5432/dbname
-    
-    # 环境变量文件
-    env_file:
-      - .env
-      - .env.web
-    
-    # 容器标签
-    labels:
-      - "com.example.description=Web Server"
-      - "com.example.version=1.0"
-```
-
-#### 资源限制
-```yaml
-services:
-  web:
-    # 资源限制
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-    
-    # 容器特权模式
-    privileged: true
-    
-    # 系统能力
-    cap_add:
-      - NET_ADMIN
-      - SYS_TIME
-    cap_drop:
-      - ALL
-```
-
-#### 依赖关系
-```yaml
-services:
-  web:
-    # 依赖服务
-    depends_on:
-      - db
-      - cache
-    
-    # 健康检查
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-```
-
-### Networks
-`networks` 部分用于定义应用程序使用的网络，支持自定义网络驱动和配置：
-
-```yaml
-networks:
-  # 自定义网络
-  frontend:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.16.238.0/24
-          gateway: 172.16.238.1
-    
-  # 外部网络（已存在的网络）
-  backend:
-    external:
-      name: my_existing_network
-    
-  # 内部网络（仅容器间可见）
-  internal_network:
-    internal: true
-    driver: overlay
-```
-
-### Volumes
-`volumes` 部分用于定义应用程序使用的存储卷，支持持久化数据存储：
-
-```yaml
-volumes:
-  # 命名卷
-  db_data:
-    driver: local
-    driver_opts:
-      type: "none"
-      o: "bind"
-      device: "/path/to/data"
-    
-  # 外部卷（已存在的卷）
-  redis_cache:
-    external:
-      name: my_existing_volume
-    
-  # 临时卷
-  temp_files:
-    driver: local
-    labels:
-      - "com.example.description=Temporary Files"
-```
-
-### Configs
-`configs` 部分用于定义可在服务间共享的配置文件（Docker Swarm 模式下使用）：
-
-```yaml
-configs:
-  # 从文件加载配置
-  app_config:
-    file: ./app/config.ini
-  
-  # 内联配置
-  db_config:
-    content: |
-      [database]
-      host=db
-      port=5432
-      user=admin
-      password=secret
-  
-  # 外部配置（已存在的配置）
-  external_config:
-    external: true
-    name: my_existing_config
-```
-
-### Secrets
-`secrets` 部分用于定义敏感数据，如密码、API 密钥等（Docker Swarm 模式下使用）：
-
-```yaml
-secrets:
-  # 从文件加载机密
-  db_password:
-    file: ./secrets/db_password.txt
-  
-  # 内联机密（不推荐用于生产环境）
-  api_key:
-    content: "my_super_secret_api_key"
-  
-  # 外部机密（已存在的机密）
-  external_secret:
-    external: true
-    name: my_existing_secret
-```
-
-## 完整示例
-
-以下是一个包含 Web 服务、数据库和缓存的完整 Compose 文件示例：
-
-```yaml
-version: '3.8'
-
-# 服务定义
-services:
-  # Web 服务
-  web:
-    image: nginx:1.21-alpine
-    container_name: web_server
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - ./html:/usr/share/nginx/html
-      - nginx_logs:/var/log/nginx
-    depends_on:
-      - app
+  db:
     networks:
-      - frontend
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      - backend
 
-  # 应用服务
+networks:
+  frontend:
+  backend:
+```
+
+**拓扑结构**：
+
+```
+┌───────────────────────────────┐
+│      frontend 网络            │
+│  ┌──────┐       ┌──────┐     │
+│  │nginx │──────>│ app  │     │
+│  └──────┘       └──────┘     │
+└───────────────────┼───────────┘
+                    │
+┌───────────────────┼───────────┐
+│      backend 网络  │           │
+│                ┌──┴───┐       │
+│                │ app  │       │
+│                └───┬──┘       │
+│                    │           │
+│                ┌───▼──┐       │
+│                │  db  │       │
+│                └──────┘       │
+└───────────────────────────────┘
+```
+
+**安全效果**：
+- nginx只能访问app，不能直接访问db
+- db完全与外部隔离，只有app能访问
+
+---
+
+## 数据持久化：volumes vs bind mounts
+
+### 命名卷（Volume）
+
+```yaml
+services:
+  db:
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:
+```
+
+**工作原理**：
+1. Compose创建名为`项目名_db_data`的卷
+2. 卷数据存储在Docker管理的目录（`/var/lib/docker/volumes/`）
+3. 容器删除后，卷数据仍然保留
+
+**适用场景**：数据库数据、应用生成的文件
+
+### 绑定挂载（Bind Mount）
+
+```yaml
+services:
   app:
-    build:
-      context: ./app
-      dockerfile: Dockerfile
-    container_name: application
-    environment:
-      - DEBUG=False
-      - DATABASE_URL=postgres://app_user:app_password@db:5432/app_db
-      - REDIS_URL=redis://cache:6379/0
     volumes:
       - ./app:/app
-      - app_data:/app/data
+      - ./config.yml:/app/config.yml
+```
+
+**工作原理**：
+1. 直接将宿主机的`./app`目录映射到容器的`/app`
+2. 两边是同一块存储区域
+3. 容器修改文件，宿主机立即看到
+
+**适用场景**：
+- 开发环境：修改代码自动生效
+- 配置文件：从宿主机传入
+
+### 临时文件系统（tmpfs）
+
+```yaml
+services:
+  app:
+    tmpfs:
+      - /tmp
+      - /run
+```
+
+**工作原理**：在内存中挂载文件系统，容器重启后数据消失。
+
+**适用场景**：临时缓存、敏感数据（不留磁盘痕迹）
+
+---
+
+## depends_on：启动顺序控制
+
+### 基础用法
+
+```yaml
+services:
+  app:
     depends_on:
       - db
-      - cache
-    networks:
-      - frontend
-      - backend
-    restart: unless-stopped
+      - redis
+
+  db:
+    image: postgres
+
+  redis:
+    image: redis
+```
+
+**Compose的启动顺序**：
+1. 启动db
+2. 启动redis
+3. 等db和redis启动后，启动app
+
+### 重要误区
+
+`depends_on`只保证**容器启动**，不保证**服务就绪**！
+
+```
+时间线：
+0s   db容器启动
+1s   app容器启动，尝试连接db → 失败！
+2s   db服务初始化完成，可以接受连接
+```
+
+### 解决方案1：健康检查
+
+```yaml
+services:
+  db:
+    image: postgres
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 3
+
+  app:
+    depends_on:
+      db:
+        condition: service_healthy
+```
+
+**工作原理**：
+1. db容器启动
+2. 每5秒执行`pg_isready`检查
+3. 连续3次成功 → 标记为healthy
+4. app容器才开始启动
+
+### 解决方案2：应用层重试
+
+```javascript
+// app代码内置重试
+async function connectDB() {
+  for (let i = 0; i < 10; i++) {
+    try {
+      await db.connect();
+      return;
+    } catch (e) {
+      console.log('DB not ready, retrying...');
+      await sleep(2000);
+    }
+  }
+  throw new Error('DB connection failed');
+}
+```
+
+**推荐**：应用层重试更可靠，因为即使在生产环境，数据库也可能短暂不可用。
+
+---
+
+## 资源限制：防止单个服务耗尽资源
+
+```yaml
+services:
+  app:
     deploy:
       resources:
         limits:
           cpus: '1.0'
-          memory: 1G
+          memory: 512M
         reservations:
           cpus: '0.5'
-          memory: 512M
-
-  # 数据库服务
-  db:
-    image: postgres:14-alpine
-    container_name: database
-    environment:
-      - POSTGRES_USER=app_user
-      - POSTGRES_PASSWORD=app_password
-      - POSTGRES_DB=app_db
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    networks:
-      - backend
-    restart: unless-stopped
-    ports:
-      - "5432:5432"
-
-  # 缓存服务
-  cache:
-    image: redis:6-alpine
-    container_name: redis_cache
-    volumes:
-      - redis_data:/data
-    networks:
-      - backend
-    restart: unless-stopped
-    ports:
-      - "6379:6379"
-
-# 网络配置
-networks:
-  frontend:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16
-  backend:
-    driver: bridge
-    internal: true
-    ipam:
-      config:
-        - subnet: 172.21.0.0/16
-
-# 存储卷配置
-volumes:
-  nginx_logs:
-    driver: local
-  app_data:
-    driver: local
-  postgres_data:
-    driver: local
-  redis_data:
-    driver: local
+          memory: 256M
 ```
+
+**工作原理**：
+
+**limits（硬限制）**：
+- CPU：最多使用1个核心
+- 内存：超过512MB触发OOM killer
+
+**reservations（软限制）**：
+- CPU：保证至少0.5个核心
+- 内存：保证至少256MB
+
+**注意**：
+- 单机模式下，`deploy`部分的某些配置不生效
+- 使用`docker-compose --compatibility`可以部分支持
+
+---
+
+## 重启策略：容器崩溃后的行为
+
+```yaml
+services:
+  app:
+    restart: always
+```
+
+**策略选项**：
+
+| 策略 | 行为 |
+|------|------|
+| `no` | 从不自动重启（默认） |
+| `always` | 总是重启，即使手动停止 |
+| `on-failure` | 仅在非正常退出时重启 |
+| `unless-stopped` | 总是重启，除非手动停止 |
+
+**工作原理**：
+
+```
+容器崩溃（exit code != 0）
+         ↓
+Docker检查重启策略
+         ↓
+restart: always → 立即重启
+restart: on-failure → 重启
+restart: no → 不重启
+```
+
+**生产环境推荐**：`unless-stopped`（允许手动停止，其他情况自动恢复）
+
+---
+
+## 配置覆盖：开发/生产环境分离
+
+### 基础配置
+
+```yaml
+# docker-compose.yml（基础配置）
+services:
+  app:
+    image: myapp
+    depends_on:
+      - db
+```
+
+### 开发环境覆盖
+
+```yaml
+# docker-compose.override.yml（自动加载）
+services:
+  app:
+    volumes:
+      - ./src:/app/src    # 代码热更新
+    environment:
+      - DEBUG=true
+```
+
+### 生产环境配置
+
+```yaml
+# docker-compose.prod.yml
+services:
+  app:
+    restart: unless-stopped
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          memory: 512M
+```
+
+**使用方式**：
+
+```bash
+# 开发环境（自动合并 docker-compose.yml + docker-compose.override.yml）
+docker-compose up
+
+# 生产环境（合并 docker-compose.yml + docker-compose.prod.yml）
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+```
+
+**合并规则**：
+- 标量值（字符串、数字）：后者覆盖前者
+- 列表值：后者追加到前者
+- 对象值：递归合并
+
+---
+
+## Compose的工作流程
+
+### docker-compose up的内部流程
+
+```
+1. 读取配置文件
+   ├─ docker-compose.yml
+   ├─ docker-compose.override.yml（如果存在）
+   └─ .env（环境变量）
+
+2. 验证配置
+   └─ 检查YAML语法和配置项有效性
+
+3. 创建资源
+   ├─ 创建网络（如果不存在）
+   └─ 创建卷（如果不存在）
+
+4. 拉取/构建镜像
+   ├─ image: 拉取镜像
+   └─ build: 构建镜像
+
+5. 创建容器（按depends_on顺序）
+   ├─ 设置网络连接
+   ├─ 挂载卷
+   └─ 配置环境变量
+
+6. 启动容器（按depends_on顺序）
+
+7. 附加日志输出（如果是前台模式）
+```
+
+### docker-compose down的清理流程
+
+```
+1. 停止所有容器
+
+2. 删除容器
+
+3. 删除网络（如果没有其他容器使用）
+
+4. 删除卷（如果指定了-v）
+
+5. 删除镜像（如果指定了--rmi）
+```
+
+---
 
 ## 最佳实践
 
-### 文件组织
-- 将 Compose 文件与应用代码分开存储
-- 使用 `.env` 文件管理环境变量，避免在 Compose 文件中硬编码敏感信息
-- 使用版本控制系统管理 Compose 文件和配置
+### 1. 不要在Compose文件中硬编码敏感信息
 
-### 命名规范
-- 使用有意义的服务、网络和卷名称
-- 遵循小写字母和下划线的命名约定
-- 为容器添加描述性标签
+```yaml
+# ❌ 错误
+services:
+  db:
+    environment:
+      POSTGRES_PASSWORD: mypassword
 
-### 配置管理
-- 使用 `extends` 关键字复用配置（Compose 1.x 版本）或使用多个 Compose 文件
-- 使用 `docker-compose.override.yml` 进行本地开发覆盖
-- 为不同环境创建专门的 Compose 文件（如 `docker-compose.prod.yml`）
+# ✅ 正确
+services:
+  db:
+    environment:
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+```
 
-### 资源管理
-- 为每个服务设置合理的资源限制和保留
-- 使用 `depends_on` 定义服务启动顺序
-- 配置健康检查以确保服务正常运行
+### 2. 使用健康检查确保服务就绪
 
-### 安全性
-- 避免在 Compose 文件中硬编码敏感信息
-- 使用 `secrets` 管理敏感数据（Docker Swarm 模式）
-- 限制容器的系统权限，仅授予必要的能力
-- 使用非 root 用户运行容器
+```yaml
+services:
+  db:
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+```
 
-## 常见问题
+### 3. 为生产环境设置资源限制
 
-### Compose 文件版本如何选择？
-选择 Compose 文件版本时，应考虑以下因素：
-- **Docker Engine 版本**：确保 Compose 文件版本与 Docker Engine 版本兼容
-- **功能需求**：新版本通常支持更多功能，如健康检查、资源限制等
-- **兼容性**：如果需要在多个环境中运行，选择兼容性较好的版本
+```yaml
+services:
+  app:
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+```
 
-建议使用最新的 3.x 版本，以获得最完整的功能支持。
+### 4. 使用命名卷持久化数据
 
-### 如何在不同环境中使用不同的配置？
-可以通过以下方式在不同环境中使用不同的配置：
-- 使用 `docker-compose.prod.yml`、`docker-compose.dev.yml` 等环境特定文件
-- 使用 `docker-compose -f docker-compose.yml -f docker-compose.prod.yml up` 合并多个 Compose 文件
-- 使用环境变量和 `.env` 文件进行配置管理
+```yaml
+services:
+  db:
+    volumes:
+      - db_data:/var/lib/postgresql/data
 
-### 如何处理服务间的依赖关系？
-使用 `depends_on` 关键字可以定义服务间的依赖关系，但需要注意：
-- `depends_on` 仅保证服务的启动顺序，不保证服务的可用性
-- 对于需要等待服务完全可用的情况，应使用健康检查或应用程序内的重试机制
-- 可以使用 `condition` 选项（Compose 2.x 版本）或自定义脚本进行更复杂的依赖处理
+volumes:
+  db_data:
+```
 
-### 如何管理 Compose 文件中的敏感信息？
-管理敏感信息的最佳实践包括：
-- 使用 `.env` 文件存储敏感信息，并将 `.env` 文件添加到 `.gitignore` 中
-- 使用 Docker Secrets（Docker Swarm 模式）管理敏感数据
-- 避免在 Compose 文件中硬编码密码、API 密钥等敏感信息
-- 使用外部密钥管理系统（如 Vault）集成获取敏感信息
+### 5. 利用网络隔离提高安全性
 
-### 如何优化 Compose 文件的性能？
-优化 Compose 文件性能的建议：
-- 为每个服务设置合理的资源限制和保留
-- 使用轻量级基础镜像（如 Alpine）
-- 合理配置卷挂载，避免不必要的文件共享
-- 使用网络隔离，减少服务间的网络通信开销
-- 配置适当的健康检查间隔，避免过多的健康检查请求
+```yaml
+services:
+  web:
+    networks:
+      - frontend
 
-## 命令参考
+  api:
+    networks:
+      - frontend
+      - backend
 
-### 基本命令
-- `docker-compose up`：启动所有服务
-- `docker-compose up -d`：后台启动所有服务
-- `docker-compose down`：停止并移除所有服务、网络和卷
-- `docker-compose ps`：列出所有服务容器
-- `docker-compose logs`：查看所有服务日志
-- `docker-compose exec <service> <command>`：在指定服务容器中执行命令
+  db:
+    networks:
+      - backend
+```
 
-### 管理命令
-- `docker-compose build`：构建或重新构建服务镜像
-- `docker-compose pull`：拉取服务镜像
-- `docker-compose push`：推送服务镜像
-- `docker-compose restart`：重启所有服务
-- `docker-compose stop`：停止所有服务
-- `docker-compose start`：启动所有已停止的服务
-
-### 环境变量命令
-- `docker-compose config`：验证并显示 Compose 文件配置
-- `docker-compose env`：显示环境变量
-- `docker-compose run --rm <service> <command>`：运行一次性命令
+---
 
 ## 总结
 
-Docker Compose 是一个强大的工具，通过 YAML 文件可以轻松定义和管理多容器 Docker 应用程序。本文详细介绍了 Compose 文件的结构、配置选项和最佳实践，帮助用户快速掌握 Docker Compose 的使用方法。
+Docker Compose通过声明式配置简化了多容器应用的管理：
 
-通过合理的配置和管理，可以充分发挥 Docker Compose 的优势，提高应用程序的部署效率和运维质量。建议用户根据实际需求选择合适的 Compose 文件版本和配置选项，并遵循最佳实践进行应用程序开发和部署。
+**核心概念**：
+- **Project**：应用的逻辑分组，自动资源命名
+- **Service**：容器的定义模板，可以扩展实例
+- **Network**：自动DNS解析，支持服务间通信
+- **Volume**：数据持久化，独立于容器生命周期
 
-## 参考资料
-- [Docker Compose 官方文档](https://docs.docker.com/compose/)
-- [Docker Compose 文件参考](https://docs.docker.com/compose/compose-file/)
-- [YAML 官方规范](https://yaml.org/spec/)
+**工作原理**：
+1. 解析YAML配置和环境变量
+2. 创建网络、卷等基础资源
+3. 按依赖顺序拉取/构建镜像
+4. 创建并启动容器
+5. 提供统一的管理接口
+
+**关键理解**：
+- Compose是编排工具，不是集群管理（单机使用）
+- `depends_on`只控制启动顺序，不保证服务就绪
+- 网络隔离是安全的重要手段
+- 配置覆盖机制支持多环境部署
+
+Docker Compose让"基础设施即代码"成为现实，团队只需共享一个YAML文件，就能保证环境的完全一致。

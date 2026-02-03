@@ -10,995 +10,485 @@ tag:
   - ClaudeCode
 ---
 
-# Docker 介绍
+# Docker 核心原理与机制
 
 ## 什么是 Docker
 
-Docker 是一个开源的容器化平台,它允许开发者将应用程序及其依赖项打包到一个可移植的容器中,然后可以在任何支持 Docker 的系统上运行。Docker 通过操作系统级别的虚拟化技术,提供了一种轻量级、快速且一致的应用部署方式。
+想象一下，你开发了一个应用程序，它在你的电脑上运行得很好。但当你把代码发给同事或部署到服务器时，突然出现各种问题：缺少依赖、版本不匹配、配置不同……这就是著名的"**在我机器上可以运行**"问题。
 
-### Docker 的核心价值
+Docker 就是为了解决这个问题而生的。它不仅仅是一个工具，更是一种**标准化的应用打包和运行方式**。
 
-- **环境一致性**: 开发、测试、生产环境完全一致,消除"在我机器上可以运行"的问题
-- **快速部署**: 秒级启动,相比传统虚拟机分钟级启动有质的飞跃
-- **资源高效**: 共享宿主机内核,资源占用远小于虚拟机
-- **版本控制**: 镜像支持版本管理,便于回滚和追溯
-- **微服务架构**: 天然适合微服务的独立部署和扩展
+### Docker 的核心思想
+
+**将应用程序及其所有依赖打包成一个独立的"集装箱"**，这个集装箱可以在任何支持 Docker 的环境中一致地运行。
+
+就像现实世界中的集装箱革命了运输业一样，Docker 集装箱化革命了软件交付方式：
+
+```
+传统方式：
+开发环境 → 测试环境 → 生产环境
+（每个环境都可能不同，需要重新配置）
+
+Docker 方式：
+构建镜像 → 运行容器
+（同一个镜像在任何地方运行都一致）
+```
+
+### Docker 解决了什么问题
+
+1. **环境一致性**：开发、测试、生产环境完全相同，消除环境差异导致的问题
+2. **依赖管理**：应用的所有依赖都打包在一起，不会与宿主机的其他应用冲突
+3. **快速部署**：秒级启动，相比传统虚拟机（分钟级）有质的飞跃
+4. **资源高效**：多个容器共享宿主机内核，资源占用远小于虚拟机
+5. **版本控制**：镜像可以像代码一样进行版本管理，方便回滚
 
 ---
 
-## Docker 的核心概念
+## Docker 的三个核心概念
 
-### 1. 镜像 (Image)
+理解 Docker，首先要理解它的三个基本概念：**镜像（Image）**、**容器（Container）** 和 **仓库（Repository）**。
 
-Docker 镜像是一个只读的模板,包含了运行应用程序所需的代码、运行时环境、库、环境变量和配置文件。
+### 镜像（Image）：应用的"模板"
 
-**特点**:
-- 分层存储结构,每一层只记录与上一层的差异
-- 可以基于已有镜像创建新镜像
-- 通过 Dockerfile 定义镜像构建过程
-- 可以存储在 Docker Hub 或私有镜像仓库
+**镜像是什么？** 镜像是一个只读的模板，包含了运行应用所需的一切：代码、运行时环境、系统库、配置文件等。
 
-**示例**:
-```bash
-# 拉取官方 nginx 镜像
-docker pull nginx:latest
+可以把镜像理解为：
+- **面向对象编程中的"类"**：定义了容器的结构和行为
+- **操作系统的"镜像文件"**：包含完整的文件系统
+- **软件的"安装包"**：双击即可运行，无需额外配置
 
-# 查看本地镜像
-docker images
+#### 镜像的分层结构
 
-# 删除镜像
-docker rmi nginx:latest
+这是 Docker 最重要的设计之一。镜像不是一个整体，而是由多个**只读层**叠加而成：
+
+```
+┌─────────────────────────────┐
+│   应用代码层 (Layer 4)       │  ← 你的应用
+├─────────────────────────────┤
+│   依赖包层 (Layer 3)         │  ← npm/pip packages
+├─────────────────────────────┤
+│   运行时层 (Layer 2)         │  ← Node.js/Python
+├─────────────────────────────┤
+│   基础系统层 (Layer 1)       │  ← Ubuntu/Alpine
+└─────────────────────────────┘
 ```
 
-### 2. 容器 (Container)
+**为什么要分层？**
 
-容器是镜像的运行实例,是一个独立运行的应用程序及其运行环境。容器之间相互隔离,但共享宿主机的操作系统内核。
+1. **节省空间**：多个镜像可以共享相同的基础层。比如 10 个基于 Ubuntu 的镜像，只需要存储一份 Ubuntu 层。
 
-**特点**:
-- 轻量级,启动速度快
-- 可以被创建、启动、停止、删除、暂停
-- 每个容器都是相互隔离的、安全的平台
-- 容器中的修改可以提交为新的镜像
+2. **加速构建**：修改代码后，只需要重建最上面的应用层，下面的层可以使用缓存。
 
-**示例**:
-```bash
-# 运行一个 nginx 容器
-docker run -d -p 80:80 --name my-nginx nginx
+3. **便于分发**：拉取镜像时，只需下载本地没有的层。
 
-# 查看运行中的容器
-docker ps
+**示例说明**：
+假设你有两个应用，都基于 Node.js 18：
+- 应用 A 的镜像大小：200MB
+- 应用 B 的镜像大小：150MB
+- 实际占用空间：可能只有 250MB（因为它们共享了 Node.js 18 的层）
 
-# 查看所有容器(包括停止的)
-docker ps -a
+### 容器（Container）：镜像的"运行实例"
 
-# 停止容器
-docker stop my-nginx
+**容器是什么？** 容器是镜像的运行实例，就像程序是代码的运行实例一样。
 
-# 启动容器
-docker start my-nginx
+继续用面向对象类比：
+- **镜像 = 类（Class）**：定义结构
+- **容器 = 对象（Object）**：实际运行的实例
 
-# 删除容器
-docker rm my-nginx
+一个镜像可以创建多个容器，就像一个类可以实例化多个对象。
+
+#### 容器的本质
+
+**容器不是虚拟机！** 这是初学者最容易混淆的地方。
+
+```
+虚拟机的架构：
+┌──────────────────┐
+│   应用程序        │
+├──────────────────┤
+│   完整的 Guest OS │  ← 每个虚拟机都有完整的操作系统
+├──────────────────┤
+│   Hypervisor     │
+├──────────────────┤
+│   Host OS        │
+└──────────────────┘
+
+Docker 容器的架构：
+┌──────────────────┐
+│   应用程序        │  ← 容器只包含应用及其依赖
+├──────────────────┤
+│   Docker Engine  │
+├──────────────────┤
+│   Host OS Kernel │  ← 所有容器共享宿主机内核
+└──────────────────┘
 ```
 
-### 3. 仓库 (Repository)
+**容器的实质**：容器本质上是**宿主机上的一个进程**，但通过 Linux 内核的隔离机制（Namespace 和 Cgroups），让这个进程"以为"自己独占整个系统。
 
-Docker 仓库是集中存储和分发镜像的地方。Docker Hub 是官方提供的公共仓库,企业也可以搭建私有仓库。
+#### 容器与镜像的关系
 
-**常用操作**:
-```bash
-# 登录 Docker Hub
-docker login
-
-# 推送镜像到仓库
-docker push username/image-name:tag
-
-# 从仓库拉取镜像
-docker pull username/image-name:tag
-
-# 搜索镜像
-docker search nginx
 ```
+镜像（只读层）
+    +
+容器层（可写层）
+    =
+运行中的容器
+```
+
+当你从镜像创建容器时，Docker 在镜像的只读层之上添加一个**可写层**。容器运行时的所有修改都写入这个可写层，原始镜像保持不变。
+
+**这意味着什么？**
+- 删除容器后，容器层的数据会丢失
+- 同一个镜像创建的多个容器互不影响
+- 容器的修改可以提交为新的镜像层
+
+### 仓库（Repository）：镜像的"应用商店"
+
+**仓库是什么？** 仓库是集中存储和分发镜像的地方，类似于：
+- **GitHub**：存储代码
+- **Docker Hub**：存储镜像
+
+#### Docker Hub
+
+Docker Hub 是官方的公共镜像仓库，包含数十万个镜像：
+- **官方镜像**：如 nginx、mysql、redis（经过 Docker 官方验证）
+- **社区镜像**：个人或组织发布的镜像
+
+#### 私有仓库
+
+企业通常会搭建私有仓库来存储内部镜像，保护知识产权和敏感信息。
 
 ---
 
-## Docker 架构
+## Docker 的工作原理
 
-Docker 采用客户端-服务器 (C/S) 架构模式,主要包含以下组件:
+理解 Docker 如何工作，需要了解它的架构和底层技术。
 
-### Docker 客户端 (Client)
+### Docker 架构：客户端-服务器模式
 
-用户通过 Docker 客户端与 Docker 守护进程通信,客户端可以通过命令行工具 (docker) 或 REST API 与守护进程交互。
+```
+┌─────────────────────────────────────────────────────┐
+│                   用户                               │
+│                     ↓                                │
+│              docker 命令                             │
+│                     ↓                                │
+│              Docker Client                           │
+│                     ↓  REST API                      │
+│              Docker Daemon (dockerd)                 │
+│                     ↓                                │
+│         ┌───────────┼───────────┐                   │
+│         ↓           ↓            ↓                   │
+│     镜像管理    容器管理      网络管理               │
+│         ↓           ↓            ↓                   │
+│     containerd  (容器运行时)                         │
+│         ↓                                            │
+│      runc  (创建容器)                                │
+│         ↓                                            │
+│   Linux 内核 (Namespace, Cgroups, UnionFS)         │
+└─────────────────────────────────────────────────────┘
+```
 
-### Docker 守护进程 (Daemon)
+**工作流程**：
 
-Docker 守护进程 (dockerd) 负责管理 Docker 对象,如镜像、容器、网络和卷。守护进程监听 Docker API 请求并处理。
+1. **用户执行命令**：`docker run nginx`
+2. **客户端解析**：Docker Client 解析命令并发送 HTTP 请求到 Docker Daemon
+3. **守护进程处理**：Docker Daemon 检查本地是否有 nginx 镜像，没有则从 Docker Hub 拉取
+4. **容器运行时**：通过 containerd 和 runc 创建容器进程
+5. **内核隔离**：利用 Linux 内核特性实现隔离和资源限制
 
-### Docker 注册中心 (Registry)
+### Docker 的底层技术
 
-存储 Docker 镜像的仓库,Docker Hub 是默认的公共注册中心。
+Docker 的"魔法"来自于 Linux 内核的三大核心技术：
 
-### Docker 对象
+#### 1. Namespace（命名空间）：实现隔离
 
-- **镜像**: 只读模板
-- **容器**: 镜像的可运行实例
-- **网络**: 容器间的通信机制
-- **卷**: 持久化数据存储
+Namespace 让容器拥有独立的系统资源视图，就像给进程戴上了"VR 眼镜"，让它以为自己独占整个系统。
+
+**7 种 Namespace**：
+
+| Namespace | 隔离内容 | 效果 |
+|-----------|---------|------|
+| **PID** | 进程 ID | 容器内进程看不到宿主机的其他进程 |
+| **NET** | 网络栈 | 容器有独立的 IP、端口、路由表 |
+| **MNT** | 文件系统 | 容器有独立的文件系统挂载点 |
+| **UTS** | 主机名 | 容器可以有自己的主机名 |
+| **IPC** | 进程间通信 | 容器内的共享内存、信号量等隔离 |
+| **USER** | 用户和组 | 容器内的 root 可以映射到宿主机的普通用户 |
+| **Cgroup** | 控制组 | 隔离容器的资源限制视图 |
+
+**举例说明 PID Namespace**：
+
+在宿主机上，容器进程的 PID 可能是 12345。但在容器内部，这个进程看到的自己的 PID 是 1（因为它"以为"自己是系统启动的第一个进程）。
+
+#### 2. Cgroups（控制组）：资源限制
+
+Cgroups 控制容器可以使用多少资源，防止单个容器耗尽宿主机资源。
+
+**可以限制的资源**：
+- **CPU**：限制 CPU 使用率或核心数
+- **内存**：限制最大内存使用量
+- **磁盘 I/O**：限制读写速率
+- **网络带宽**：限制网络流量（需要额外配置）
+
+**工作原理**：
+Cgroups 在内核层面跟踪和限制资源使用。当容器尝试超出限制时：
+- **CPU**：调度器会降低该容器的 CPU 时间片
+- **内存**：触发 OOM（Out of Memory）Killer，可能终止容器进程
+
+#### 3. UnionFS（联合文件系统）：分层存储
+
+UnionFS 是实现镜像分层的关键技术。它可以将多个目录"叠加"成一个统一的文件系统视图。
+
+**常见的 UnionFS 实现**：
+- **OverlayFS**：现代 Docker 的默认选择，性能优异
+- **AUFS**：早期 Docker 使用，在 Ubuntu 上表现良好
+- **Btrfs/ZFS**：支持快照和克隆，适合大规模存储
+
+**写时复制（Copy-on-Write）**：
+
+当容器修改镜像中的文件时：
+1. 原文件在只读层中保持不变
+2. 系统将文件复制到可写层
+3. 在可写层中进行修改
+
+这样既保护了原始镜像，又节省了存储空间。
 
 ---
 
-## Dockerfile 详解
+## Docker 与虚拟机的本质区别
 
-Dockerfile 是一个文本文件,包含了一系列指令,用于自动化构建 Docker 镜像。
+这是面试常考的问题，也是理解 Docker 的关键。
 
-### 常用指令
+### 架构对比
 
-```dockerfile
-# 指定基础镜像
-FROM node:18-alpine
+```
+虚拟机：每个虚拟机都是一个完整的操作系统
+┌─────────┐ ┌─────────┐ ┌─────────┐
+│  App A  │ │  App B  │ │  App C  │
+├─────────┤ ├─────────┤ ├─────────┤
+│ Guest OS│ │ Guest OS│ │ Guest OS│  ← 每个 VM 都有完整的 OS
+├─────────┴─┴─────────┴─┴─────────┤
+│         Hypervisor               │  ← 虚拟化层
+├──────────────────────────────────┤
+│         Host OS & Hardware       │
+└──────────────────────────────────┘
 
-# 设置工作目录
-WORKDIR /app
-
-# 复制文件到容器
-COPY package*.json ./
-
-# 执行命令
-RUN npm install
-
-# 复制应用代码
-COPY . .
-
-# 暴露端口
-EXPOSE 3000
-
-# 设置环境变量
-ENV NODE_ENV=production
-
-# 容器启动时执行的命令
-CMD ["node", "server.js"]
+Docker：所有容器共享宿主机内核
+┌─────────┐ ┌─────────┐ ┌─────────┐
+│  App A  │ │  App B  │ │  App C  │  ← 只包含应用和依赖
+├─────────┴─┴─────────┴─┴─────────┤
+│         Docker Engine            │
+├──────────────────────────────────┤
+│    Host OS Kernel & Hardware     │  ← 共享内核
+└──────────────────────────────────┘
 ```
 
-### Dockerfile 最佳实践
+### 关键区别
 
-1. **使用官方基础镜像**: 优先选择官方维护的基础镜像
-2. **最小化层数**: 合并 RUN 指令减少镜像层数
-3. **利用构建缓存**: 将变化频繁的指令放在后面
-4. **多阶段构建**: 分离编译环境和运行环境,减小最终镜像大小
-5. **.dockerignore**: 排除不必要的文件,加快构建速度
+| 维度 | Docker 容器 | 虚拟机 |
+|------|------------|--------|
+| **隔离级别** | 进程级（共享内核） | 硬件级（独立内核） |
+| **启动速度** | 毫秒到秒级 | 分钟级 |
+| **资源占用** | MB 级 | GB 级 |
+| **性能损耗** | 几乎无损耗（接近原生） | 5-20% 性能损耗 |
+| **磁盘占用** | 几十到几百 MB | 几 GB 到几十 GB |
+| **操作系统** | 必须与宿主机内核兼容 | 可以运行任何操作系统 |
+| **安全性** | 较弱（共享内核，存在逃逸风险） | 较强（完全隔离） |
+| **密度** | 单机可运行数百个容器 | 单机运行几十个虚拟机 |
 
-**多阶段构建示例**:
-```dockerfile
-# 构建阶段
-FROM node:18 AS builder
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
+### 为什么 Docker 更快？
 
-# 生产阶段
-FROM node:18-alpine
-WORKDIR /app
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-EXPOSE 3000
-CMD ["node", "dist/server.js"]
-```
+1. **无需启动操作系统**：容器启动就是启动一个进程，虚拟机需要启动整个操作系统
+2. **共享内核**：容器直接使用宿主机内核，虚拟机需要模拟硬件
+3. **无虚拟化开销**：容器直接运行在宿主机上，虚拟机需要通过 Hypervisor
+
+### 选择建议
+
+**使用 Docker 的场景**：
+- 微服务架构
+- 持续集成/持续部署（CI/CD）
+- 开发环境标准化
+- 需要快速扩缩容
+
+**使用虚拟机的场景**：
+- 需要运行不同的操作系统（如在 Linux 上运行 Windows）
+- 需要更强的隔离性和安全性
+- 传统应用迁移
+
+**组合使用**：
+实际上，很多企业在虚拟机中运行 Docker，结合两者的优势：虚拟机提供强隔离，Docker 提供快速部署。
 
 ---
 
-## Docker 网络
+## Docker 网络原理
 
-Docker 提供了多种网络模式,满足不同场景的需求。
+容器之间以及容器与外部的通信是如何实现的？这涉及到 Docker 的网络机制。
 
 ### 网络模式
 
-1. **bridge (桥接模式)**: 默认模式,容器通过虚拟网桥互相通信
-2. **host (主机模式)**: 容器直接使用宿主机网络
-3. **none (无网络模式)**: 容器没有网络接口
-4. **container (容器模式)**: 与其他容器共享网络命名空间
-5. **自定义网络**: 用户自定义的桥接网络
+Docker 提供了多种网络模式，每种模式适用于不同场景：
 
-### 网络操作示例
+| 模式 | 原理 | 适用场景 |
+|------|------|----------|
+| **bridge**（默认） | 通过虚拟网桥连接容器 | 同主机容器通信 |
+| **host** | 容器直接使用宿主机网络栈 | 需要最佳网络性能 |
+| **none** | 容器没有网络 | 需要完全隔离 |
+| **container** | 共享另一个容器的网络 | 紧密耦合的容器组 |
+| **overlay** | 跨主机容器通信 | Docker Swarm / Kubernetes |
 
-```bash
-# 创建自定义网络
-docker network create my-network
+### Bridge 网络原理（最常用）
 
-# 查看网络列表
-docker network ls
-
-# 运行容器并连接到指定网络
-docker run -d --name app1 --network my-network nginx
-
-# 查看网络详情
-docker network inspect my-network
-
-# 将运行中的容器连接到网络
-docker network connect my-network app2
-
-# 断开容器与网络的连接
-docker network disconnect my-network app2
-
-# 删除网络
-docker network rm my-network
 ```
+┌─────────────────────────────────────────────┐
+│              宿主机                          │
+│                                             │
+│  ┌──────────────────────────────────────┐  │
+│  │       docker0 网桥（172.17.0.1）     │  │
+│  └──────┬──────────────────┬────────────┘  │
+│         │                  │                │
+│    ┌────┴────┐        ┌────┴────┐         │
+│    │ veth1   │        │ veth2   │         │
+│    └────┬────┘        └────┬────┘         │
+│         │                  │                │
+│  ┌──────┴───────┐   ┌──────┴───────┐      │
+│  │ Container 1  │   │ Container 2  │      │
+│  │ 172.17.0.2   │   │ 172.17.0.3   │      │
+│  └──────────────┘   └──────────────┘      │
+└─────────────────────────────────────────────┘
+```
+
+**工作原理**：
+
+1. **虚拟网桥**：Docker 创建一个名为 `docker0` 的虚拟网桥，作为容器网络的交换机
+2. **veth pair**：每个容器都有一对虚拟网卡（veth pair），一端在容器内，一端连接到 docker0
+3. **IP 分配**：Docker 从一个私有 IP 段（默认 172.17.0.0/16）为容器分配 IP
+4. **NAT 转换**：容器访问外网时，通过 iptables 进行 NAT 转换，使用宿主机 IP
+
+### 端口映射原理
+
+当你执行 `-p 8080:80` 时，Docker 做了什么？
+
+```
+外部访问 → 宿主机:8080 → iptables规则 → 容器:80
+```
+
+Docker 在宿主机的 iptables 中添加 DNAT（目标地址转换）规则：
+- 外部访问宿主机的 8080 端口
+- iptables 将流量转发到容器的 80 端口
+
+### 容器间通信
+
+**同一 bridge 网络内的容器**：
+- 可以通过容器 IP 直接通信
+- 可以通过容器名通信（Docker 内置 DNS 服务）
+
+**不同网络的容器**：
+- 默认无法通信（隔离）
+- 可以通过 `docker network connect` 将容器加入多个网络
 
 ---
 
 ## Docker 数据持久化
 
-容器中的数据默认是临时的,容器删除后数据也会丢失。Docker 提供了两种主要的数据持久化方式。
+容器是临时的，删除容器后数据会丢失。如何持久化数据？
 
-### 1. 数据卷 (Volume)
+### 两种数据持久化方式
 
-由 Docker 管理的数据存储,推荐使用方式。
+#### 1. Volume（数据卷）- 推荐方式
 
-```bash
-# 创建数据卷
-docker volume create my-volume
+**原理**：Docker 管理的存储区域，位于宿主机的 Docker 目录下（通常是 `/var/lib/docker/volumes/`）。
 
-# 查看数据卷列表
-docker volume ls
+**特点**：
+- Docker 完全管理生命周期
+- 独立于容器，删除容器不影响数据
+- 可以在容器间共享
+- 支持卷驱动（可以将数据存储到远程存储、云存储）
 
-# 使用数据卷运行容器
-docker run -d -v my-volume:/data --name app nginx
+**适用场景**：数据库数据、应用生成的文件
 
-# 查看数据卷详情
-docker volume inspect my-volume
+#### 2. Bind Mount（绑定挂载）
 
-# 删除数据卷
-docker volume rm my-volume
+**原理**：直接将宿主机的目录或文件挂载到容器中。
 
-# 清理未使用的数据卷
-docker volume prune
-```
+**特点**：
+- 宿主机直接管理，可以从任何位置挂载
+- 性能略低于 Volume
+- 宿主机和容器都可以修改文件
+- 路径依赖于宿主机文件系统
 
-### 2. 绑定挂载 (Bind Mount)
+**适用场景**：开发环境（挂载代码实现热更新）、配置文件
 
-直接将宿主机的目录或文件挂载到容器中。
-
-```bash
-# 使用绑定挂载
-docker run -d -v /host/path:/container/path --name app nginx
-
-# 或使用 --mount 语法(更明确)
-docker run -d \
-  --mount type=bind,source=/host/path,target=/container/path \
-  --name app nginx
-```
-
-### Volume vs Bind Mount
-
-| 特性 | Volume | Bind Mount |
-|------|--------|------------|
-| 管理 | Docker 管理 | 用户管理 |
-| 位置 | Docker 目录 | 任意位置 |
-| 性能 | 更好 | 较好 |
-| 可移植性 | 高 | 低 |
-| 推荐场景 | 生产环境 | 开发环境 |
-
----
-
-## Docker Compose
-
-Docker Compose 是用于定义和运行多容器 Docker 应用程序的工具,通过 YAML 文件配置应用的服务。
-
-### docker-compose.yml 示例
-
-```yaml
-version: '3.8'
-
-services:
-  web:
-    build: ./web
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - DB_HOST=db
-    depends_on:
-      - db
-    networks:
-      - app-network
-    volumes:
-      - ./logs:/app/logs
-
-  db:
-    image: postgres:15
-    environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=secret
-      - POSTGRES_DB=myapp
-    volumes:
-      - db-data:/var/lib/postgresql/data
-    networks:
-      - app-network
-
-  redis:
-    image: redis:7-alpine
-    networks:
-      - app-network
-
-networks:
-  app-network:
-    driver: bridge
-
-volumes:
-  db-data:
-```
-
-### Compose 常用命令
-
-```bash
-# 启动所有服务
-docker-compose up -d
-
-# 查看服务状态
-docker-compose ps
-
-# 查看日志
-docker-compose logs -f web
-
-# 停止所有服务
-docker-compose stop
-
-# 停止并删除容器、网络
-docker-compose down
-
-# 停止并删除容器、网络、卷
-docker-compose down -v
-
-# 重启服务
-docker-compose restart web
-
-# 执行命令
-docker-compose exec web sh
-
-# 构建或重新构建服务
-docker-compose build
-```
-
----
-
-## Docker 常用命令速查
-
-### 镜像相关
-
-```bash
-# 构建镜像
-docker build -t image-name:tag .
-
-# 列出镜像
-docker images
-
-# 删除镜像
-docker rmi image-name:tag
-
-# 导出镜像
-docker save -o image.tar image-name:tag
-
-# 导入镜像
-docker load -i image.tar
-
-# 查看镜像历史
-docker history image-name:tag
-
-# 标记镜像
-docker tag source-image:tag target-image:tag
-```
-
-### 容器相关
-
-```bash
-# 运行容器
-docker run -d --name container-name image-name
-
-# 启动/停止/重启容器
-docker start/stop/restart container-name
-
-# 删除容器
-docker rm container-name
-
-# 强制删除运行中的容器
-docker rm -f container-name
-
-# 进入容器
-docker exec -it container-name /bin/bash
-
-# 查看容器日志
-docker logs -f container-name
-
-# 查看容器资源使用
-docker stats container-name
-
-# 复制文件
-docker cp container-name:/path/in/container /path/on/host
-
-# 查看容器详细信息
-docker inspect container-name
-
-# 暂停/恢复容器
-docker pause/unpause container-name
-```
-
-### 系统相关
-
-```bash
-# 查看 Docker 信息
-docker info
-
-# 查看 Docker 版本
-docker version
-
-# 清理未使用的资源
-docker system prune -a
-
-# 查看磁盘使用情况
-docker system df
-
-# 实时查看容器资源使用
-docker stats
-```
-
----
-
-## Docker 实战场景
-
-### 场景 1: 开发环境统一
-
-使用 Docker Compose 定义开发环境,确保团队成员环境一致。
-
-```yaml
-# docker-compose.dev.yml
-version: '3.8'
-
-services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    volumes:
-      - .:/app
-      - /app/node_modules
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=development
-    command: npm run dev
-```
-
-### 场景 2: 微服务部署
-
-```yaml
-version: '3.8'
-
-services:
-  api-gateway:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-    depends_on:
-      - user-service
-      - order-service
-
-  user-service:
-    build: ./services/user
-    environment:
-      - DB_HOST=user-db
-    depends_on:
-      - user-db
-
-  order-service:
-    build: ./services/order
-    environment:
-      - DB_HOST=order-db
-    depends_on:
-      - order-db
-
-  user-db:
-    image: postgres:15
-    volumes:
-      - user-db-data:/var/lib/postgresql/data
-
-  order-db:
-    image: postgres:15
-    volumes:
-      - order-db-data:/var/lib/postgresql/data
-
-volumes:
-  user-db-data:
-  order-db-data:
-```
-
-### 场景 3: CI/CD 集成
-
-```dockerfile
-# Dockerfile for production
-FROM node:18-alpine AS builder
-
-WORKDIR /app
-COPY package*.json ./
-RUN npm ci --only=production
-
-COPY . .
-RUN npm run build
-
-FROM node:18-alpine
-WORKDIR /app
-
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/node_modules ./node_modules
-COPY package*.json ./
-
-USER node
-EXPOSE 3000
-
-HEALTHCHECK --interval=30s --timeout=3s \
-  CMD node healthcheck.js
-
-CMD ["node", "dist/server.js"]
-```
-
----
-
-## Docker 安全最佳实践
-
-### 1. 使用官方镜像
-
-优先使用官方维护的基础镜像,避免使用来源不明的镜像。
-
-### 2. 最小权限原则
-
-```dockerfile
-# 不要使用 root 用户运行应用
-FROM node:18-alpine
-
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodejs -u 1001
-
-USER nodejs
-
-WORKDIR /app
-COPY --chown=nodejs:nodejs . .
-
-CMD ["node", "server.js"]
-```
-
-### 3. 镜像扫描
-
-```bash
-# 使用 Docker Scan 扫描镜像漏洞
-docker scan image-name:tag
-
-# 使用 Trivy 扫描
-trivy image image-name:tag
-```
-
-### 4. 限制资源使用
-
-```bash
-# 限制容器资源
-docker run -d \
-  --memory="512m" \
-  --cpus="1.0" \
-  --name app \
-  nginx
-```
-
-### 5. 使用只读文件系统
-
-```bash
-# 使用只读根文件系统
-docker run -d --read-only --name app nginx
-```
-
-### 6. 安全配置
-
-```yaml
-# docker-compose.yml 安全配置
-version: '3.8'
-
-services:
-  app:
-    image: myapp:latest
-    read_only: true
-    security_opt:
-      - no-new-privileges:true
-    cap_drop:
-      - ALL
-    cap_add:
-      - NET_BIND_SERVICE
-```
-
----
-
-## Docker 性能优化
-
-### 1. 镜像优化
-
-```dockerfile
-# 使用更小的基础镜像
-FROM node:18-alpine  # 而不是 node:18
-
-# 合并 RUN 指令减少层数
-RUN apt-get update && \
-    apt-get install -y package1 package2 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# 利用构建缓存
-COPY package*.json ./
-RUN npm install
-COPY . .
-```
-
-### 2. .dockerignore 文件
+### 数据流向
 
 ```
-# .dockerignore
-node_modules
-npm-debug.log
-.git
-.gitignore
-README.md
-.env
-.DS_Store
-*.md
-.vscode
-coverage
-.nyc_output
+容器 ← 读写 → Volume/Bind Mount ← 读写 → 宿主机磁盘
 ```
 
-### 3. 多阶段构建
-
-减小最终镜像大小,分离构建依赖和运行依赖。
-
-```dockerfile
-FROM golang:1.21 AS builder
-WORKDIR /app
-COPY . .
-RUN CGO_ENABLED=0 go build -o server
-
-FROM alpine:latest
-WORKDIR /app
-COPY --from=builder /app/server .
-CMD ["./server"]
-```
-
-### 4. 容器资源监控
-
-```bash
-# 查看容器资源使用
-docker stats
-
-# 限制容器资源
-docker run -d \
-  --memory="1g" \
-  --memory-swap="2g" \
-  --cpus="2.0" \
-  --name app \
-  myapp:latest
-```
-
----
-
-## Docker 与虚拟机的区别
-
-| 特性 | Docker 容器 | 虚拟机 |
-|------|------------|--------|
-| 启动速度 | 秒级 | 分钟级 |
-| 资源占用 | MB 级 | GB 级 |
-| 性能 | 接近原生 | 有性能损耗 |
-| 隔离级别 | 进程级 | 系统级 |
-| 操作系统 | 共享宿主机内核 | 独立操作系统 |
-| 可移植性 | 高 | 较低 |
-| 系统支持 | 成百上千 | 几十个 |
-
-**适用场景**:
-- **Docker**: 微服务、快速部署、DevOps、CI/CD
-- **虚拟机**: 需要完全隔离、运行不同操作系统、传统应用迁移
+Volume 和 Bind Mount 的区别：
+- Volume 由 Docker 管理，宿主机直接访问不方便
+- Bind Mount 直接映射宿主机路径，宿主机可以直接访问
 
 ---
 
 ## Docker 生态系统
 
+Docker 不是孤立的工具，而是一个完整的生态系统。
+
 ### 容器编排
 
-- **Kubernetes (K8s)**: 最流行的容器编排平台,支持自动部署、扩展和管理
-- **Docker Swarm**: Docker 官方的容器编排工具,配置简单
-- **Apache Mesos**: 大规模集群管理系统
+**单机多容器**：Docker Compose
+- 通过 YAML 文件定义多容器应用
+- 一条命令启动所有服务
+- 适合开发和测试环境
+
+**集群编排**：Kubernetes / Docker Swarm
+- 跨多台主机管理容器
+- 自动扩缩容、负载均衡、故障恢复
+- 适合生产环境
 
 ### 镜像仓库
 
-- **Docker Hub**: 官方公共镜像仓库
-- **Harbor**: 企业级私有镜像仓库
-- **AWS ECR**: Amazon 容器镜像服务
-- **Google Container Registry**: Google 云容器镜像服务
-- **Azure Container Registry**: Microsoft 容器镜像服务
+- **Docker Hub**：公共镜像仓库
+- **Harbor**：企业级私有仓库
+- **云服务商**：AWS ECR、Google GCR、Azure ACR
 
 ### 监控与日志
 
-- **Prometheus + Grafana**: 监控和可视化
-- **ELK Stack**: 日志收集和分析
-- **cAdvisor**: 容器资源监控
-- **Datadog**: 云监控平台
-
----
-
-## 故障排查
-
-### 常见问题排查思路
-
-1. **容器无法启动**
-```bash
-# 查看容器日志
-docker logs container-name
-
-# 查看容器详细信息
-docker inspect container-name
-
-# 尝试交互式启动
-docker run -it image-name /bin/sh
-```
-
-2. **网络连接问题**
-```bash
-# 检查容器网络
-docker network inspect bridge
-
-# 进入容器检查网络
-docker exec -it container-name ping other-container
-
-# 检查端口映射
-docker port container-name
-```
-
-3. **磁盘空间不足**
-```bash
-# 查看磁盘使用
-docker system df
-
-# 清理未使用的资源
-docker system prune -a --volumes
-```
-
-4. **性能问题**
-```bash
-# 查看资源使用
-docker stats
-
-# 检查容器进程
-docker top container-name
-
-# 查看容器事件
-docker events
-```
-
----
-
-## 学习资源推荐
-
-### 官方文档
-- Docker 官方文档: https://docs.docker.com/
-- Docker Hub: https://hub.docker.com/
-
-### 实践平台
-- Play with Docker: 免费的在线 Docker 环境
-- Katacoda: 交互式 Docker 教程
-
-### 社区资源
-- Docker 官方博客
-- GitHub Docker 项目
-- Stack Overflow Docker 标签
+- **Prometheus + Grafana**：监控指标和可视化
+- **ELK Stack**：日志收集和分析
+- **cAdvisor**：容器资源监控
 
 ---
 
 ## 总结
 
-Docker 已经成为现代软件开发和部署的标准工具之一。通过容器化技术,Docker 解决了环境一致性、快速部署、资源利用等问题,极大地提升了开发和运维效率。
+Docker 通过巧妙地利用 Linux 内核的隔离机制，实现了轻量级、高效的应用容器化：
 
-**核心要点**:
-1. Docker 通过容器化提供轻量级的应用隔离
-2. 镜像、容器、仓库是 Docker 的三大核心概念
-3. Dockerfile 用于定义镜像构建过程
-4. Docker Compose 简化多容器应用的管理
-5. 掌握 Docker 网络和数据持久化是深入使用的关键
-6. 安全性和性能优化是生产环境的重要考量
+**核心原理**：
+1. **镜像分层**：通过 UnionFS 实现高效的存储和分发
+2. **进程隔离**：通过 Namespace 让容器拥有独立的资源视图
+3. **资源限制**：通过 Cgroups 控制容器的资源使用
+4. **网络通信**：通过虚拟网桥和 veth pair 实现容器网络
 
-随着微服务架构和云原生应用的普及,Docker 及其生态系统将继续在软件开发领域发挥重要作用。
+**与虚拟机的区别**：
+- Docker 共享内核，虚拟机独立内核
+- Docker 秒级启动，虚拟机分钟级启动
+- Docker MB 级占用，虚拟机 GB 级占用
+
+**适用场景**：
+- 微服务架构
+- CI/CD 流水线
+- 环境标准化
+- 快速部署和扩展
+
+理解这些核心原理，你就掌握了 Docker 的本质。接下来可以深入学习具体的命令使用、Dockerfile 编写、网络配置等实践技能。
 
 ---
 
-## 常见问题 (FAQ)
+## 延伸学习
 
-### 1. Docker 容器和虚拟机有什么本质区别?
-
-**核心区别**在于隔离级别和资源使用方式:
-
-- **Docker 容器**共享宿主机的操作系统内核,通过命名空间和控制组实现进程级隔离。容器启动快(秒级),资源占用少(MB 级),但隔离性相对较弱。
-
-- **虚拟机**运行完整的客户操作系统,通过 Hypervisor 实现系统级隔离。启动慢(分钟级),资源占用大(GB 级),但提供更强的隔离性和安全性。
-
-**选择建议**: 对于需要快速部署、高密度运行的微服务应用,选择 Docker;对于需要运行不同操作系统或要求强隔离的场景,选择虚拟机。两者也可以结合使用,在虚拟机中运行 Docker 容器。
-
-### 2. 如何处理 Docker 容器中的数据持久化?
-
-容器删除后数据会丢失,有三种主要的持久化方案:
-
-**方案一: Volume (推荐)**
-```bash
-# 创建命名卷
-docker volume create mydata
-docker run -v mydata:/app/data myapp
-
-# 优点: Docker 管理,可移植性好,性能优秀
-```
-
-**方案二: Bind Mount**
-```bash
-# 挂载宿主机目录
-docker run -v /host/path:/container/path myapp
-
-# 优点: 方便开发调试,实时同步
-# 缺点: 依赖宿主机路径,可移植性差
-```
-
-**方案三: tmpfs Mount**
-```bash
-# 存储在内存中
-docker run --tmpfs /app/temp myapp
-
-# 适用: 临时敏感数据,不需要持久化
-```
-
-**最佳实践**: 生产环境使用 Volume,开发环境使用 Bind Mount,敏感临时数据使用 tmpfs。
-
-### 3. 如何优化 Docker 镜像大小?
-
-镜像太大会导致构建慢、部署慢、存储成本高。以下是优化策略:
-
-**策略一: 选择合适的基础镜像**
-```dockerfile
-# 使用 alpine 版本(5MB) 而不是标准版(上百MB)
-FROM node:18-alpine  # 而不是 FROM node:18
-```
-
-**策略二: 多阶段构建**
-```dockerfile
-# 构建阶段包含编译工具
-FROM node:18 AS builder
-WORKDIR /app
-COPY . .
-RUN npm install && npm run build
-
-# 运行阶段只包含必要文件
-FROM node:18-alpine
-COPY --from=builder /app/dist ./dist
-CMD ["node", "dist/server.js"]
-```
-
-**策略三: 减少镜像层数**
-```dockerfile
-# 合并 RUN 命令
-RUN apt-get update && \
-    apt-get install -y package1 package2 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-```
-
-**策略四: 使用 .dockerignore**
-```
-node_modules
-.git
-*.md
-.env
-```
-
-通过这些方法,可以将镜像从几GB优化到几十MB。
-
-### 4. Docker 容器之间如何通信?
-
-容器间通信有多种方式,取决于具体场景:
-
-**方式一: 自定义网络(推荐)**
-```bash
-# 创建网络
-docker network create mynetwork
-
-# 容器加入同一网络
-docker run --network mynetwork --name app1 image1
-docker run --network mynetwork --name app2 image2
-
-# app1 可以通过容器名访问 app2
-# 例如: http://app2:3000
-```
-
-**方式二: Docker Compose (最简单)**
-```yaml
-version: '3.8'
-services:
-  web:
-    image: nginx
-  api:
-    image: myapi
-    # web 可以通过 http://api:8080 访问
-```
-
-**方式三: 容器连接 (legacy,不推荐)**
-```bash
-docker run --name db mysql
-docker run --link db:database myapp
-```
-
-**方式四: Host 网络模式**
-```bash
-docker run --network host myapp
-# 直接使用宿主机网络,性能最好但隔离性差
-```
-
-**最佳实践**: 使用自定义桥接网络或 Docker Compose,通过服务名进行通信,DNS 自动解析。
-
-### 5. 如何保证 Docker 容器的安全性?
-
-容器安全是生产环境的关键考量,需要多层防护:
-
-**层面一: 镜像安全**
-```dockerfile
-# 使用官方镜像
-FROM node:18-alpine
-
-# 不使用 root 用户
-RUN addgroup -g 1001 nodejs && \
-    adduser -S nodejs -u 1001
-USER nodejs
-
-# 扫描漏洞
-# docker scan myimage:latest
-```
-
-**层面二: 运行时安全**
-```bash
-# 只读文件系统
-docker run --read-only myapp
-
-# 限制权限
-docker run --cap-drop=ALL --cap-add=NET_BIND_SERVICE myapp
-
-# 资源限制
-docker run --memory="512m" --cpus="1.0" myapp
-```
-
-**层面三: 网络安全**
-```bash
-# 使用自定义网络隔离
-docker network create --internal backend-network
-
-# 只暴露必要端口
-docker run -p 127.0.0.1:3000:3000 myapp
-```
-
-**层面四: 密钥管理**
-```bash
-# 使用 Docker Secrets (Swarm)
-echo "my_secret" | docker secret create db_password -
-docker service create --secret db_password myapp
-
-# 或使用环境变量 + 密钥管理工具
-docker run -e DB_PASSWORD_FILE=/run/secrets/db_password myapp
-```
-
-**层面五: 定期更新**
-```bash
-# 定期更新基础镜像
-docker pull node:18-alpine
-docker build -t myapp:latest .
-
-# 扫描和修复漏洞
-trivy image myapp:latest
-```
-
-**综合建议**: 最小权限原则 + 定期扫描 + 网络隔离 + 密钥管理 + 持续更新,构建纵深防御体系。
+- **深入 Namespace 和 Cgroups**：了解 Linux 内核如何实现容器隔离
+- **镜像构建优化**：学习如何编写高效的 Dockerfile
+- **Docker 网络详解**：深入理解各种网络模式的应用场景
+- **容器编排**：学习 Docker Compose 和 Kubernetes
+- **安全最佳实践**：了解容器安全加固方法

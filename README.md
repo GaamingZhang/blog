@@ -138,12 +138,6 @@ pnpm docs:build
 pnpm docs:clean-dev
 ```
 
-### 更新依赖
-
-```bash
-pnpm docs:update-package
-```
-
 ## 文章格式
 
 每篇 Markdown 文件都包含以下 frontmatter：
@@ -176,11 +170,3 @@ tag:
 ## 贡献
 
 目前该项目仅从本地gitlab仓库进行管理，该github仓库为镜像仓库。
-
-## 更新日志
-
-### v2.0.0
-- 升级到 VuePress 2.0
-- 使用 vuepress-theme-hope 主题
-- 优化构建性能
-- 增加内存配置（4GB）
