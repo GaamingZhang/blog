@@ -8,7 +8,7 @@ WORKDIR /app
 COPY . .
 
 # 安装pnpm
-RUN npm install -g pnpm
+RUN npm install pnpm
 
 # 设置CI环境变量，避免pnpm在非交互式环境中的提示
 ENV CI=true

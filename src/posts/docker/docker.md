@@ -10,7 +10,7 @@ tag:
   - ClaudeCode
 ---
 
-# Docker 核心原理与机制
+# 核心原理与机制
 
 ## 什么是 Docker
 

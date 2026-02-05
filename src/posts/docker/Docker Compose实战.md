@@ -1,4 +1,16 @@
-# Docker Compose实战
+---
+date: 2026-02-03
+author: Gaaming Zhang
+isOriginal: false
+article: true
+category:
+  - docker
+tag:
+  - docker
+  - ClaudeCode
+---
+
+# Docker Compose 实战
 
 ## 为什么需要Docker Compose？
 

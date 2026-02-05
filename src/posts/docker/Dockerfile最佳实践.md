@@ -1,4 +1,16 @@
-# Dockerfile最佳实践
+---
+date: 2026-02-03
+author: Gaaming Zhang
+isOriginal: false
+article: true
+category:
+  - docker
+tag:
+  - docker
+  - ClaudeCode
+---
+
+# Dockerfile 最佳实践
 
 ## Dockerfile是什么？
 
