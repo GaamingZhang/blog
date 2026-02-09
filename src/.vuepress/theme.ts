@@ -109,6 +109,14 @@ export default hopeTheme({
 
     icon: {
       prefix: "fa6-solid:",
-    }
+    },
+
+    pwa: {
+      favicon: "/favicon.ico",
+      cacheHTML: true,
+      cacheImage: true,
+      appendBase: true,
+      update: "hint",
+    },
   },
 });

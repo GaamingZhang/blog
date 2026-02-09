@@ -1,4 +1,5 @@
 import { defineUserConfig } from "vuepress";
+import { viteBundler } from "@vuepress/bundler-vite";
 
 import theme from "./theme.js";
 
@@ -12,5 +13,13 @@ export default defineUserConfig({
   theme,
 
   // 和 PWA 一起启用
-  // shouldPrefetch: false,
+  shouldPrefetch: false,
+
+  bundler: viteBundler({
+    viteOptions: {
+      build: {
+        chunkSizeWarningLimit: 2048,
+      },
+    },
+  }),
 });

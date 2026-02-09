@@ -5,3 +5,5 @@ src/.vuepress/.temp/
 src/.vuepress/dist/
 internal_scripts/
 internal/
+CLAUDE.md
+.claude/
