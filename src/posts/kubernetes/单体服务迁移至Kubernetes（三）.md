@@ -380,40 +380,7 @@ server {
 
 Nginx的权重负载均衡不是严格的百分比分配，而是基于加权轮询（Weighted Round Robin）算法。算法的核心是每个后端维护一个当前权重值，每次请求时选择当前权重最高的后端，并调整权重值。
 
-```
-假设有两个后端：
-A: weight=90, current_weight=0
-B: weight=10, current_weight=0
-
-请求1：
-  A: current_weight = 0 + 90 = 90
-  B: current_weight = 0 + 10 = 10
-  选择A（90最大），A: current_weight = 90 - 100 = -10
-
-请求2：
-  A: current_weight = -10 + 90 = 80
-  B: current_weight = 10 + 10 = 20
-  选择A（80最大），A: current_weight = 80 - 100 = -20
-
-请求3：
-  A: current_weight = -20 + 90 = 70
-  B: current_weight = 20 + 10 = 30
-  选择A（70最大），A: current_weight = 70 - 100 = -30
-
-...
-
-请求9：
-  A: current_weight = -80 + 90 = 10
-  B: current_weight = 80 + 10 = 90
-  选择B（90最大），B: current_weight = 90 - 100 = -10
-
-请求10：
-  A: current_weight = 10 + 90 = 100
-  B: current_weight = -10 + 10 = 0
-  选择A（100最大），A: current_weight = 100 - 100 = 0
-```
-
-经过10个请求后，A处理了9个，B处理了1个，符合90:10的比例。这个算法保证了长期的比例正确性，同时分布比较均匀（不会连续发送90个请求到A再发送10个到B）。
+每次请求到来时，算法为每个后端增加其权重值到当前权重，然后选择当前权重最高的后端，并减去总权重。经过足够的请求后，各后端的请求比例会精确符合权重设定。这个算法保证了长期的比例正确性，同时分布均匀（不会连续发送90个请求到A再发送10个到B）。
 
 **连接级 vs 请求级的负载均衡**：
 
@@ -421,32 +388,11 @@ Nginx的upstream是在请求级别做负载均衡的。每个HTTP请求独立选
 
 这与连接级负载均衡（如四层负载均衡器）不同。连接级负载均衡在建立TCP连接时选择后端，该连接的所有请求都发往同一个后端。
 
-**会话保持的处理**：
+**Nginx方案的优势**：流量比例精确可控、实时生效（reload即可）、支持基于Header/Cookie的复杂路由、不依赖DNS。
 
-如果应用需要会话保持（同一个用户的请求必须路由到同一个后端），可以使用`ip_hash`或`hash $cookie_sessionid consistent`等指令：
+**Nginx方案的劣势**：需要额外维护一层Nginx（需做高可用）、如果已有云负载均衡器会形成两层负载均衡。
 
-```nginx
-upstream backend {
-    ip_hash;  # 根据客户端IP做哈希，同一IP总是路由到同一后端
-    server 192.168.1.100:8080;
-    server 10.0.0.50:8080;
-}
-```
-
-但这会破坏权重的精确控制。更好的方案是应用层无状态化（会话外部化到Redis），这样就不需要会话保持。
-
-**Nginx方案的优势**：
-
-- 流量比例精确可控，实时生效
-- 切换和回滚都很快（reload Nginx配置即可）
-- 可以基于更复杂的条件路由（如Header、Cookie）
-- 对DNS没有依赖
-
-**Nginx方案的劣势**：
-
-- 需要一层额外的Nginx，增加了架构复杂度
-- Nginx成为单点，需要做高可用
-- 如果已经有云负载均衡器，相当于两层负载均衡
+如果应用需要会话保持，可以使用`ip_hash`指令，但这会破坏权重的精确控制。更好的方案是应用层无状态化（会话外部化到Redis）。
 
 ### Ingress灰度发布的实现原理
 
@@ -537,94 +483,9 @@ Ingress灰度主要适用于应用升级，而不是从外部环境迁移到Kube
 
 ### 服务网格的流量管理能力
 
-服务网格（如Istio）提供了最强大和灵活的流量管理能力，但也带来了额外的复杂度。
+服务网格（如Istio）通过在每个Pod旁边注入Envoy代理（Sidecar）拦截流量，提供了最精细的流量管理能力。通过VirtualService和DestinationRule，可以实现基于Header、权重、Cookie等多维度的流量路由，支持A/B测试、金丝雀发布、流量镜像等高级策略。
 
-**Istio的流量管理原理**：
-
-Istio通过在每个Pod旁边注入一个Envoy代理（Sidecar）来拦截所有进出Pod的流量。Envoy根据Istio的控制平面下发的配置来决定流量如何路由。
-
-```
-客户端请求
-    ↓
-Envoy Sidecar (客户端Pod)
-    ↓ 根据VirtualService规则路由
-Envoy Sidecar (服务端Pod v1或v2)
-    ↓
-应用容器
-```
-
-**VirtualService的权重路由**：
-
-```yaml
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-  name: my-app
-spec:
-  hosts:
-  - my-app
-  http:
-  - match:
-    - headers:
-        user-agent:
-          regex: ".*Chrome.*"
-    route:
-    - destination:
-        host: my-app
-        subset: v2
-      weight: 50
-    - destination:
-        host: my-app
-        subset: v1
-      weight: 50
-  - route:
-    - destination:
-        host: my-app
-        subset: v2
-      weight: 10
-    - destination:
-        host: my-app
-        subset: v1
-      weight: 90
----
-apiVersion: networking.istio.io/v1beta1
-kind: DestinationRule
-metadata:
-  name: my-app
-spec:
-  host: my-app
-  subsets:
-  - name: v1
-    labels:
-      version: v1
-  - name: v2
-    labels:
-      version: v2
-```
-
-这个配置的含义是：
-- Chrome浏览器的用户，50%流量到v2，50%到v1
-- 其他用户，10%流量到v2，90%到v1
-
-**Istio的优势**：
-
-- 流量控制非常精细，支持各种路由规则
-- 可以做A/B测试、蓝绿部署、金丝雀发布等多种策略
-- 提供了丰富的可观测性（自动生成metrics、traces）
-- 支持流量镜像（将生产流量复制一份发送到测试环境）
-
-**Istio的劣势**：
-
-- 学习曲线陡峭，概念复杂（VirtualService、DestinationRule、Gateway等）
-- 性能开销：每个Pod多一个Sidecar，CPU和内存消耗增加
-- 调试困难：流量路由逻辑在Envoy中，排查问题需要理解Envoy的工作原理
-- 对现有应用的侵入性：需要注入Sidecar，可能影响应用的网络行为
-
-**使用建议**：
-
-- 如果团队刚开始使用Kubernetes，不建议立即引入Istio，先掌握Kubernetes本身的能力
-- 如果应用数量多、服务间调用复杂、需要精细的流量控制，Istio的价值才能体现
-- 可以先在非关键应用上试点Istio，积累经验后再推广
+但Istio也带来了显著的复杂度：学习曲线陡峭、每个Pod多一个Sidecar增加资源开销、调试困难。**如果团队刚开始使用Kubernetes，不建议立即引入Istio**，先掌握Kubernetes本身的能力。等应用数量多、服务间调用复杂时，再考虑引入。
 
 ## CI/CD流水线改造
 
@@ -792,123 +653,17 @@ docker push ${REGISTRY}/myapp:v1.2.3
 
 镜像一旦构建并打上标签，不应该被修改或覆盖。这是容器化的核心原则之一。
 
-**违反不可变性的反模式**：
+镜像一旦构建并打上标签，不应该被覆盖。覆盖标签会导致不同节点拉取到不同版本、无法回滚到真正的上一版本等问题。正确做法是每次构建生成唯一标签（如`myapp:1.0-build-123`）。
 
-```bash
-# 错误做法：每次构建都覆盖同一个标签
-docker build -t myapp:1.0 .
-docker push myapp:1.0  # 覆盖了之前的myapp:1.0
-```
+不可变性的好处：确定性（相同标签指向相同内容）、可追溯、可重复、易于回滚。
 
-这种做法的问题：
-- 无法确定某个环境运行的是哪次构建的镜像
-- 不同节点可能拉取到不同版本的`myapp:1.0`（有些节点有缓存，有些节点拉取新版本）
-- 无法回滚到真正的"上一个版本"（因为标签被覆盖了）
+**Kubernetes的imagePullPolicy**也与此相关：`latest`标签默认为`Always`（每次拉取），其他标签默认为`IfNotPresent`（有缓存就用缓存）。如果覆盖了标签，现有Pod不会自动更新，可能导致同一Deployment的不同Pod运行不同版本的代码。
 
-**正确的做法**：
+### 镜像安全扫描
 
-```bash
-# 每次构建生成唯一标签
-docker build -t myapp:1.0-build-123 .
-docker push myapp:1.0-build-123
+镜像安全扫描用于在部署前发现安全漏洞。工具如Trivy、Clair等，工作流程是：解压镜像层、识别OS和软件包、对比CVE数据库、生成漏洞报告。
 
-# 下次构建
-docker build -t myapp:1.0-build-124 .
-docker push myapp:1.0-build-124
-```
-
-**不可变性的好处**：
-
-- 确定性：相同的镜像标签在任何时间、任何地点都指向相同的内容
-- 可追溯：每个镜像都有唯一标识，可以精确追溯到构建时的代码和环境
-- 可重复：可以在任何时候重新部署任何历史版本，结果完全一致
-- 易于回滚：回滚就是部署一个旧的镜像标签，不需要重新构建
-
-**Kubernetes的imagePullPolicy**：
-
-理解这个策略对镜像管理很重要：
-
-- `Always`：每次创建Pod都从镜像仓库拉取（即使本地有缓存）
-- `IfNotPresent`：本地有缓存就用缓存，没有才拉取（默认策略）
-- `Never`：只使用本地缓存，从不拉取
-
-对于`latest`标签，默认是`Always`。对于其他标签，默认是`IfNotPresent`。
-
-如果你违反了不可变性原则（覆盖标签），即使使用`Always`策略，Kubernetes也只会在Pod重建时拉取新镜像，现有的Pod不会自动更新。这会导致同一个Deployment的不同Pod运行不同版本的代码。
-
-**最佳实践**：
-
-- 总是使用唯一的标签，不要覆盖
-- 生产环境使用`IfNotPresent`策略（减少镜像仓库压力）
-- 禁止使用`latest`标签（除了开发环境的快速迭代）
-
-### 镜像安全扫描的工作原理
-
-镜像安全扫描是CI/CD流水线的重要环节，用于在部署前发现镜像中的安全漏洞。
-
-**漏洞扫描的原理**：
-
-工具如Trivy、Clair、Anchore等，工作流程是：
-1. 解压镜像的每一层文件系统
-2. 识别操作系统类型（Ubuntu、Alpine等）
-3. 提取已安装的软件包列表（从`/var/lib/dpkg`、`/var/lib/rpm`等）
-4. 对比漏洞数据库（如CVE数据库）
-5. 生成漏洞报告
-
-**以Trivy为例**：
-
-```bash
-# 扫描镜像
-trivy image myapp:1.0-build-123
-
-# 输出示例
-Total: 150 (UNKNOWN: 0, LOW: 50, MEDIUM: 80, HIGH: 15, CRITICAL: 5)
-
-CRITICAL: 5
-CVE-2021-12345 | openssl | 1.1.1k | 1.1.1l | Buffer overflow
-CVE-2021-23456 | curl    | 7.68.0 | 7.68.1 | Remote code execution
-...
-```
-
-**集成到CI/CD**：
-
-```groovy
-stage('Security Scan') {
-    steps {
-        sh '''
-            trivy image --severity CRITICAL,HIGH \
-                --exit-code 1 \
-                ${IMAGE_TAG}
-        '''
-    }
-}
-```
-
-`--exit-code 1`表示如果发现CRITICAL或HIGH级别的漏洞，退出码为1，导致CI失败，阻止部署。
-
-**漏洞修复策略**：
-
-- CRITICAL级别：必须修复才能部署
-- HIGH级别：评估风险，优先修复
-- MEDIUM/LOW级别：记录，计划修复
-
-修复方法：
-1. 更新基础镜像（如从`ubuntu:20.04`更新到`ubuntu:22.04`）
-2. 更新软件包（`apt-get upgrade`）
-3. 移除不必要的软件包（减少攻击面）
-
-**扫描的局限性**：
-
-- 只能发现已知漏洞（CVE），无法发现0day漏洞
-- 只能扫描操作系统包和部分编程语言包，无法扫描自定义代码
-- 可能有误报（工具识别错误或漏洞不适用于你的使用场景）
-
-**最佳实践**：
-
-- 在CI流程中强制扫描，阻止有严重漏洞的镜像进入生产
-- 定期扫描生产环境的镜像（漏洞数据库会更新，昨天没有的漏洞今天可能出现）
-- 使用Distroless或Alpine等最小化基础镜像（减少攻击面）
-- 建立漏洞响应流程（发现漏洞后多久必须修复）
+在CI/CD中集成扫描，使用`--exit-code 1`配置使CRITICAL/HIGH级别漏洞阻断部署。修复方法包括更新基础镜像、更新软件包、移除不必要的包。需要注意扫描只能发现已知漏洞，且应定期重新扫描生产镜像（漏洞数据库持续更新）。
 
 ## 可观测性架构
 
@@ -1257,38 +1012,11 @@ containerLogMaxFiles: 5
 └─────────────────────────────────────────────────────────┘
 ```
 
-**Trace ID的传播**：
+**Trace ID的传播**：分布式追踪的关键是Trace ID必须通过HTTP Header在所有服务间传播，这样就可以根据Trace ID查询到整个请求链路的所有日志和Span。
 
-分布式追踪的关键是Trace ID必须在所有服务间传播。通常通过HTTP Header实现：
+**采样策略**：记录所有Trace会产生海量数据，通常需要采样。常见策略包括固定比例采样（随机10%）、基于延迟的采样（只采样慢请求）、基于错误的采样（采样所有失败请求）。
 
-```
-客户端请求
-    ↓
-API Gateway生成Trace ID: abc123
-    ↓ HTTP Header: X-Trace-Id: abc123
-Service A接收请求，提取Trace ID
-    ↓ HTTP Header: X-Trace-Id: abc123
-Service B接收请求，提取Trace ID
-    ↓
-所有服务的日志和Span都包含Trace ID: abc123
-```
-
-这样就可以根据Trace ID查询到整个请求的所有日志和Span。
-
-**采样策略**：
-
-记录所有请求的Trace会产生海量数据，通常需要采样。常见策略：
-
-- **固定比例采样**：随机采样10%的请求
-- **基于延迟的采样**：只采样响应时间超过阈值的请求
-- **基于错误的采样**：采样所有失败的请求
-- **头部采样 vs 尾部采样**：头部采样在请求开始时决定是否采样，尾部采样在请求结束后根据结果决定（更灵活但实现复杂）
-
-**Jaeger、Zipkin、OpenTelemetry**：
-
-- Jaeger和Zipkin是分布式追踪系统的实现
-- OpenTelemetry是统一的可观测性标准，包括追踪、指标、日志
-- 推荐使用OpenTelemetry SDK（语言无关），数据可以发送到Jaeger、Zipkin或其他后端
+**技术选型**：推荐使用OpenTelemetry SDK（统一的可观测性标准），数据可以发送到Jaeger、Zipkin等后端。
 
 **应用接入追踪**：
 
@@ -1442,25 +1170,7 @@ kubectl rollout undo deployment/my-app --to-revision=2
 4. 遵循maxSurge和maxUnavailable的配置
 5. 完成后，目标ReplicaSet成为当前版本，revision号递增
 
-**回滚的速度**：
-
-回滚的速度取决于几个因素：
-- Pod的启动速度（镜像拉取、应用启动、就绪探针）
-- maxSurge和maxUnavailable的配置（控制替换的并发度）
-- 节点的资源可用性（是否有足够资源创建新Pod）
-
-通常，回滚和正常的滚动更新速度相同，因为它们是同一个机制。如果需要更快的回滚，可以临时调整maxSurge和maxUnavailable：
-
-```bash
-# 加快回滚速度
-kubectl patch deployment my-app -p '{"spec":{"strategy":{"rollingUpdate":{"maxSurge":"100%","maxUnavailable":"0"}}}}'
-
-# 执行回滚
-kubectl rollout undo deployment/my-app
-
-# 恢复默认配置
-kubectl patch deployment my-app -p '{"spec":{"strategy":{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":"25%"}}}}'
-```
+回滚与正常滚动更新使用同一机制，速度取决于Pod启动速度和maxSurge/maxUnavailable配置。如果需要更快回滚，可以临时将maxSurge调高。
 
 **回滚的局限性**：
 
@@ -1486,17 +1196,7 @@ kubectl patch deployment my-app -p '{"spec":{"strategy":{"rollingUpdate":{"maxSu
 
 如果整个Kubernetes环境出现问题（不是单个应用的问题，而是集群级的问题），需要能够快速将流量切回旧环境。
 
-**什么情况需要环境级回滚**：
-
-- Kubernetes集群网络故障（Pod间无法通信）
-- 存储系统故障（PV无法挂载）
-- API Server不可用（无法部署和回滚）
-- 大规模的Node故障（多个节点同时宕机）
-- 性能问题（整体延迟增加，但不是单个应用的问题）
-
-**环境级回滚的实施**：
-
-根据流量切换方案的不同，回滚方式也不同：
+当集群出现网络故障、存储异常、API Server不可用、大规模节点故障等问题时，需要环境级回滚。根据流量切换方案的不同，回滚方式也不同：
 
 **DNS切换方案**：
 ```bash
@@ -1532,20 +1232,7 @@ nginx -s reload
 - 回滚操作必须经过演练，确保团队熟悉流程
 - 有明确的决策流程（谁有权限决定环境级回滚）
 
-**旧环境的保留期**：
-
-迁移完成后，旧环境应该保留多久？
-
-- 最少：2周（覆盖两个完整的业务周期）
-- 推荐：4周（给团队足够的信心）
-- 最多：3个月（过长会增加维护成本）
-
-在保留期内：
-- 旧环境保持可用状态，但不接收流量
-- 定期验证旧环境可以快速接管流量（每周一次切流演练）
-- 监控和日志系统同时覆盖新旧环境
-
-保留期结束后，才能下线旧环境，释放资源。
+**旧环境的保留期**：最少2周，推荐4周，最多3个月。保留期内旧环境保持可用但不接收流量，每周演练切流验证。保留期结束后才可下线。
 
 ### 数据回滚的考量
 
@@ -1895,31 +1582,9 @@ RUN echo "* soft nofile 65535" >> /etc/security/limits.conf && \
 
 如果新旧环境共享同一个数据库实例，天然保持一致，这是最简单也是推荐的做法。
 
-如果必须使用不同的数据库实例（比如旧环境是自建MySQL，新环境是云RDS），需要在数据库层面实现同步。常见方案：
+如果必须使用不同的数据库实例，需要在数据库层面实现同步。常见方案包括：主从复制（旧环境为主库，新环境为从库）、CDC工具（Debezium、Canal捕获binlog实时同步）。不推荐双写方案，一致性问题难以处理。
 
-**主从复制**：
-- 旧环境数据库作为主库
-- 新环境数据库作为从库，实时复制数据
-- 迁移期间，两边都只读主库，数据一致
-- 迁移完成后，提升从库为主库
-
-**双写**：
-- 应用同时写入两个数据库
-- 读取时从一个数据库读
-- 需要处理写入失败、一致性问题
-- 实现复杂，不推荐
-
-**数据同步工具**：
-- 使用Debezium、Canal等CDC工具
-- 捕获旧数据库的binlog
-- 实时同步到新数据库
-- 适合异构数据库（如MySQL到PostgreSQL）
-
-**最佳实践**：
-- 迁移初期强烈建议共享数据库，减少复杂度
-- 只在旧数据库必须下线时才考虑数据迁移
-- 数据迁移应该在应用迁移完成后单独进行
-- 数据迁移需要充分的演练和验证
+**最佳实践**：迁移初期强烈建议共享数据库，减少复杂度。数据迁移应在应用迁移完成后单独进行，需要充分的演练和验证。
 
 ### Q2: 灰度期间如何保证用户会话的一致性？
 
@@ -2132,50 +1797,8 @@ echo "迁移完成"
 
 需要逐步替换，而不是立即删除。
 
-**分层分析**：
+**迁移路径**：第1周建立Prometheus+Grafana新监控体系；第2-4周新旧并行运行，验证数据准确性；第5-6周切换告警到新系统；第7-8周确认覆盖完整后下线旧监控。
 
-| 监控层次 | 原监控系统 | Kubernetes监控 | 建议 |
-|----------|------------|----------------|------|
-| 应用指标（QPS、错误率、延迟） | Zabbix、自建系统 | Prometheus + Grafana | 替换，Prometheus更适合云原生 |
-| 容器指标（CPU、内存、网络） | 无 | Prometheus + cAdvisor | 新增 |
-| Pod状态（重启、OOM） | 无 | kube-state-metrics | 新增 |
-| 节点指标（磁盘、网络、负载） | Zabbix、Nagios | Node Exporter | 保留旧监控，直到Prometheus覆盖完整 |
-| 日志 | ELK、Splunk | EFK/Loki | 可以共存，逐步迁移 |
-| 告警 | Zabbix、PagerDuty | Prometheus Alertmanager | 双写告警（两边都发），验证后切换 |
+**分层处理**：应用指标（QPS、错误率）替换为Prometheus；容器和Pod指标是新增的（cAdvisor、kube-state-metrics）；节点硬件、机房环境、网络设备的监控不属于Kubernetes职责，需保留传统工具。
 
-**迁移路径**：
-
-1. **第1周：建立新监控**
-   - 部署Prometheus、Grafana、Alertmanager
-   - 配置ServiceMonitor，开始采集指标
-   - 创建看板，对比新旧监控数据
-
-2. **第2-4周：并行运行**
-   - 新旧监控同时运行
-   - 验证新监控的准确性（数据对比）
-   - 调整告警规则（减少误报）
-
-3. **第5-6周：切换告警**
-   - 保留旧监控的数据采集
-   - 告警从新系统发出
-   - 观察是否有漏报或误报
-
-4. **第7-8周：下线旧监控**
-   - 确认新监控覆盖完整
-   - 导出旧监控的历史数据（如果需要）
-   - 关闭旧监控系统
-
-**需要永久保留的监控**：
-
-- 节点硬件健康（磁盘SMART、RAID状态、温度）
-- 机房环境（温度、湿度、电源）
-- 网络设备（交换机、路由器）
-- 存储系统（如果使用独立的存储）
-
-这些不是Kubernetes的职责，需要传统的基础设施监控工具。
-
-**建议**：
-- 不要急于下线旧监控，先建立信心
-- 保留至少1-2个月的overlap期
-- 告警双写一段时间，确保没有监控盲区
-- 文档化新监控系统的使用方法，培训团队
+**关键原则**：保留至少1-2个月的overlap期，告警双写确保没有监控盲区。
