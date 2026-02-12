@@ -9,6 +9,9 @@ pipeline {
     booleanParam(name: 'SKIP_ACCESS_LOG_PROCESSOR', defaultValue: false, description: '是否跳过博客访问日志处理服务的部署')
     booleanParam(name: 'DEPLOY_TO_ALI_BEIJING_NODE', defaultValue: false, description: '是否部署到Ali BeiJing Node')
     booleanParam(name: 'DEPLOY_TO_TENCENT_GUANGZHOU_NODE', defaultValue: false, description: '是否部署到Tencent Guangzhou Node')
+    booleanParam(name: 'SYNC_SSL_CERTS', defaultValue: false, description: '是否同步SSL证书文件')
+    choice(name: 'SSL_CERTS_SOURCE_SERVER', choices: ['AliBeijing', 'TencentGuangzhou'], description: 'SSL证书源服务器')
+    choice(name: 'SSL_CERTS_TARGET_SERVER', choices: ['TencentGuangzhou', 'AliBeijing'], description: 'SSL证书目标服务器')
   }
 
   environment {
@@ -23,6 +26,12 @@ pipeline {
     VERSION = "${BUILD_NUMBER}"
     MAX_BACKUPS = 10
     LOG_PROCESS_SCRIPTS = "${BLOG_DEPLOY_PATH}/scripts"
+    SSL_CERTS_SOURCE_DIR = '/etc/letsencrypt/live/gaaming.com.cn'
+    SSL_CERTS_TARGET_DIR = '/etc/letsencrypt/live/gaaming.com.cn'
+    SSL_DHPARAM_SOURCE = '/etc/letsencrypt/ssl-dhparams.pem'
+    SSL_DHPARAM_TARGET = '/etc/letsencrypt/ssl-dhparams.pem'
+    SSL_OPTIONS_SOURCE = '/etc/letsencrypt/options-ssl-nginx.conf'
+    SSL_OPTIONS_TARGET = '/etc/letsencrypt/options-ssl-nginx.conf'
   }
 
   // TODO: 部署前生成 official_blog_<buildNumber> 分支
@@ -132,6 +141,41 @@ pipeline {
       }
     }
 
+    stage('Sync SSL Certs') {
+      when {
+        expression { params.SYNC_SSL_CERTS == true }
+      }
+      steps {
+        script {
+          def sourceServer = params.SSL_CERTS_SOURCE_SERVER
+          def targetServer = params.SSL_CERTS_TARGET_SERVER
+          
+          if (sourceServer == targetServer) {
+            error "源服务器和目标服务器不能相同"
+          }
+          
+          def sourceIpCredential = sourceServer == 'AliBeijing' ? ALI_BEIJING_NODE_IP : TENCENT_GUANGZHOU_NODE_IP
+          def sourceUserCredential = sourceServer == 'AliBeijing' ? ALI_BEIJING_NODE_DEPLOY_USER : TENCENT_GUANGZHOU_NODE_DEPLOY_USER
+          def sourceSshCredential = sourceServer == 'AliBeijing' ? ALI_BEIJING_NODE_SSH_KEY_CREDENTIAL : TENCENT_GUANGZHOU_NODE_SSH_KEY_CREDENTIAL
+          
+          def targetIpCredential = targetServer == 'AliBeijing' ? ALI_BEIJING_NODE_IP : TENCENT_GUANGZHOU_NODE_IP
+          def targetUserCredential = targetServer == 'AliBeijing' ? ALI_BEIJING_NODE_DEPLOY_USER : TENCENT_GUANGZHOU_NODE_DEPLOY_USER
+          def targetSshCredential = targetServer == 'AliBeijing' ? ALI_BEIJING_NODE_SSH_KEY_CREDENTIAL : TENCENT_GUANGZHOU_NODE_SSH_KEY_CREDENTIAL
+          
+          withCredentials([
+            string(credentialsId: sourceIpCredential, variable: 'SOURCE_HOST'),
+            string(credentialsId: sourceUserCredential, variable: 'SOURCE_USER'),
+            sshUserPrivateKey(credentialsId: sourceSshCredential, keyFileVariable: 'SOURCE_SSH_KEY'),
+            string(credentialsId: targetIpCredential, variable: 'TARGET_HOST'),
+            string(credentialsId: targetUserCredential, variable: 'TARGET_USER'),
+            sshUserPrivateKey(credentialsId: targetSshCredential, keyFileVariable: 'TARGET_SSH_KEY')
+          ]) {
+            syncSSLCerts()
+          }
+        }
+      }
+    }
+
     // TODO: 创建新的流水线部署 Nginx
     // TODO: 增加备份旧版本的 stage
     // TODO: 增加回滚 stage
@@ -186,7 +230,7 @@ pipeline {
         string(credentialsId: 'wxpush_templateID', variable: 'WXPUSH_TEMPLATEID')
       ]) {
         sh '''
-          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署成功" -content "gaamingzhangblog v.'${BUILD_NUMBER}' 已成功部署 $(hostname)"
+          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署成功" -content "gaamingzhangblog v.'${BUILD_NUMBER}' 部署成功"
         '''
       }
     }
@@ -198,7 +242,7 @@ pipeline {
         string(credentialsId: 'wxpush_templateID', variable: 'WXPUSH_TEMPLATEID')
       ]) {
         sh '''
-          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署失败" -content "gaamingzhangblog v.'${BUILD_NUMBER}' 部署失败 $(hostname)"
+          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署失败" -content "gaamingzhangblog v.'${BUILD_NUMBER}' 部署失败"
         '''
       }
     }
@@ -245,6 +289,50 @@ def deployNginxConfig() {
         ssh -i "\${SSH_KEY}" -o StrictHostKeyChecking=no "\$REMOTE" "sudo systemctl reload nginx"
         
         echo "Nginx配置已部署并重新加载"
+    """
+}
+
+def syncSSLCerts() {
+    sh """
+        set -e
+        SOURCE_REMOTE="\${SOURCE_USER}@\${SOURCE_HOST}"
+        TARGET_REMOTE="\${TARGET_USER}@\${TARGET_HOST}"
+        
+        echo "同步SSL证书从 \$SOURCE_REMOTE 到 \$TARGET_REMOTE"
+        
+        # 创建临时目录
+        TMP_DIR=\$(mktemp -d)
+        echo "创建临时目录: \$TMP_DIR"
+        
+        # 从源服务器复制SSL证书文件到本地临时目录
+        echo "从源服务器复制证书文件..."
+        scp -i "\${SOURCE_SSH_KEY}" -o StrictHostKeyChecking=no "\$SOURCE_REMOTE:${SSL_CERTS_SOURCE_DIR}/fullchain.pem" "\$TMP_DIR/"
+        scp -i "\${SOURCE_SSH_KEY}" -o StrictHostKeyChecking=no "\$SOURCE_REMOTE:${SSL_CERTS_SOURCE_DIR}/privkey.pem" "\$TMP_DIR/"
+        scp -i "\${SOURCE_SSH_KEY}" -o StrictHostKeyChecking=no "\$SOURCE_REMOTE:${SSL_OPTIONS_SOURCE}" "\$TMP_DIR/"
+        scp -i "\${SOURCE_SSH_KEY}" -o StrictHostKeyChecking=no "\$SOURCE_REMOTE:${SSL_DHPARAM_SOURCE}" "\$TMP_DIR/"
+        
+        # 在目标服务器创建目录
+        echo "在目标服务器创建目录..."
+        ssh -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TARGET_REMOTE" "sudo mkdir -p ${SSL_CERTS_TARGET_DIR}"
+        
+        # 复制证书文件到目标服务器
+        echo "复制证书文件到目标服务器..."
+        scp -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TMP_DIR/fullchain.pem" "\$TARGET_REMOTE:/tmp/"
+        scp -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TMP_DIR/privkey.pem" "\$TARGET_REMOTE:/tmp/"
+        scp -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TMP_DIR/options-ssl-nginx.conf" "\$TARGET_REMOTE:/tmp/"
+        scp -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TMP_DIR/ssl-dhparams.pem" "\$TARGET_REMOTE:/tmp/"
+        
+        # 移动文件到目标位置
+        echo "移动文件到目标位置..."
+        ssh -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TARGET_REMOTE" "sudo mv /tmp/fullchain.pem ${SSL_CERTS_TARGET_DIR}/"
+        ssh -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TARGET_REMOTE" "sudo mv /tmp/privkey.pem ${SSL_CERTS_TARGET_DIR}/"
+        ssh -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TARGET_REMOTE" "sudo mv /tmp/options-ssl-nginx.conf ${SSL_OPTIONS_TARGET}"
+        ssh -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TARGET_REMOTE" "sudo mv /tmp/ssl-dhparams.pem ${SSL_DHPARAM_TARGET}"
+        
+        # 清理临时目录
+        rm -rf "\$TMP_DIR"
+        
+        echo "SSL证书同步完成"
     """
 }
 
