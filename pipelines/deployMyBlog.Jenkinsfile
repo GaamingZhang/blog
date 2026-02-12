@@ -7,16 +7,16 @@ pipeline {
 
   parameters {
     booleanParam(name: 'SKIP_ACCESS_LOG_PROCESSOR', defaultValue: false, description: '是否跳过博客访问日志处理服务的部署')
-    booleanParam(name: 'DEPLOY_TO_TENCENT_NODE', defaultValue: false, description: '是否部署到Tencent Node')
+    booleanParam(name: 'DEPLOY_TO_ALI_BEIJING_NODE', defaultValue: false, description: '是否部署到Ali BeiJing Node')
     booleanParam(name: 'DEPLOY_TO_TENCENT_GUANGZHOU_NODE', defaultValue: false, description: '是否部署到Tencent Guangzhou Node')
   }
 
   environment {
     BLOG_DEPLOY_PATH = '/var/www/vuepress-blog'
     NGINX_CONF_REMOTE = '/etc/nginx/conf.d/myBlog.conf'
-    TENCENT_NODE_IP = 'TencentNodeIP'
-    TENCENT_NODE_DEPLOY_USER = 'TencentNodeDeployUser'
-    TENCENT_NODE_SSH_KEY_CREDENTIAL = 'TencentNodeSSHKey'
+    ALI_BEIJING_NODE_IP = 'AliBeijingNodeIP'
+    ALI_BEIJING_NODE_DEPLOY_USER = 'AliBeijingNodeDeployUser'
+    ALI_BEIJING_NODE_SSH_KEY_CREDENTIAL = 'AliBeijingNodeSSH'
     TENCENT_GUANGZHOU_NODE_IP = 'TencentGuangzhouNodeIP'
     TENCENT_GUANGZHOU_NODE_DEPLOY_USER = 'TencentGuangzhouNodeDeployUser'
     TENCENT_GUANGZHOU_NODE_SSH_KEY_CREDENTIAL = 'TencentGuangzhouNodeSSH'
@@ -52,13 +52,13 @@ pipeline {
         script {
           def deployJobs = [:]
           
-          // 只有当DEPLOY_TO_TENCENT_NODE为true时才添加Tencent Node的部署任务
-          if (params.DEPLOY_TO_TENCENT_NODE) {
-            deployJobs["Deploy to Tencent Node"] = {
+          // 只有当DEPLOY_TO_ALI_BEIJING_NODE为true时才添加Ali BeiJing Node的部署任务
+          if (params.DEPLOY_TO_ALI_BEIJING_NODE) {
+            deployJobs["Deploy to Ali BeiJing Node"] = {
               withCredentials([
-                string(credentialsId: TENCENT_NODE_IP, variable: 'DEPLOY_HOST'),
-                string(credentialsId: TENCENT_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
-                sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+                string(credentialsId: ALI_BEIJING_NODE_IP, variable: 'DEPLOY_HOST'),
+                string(credentialsId: ALI_BEIJING_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+                sshUserPrivateKey(credentialsId: ALI_BEIJING_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
               ]) {
                 deployToRemote()
               }
@@ -96,13 +96,13 @@ pipeline {
         script {
           def processJobs = [:]
           
-          // 只有当DEPLOY_TO_TENCENT_NODE为true时才添加Tencent Node的处理任务
-          if (params.DEPLOY_TO_TENCENT_NODE) {
-            processJobs["Process Blog Access Log on Tencent Node"] = {
+          // 只有当DEPLOY_TO_ALI_BEIJING_NODE为true时才添加Ali BeiJing Node的处理任务
+          if (params.DEPLOY_TO_ALI_BEIJING_NODE) {
+            processJobs["Process Blog Access Log on Ali BeiJing Node"] = {
               withCredentials([
-                string(credentialsId: TENCENT_NODE_IP, variable: 'DEPLOY_HOST'),
-                string(credentialsId: TENCENT_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
-                sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+                string(credentialsId: ALI_BEIJING_NODE_IP, variable: 'DEPLOY_HOST'),
+                string(credentialsId: ALI_BEIJING_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+                sshUserPrivateKey(credentialsId: ALI_BEIJING_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
               ]) {
                 processBlogAccessLog()
               }
@@ -140,13 +140,13 @@ pipeline {
         script {
           def nginxJobs = [:]
           
-          // 只有当DEPLOY_TO_TENCENT_NODE为true时才添加Tencent Node的Nginx配置部署任务
-          if (params.DEPLOY_TO_TENCENT_NODE) {
-            nginxJobs["Deploy Nginx Config to Tencent Node"] = {
+          // 只有当DEPLOY_TO_ALI_BEIJING_NODE为true时才添加Ali BeiJing Node的Nginx配置部署任务
+          if (params.DEPLOY_TO_ALI_BEIJING_NODE) {
+            nginxJobs["Deploy Nginx Config to Ali BeiJing Node"] = {
               withCredentials([
-                string(credentialsId: TENCENT_NODE_IP, variable: 'DEPLOY_HOST'),
-                string(credentialsId: TENCENT_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
-                sshUserPrivateKey(credentialsId: TENCENT_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
+                string(credentialsId: ALI_BEIJING_NODE_IP, variable: 'DEPLOY_HOST'),
+                string(credentialsId: ALI_BEIJING_NODE_DEPLOY_USER, variable: 'DEPLOY_USER'),
+                sshUserPrivateKey(credentialsId: ALI_BEIJING_NODE_SSH_KEY_CREDENTIAL, keyFileVariable: 'SSH_KEY')
               ]) {
                 deployNginxConfig()
               }
@@ -186,7 +186,7 @@ pipeline {
         string(credentialsId: 'wxpush_templateID', variable: 'WXPUSH_TEMPLATEID')
       ]) {
         sh '''
-          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署成功" -content "博客项目 gaamingzhangblog v.'${BUILD_NUMBER}' 已成功部署到生产环境"
+          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署成功" -content "gaamingzhangblog v.'${BUILD_NUMBER}' 已成功部署 $(hostname)"
         '''
       }
     }
@@ -198,7 +198,7 @@ pipeline {
         string(credentialsId: 'wxpush_templateID', variable: 'WXPUSH_TEMPLATEID')
       ]) {
         sh '''
-          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署失败" -content "博客项目 gaamingzhangblog v.'${BUILD_NUMBER}' 部署失败"
+          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署失败" -content "gaamingzhangblog v.'${BUILD_NUMBER}' 部署失败 $(hostname)"
         '''
       }
     }
