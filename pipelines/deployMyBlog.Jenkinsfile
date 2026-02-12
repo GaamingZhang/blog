@@ -300,37 +300,22 @@ def syncSSLCerts() {
         
         echo "同步SSL证书从 \$SOURCE_REMOTE 到 \$TARGET_REMOTE"
         
-        # 创建临时目录
-        TMP_DIR=\$(mktemp -d)
-        echo "创建临时目录: \$TMP_DIR"
-        
-        # 从源服务器复制SSL证书文件到本地临时目录
-        echo "从源服务器复制证书文件..."
-        scp -i "\${SOURCE_SSH_KEY}" -o StrictHostKeyChecking=no "\$SOURCE_REMOTE:${SSL_CERTS_SOURCE_DIR}/fullchain.pem" "\$TMP_DIR/"
-        scp -i "\${SOURCE_SSH_KEY}" -o StrictHostKeyChecking=no "\$SOURCE_REMOTE:${SSL_CERTS_SOURCE_DIR}/privkey.pem" "\$TMP_DIR/"
-        scp -i "\${SOURCE_SSH_KEY}" -o StrictHostKeyChecking=no "\$SOURCE_REMOTE:${SSL_OPTIONS_SOURCE}" "\$TMP_DIR/"
-        scp -i "\${SOURCE_SSH_KEY}" -o StrictHostKeyChecking=no "\$SOURCE_REMOTE:${SSL_DHPARAM_SOURCE}" "\$TMP_DIR/"
-        
         # 在目标服务器创建目录
         echo "在目标服务器创建目录..."
         ssh -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TARGET_REMOTE" "sudo mkdir -p ${SSL_CERTS_TARGET_DIR}"
         
-        # 复制证书文件到目标服务器
-        echo "复制证书文件到目标服务器..."
-        scp -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TMP_DIR/fullchain.pem" "\$TARGET_REMOTE:/tmp/"
-        scp -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TMP_DIR/privkey.pem" "\$TARGET_REMOTE:/tmp/"
-        scp -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TMP_DIR/options-ssl-nginx.conf" "\$TARGET_REMOTE:/tmp/"
-        scp -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TMP_DIR/ssl-dhparams.pem" "\$TARGET_REMOTE:/tmp/"
+        # 直接从源服务器复制文件到目标服务器（通过SSH管道，不经过Jenkins节点）
+        echo "同步 fullchain.pem..."
+        ssh -i "\${SOURCE_SSH_KEY}" -o StrictHostKeyChecking=no "\$SOURCE_REMOTE" "sudo cat ${SSL_CERTS_SOURCE_DIR}/fullchain.pem" | ssh -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TARGET_REMOTE" "sudo tee ${SSL_CERTS_TARGET_DIR}/fullchain.pem > /dev/null"
         
-        # 移动文件到目标位置
-        echo "移动文件到目标位置..."
-        ssh -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TARGET_REMOTE" "sudo mv /tmp/fullchain.pem ${SSL_CERTS_TARGET_DIR}/"
-        ssh -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TARGET_REMOTE" "sudo mv /tmp/privkey.pem ${SSL_CERTS_TARGET_DIR}/"
-        ssh -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TARGET_REMOTE" "sudo mv /tmp/options-ssl-nginx.conf ${SSL_OPTIONS_TARGET}"
-        ssh -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TARGET_REMOTE" "sudo mv /tmp/ssl-dhparams.pem ${SSL_DHPARAM_TARGET}"
+        echo "同步 privkey.pem..."
+        ssh -i "\${SOURCE_SSH_KEY}" -o StrictHostKeyChecking=no "\$SOURCE_REMOTE" "sudo cat ${SSL_CERTS_SOURCE_DIR}/privkey.pem" | ssh -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TARGET_REMOTE" "sudo tee ${SSL_CERTS_TARGET_DIR}/privkey.pem > /dev/null"
         
-        # 清理临时目录
-        rm -rf "\$TMP_DIR"
+        echo "同步 options-ssl-nginx.conf..."
+        ssh -i "\${SOURCE_SSH_KEY}" -o StrictHostKeyChecking=no "\$SOURCE_REMOTE" "sudo cat ${SSL_OPTIONS_SOURCE}" | ssh -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TARGET_REMOTE" "sudo tee ${SSL_OPTIONS_TARGET} > /dev/null"
+        
+        echo "同步 ssl-dhparams.pem..."
+        ssh -i "\${SOURCE_SSH_KEY}" -o StrictHostKeyChecking=no "\$SOURCE_REMOTE" "sudo cat ${SSL_DHPARAM_SOURCE}" | ssh -i "\${TARGET_SSH_KEY}" -o StrictHostKeyChecking=no "\$TARGET_REMOTE" "sudo tee ${SSL_DHPARAM_TARGET} > /dev/null"
         
         echo "SSL证书同步完成"
     """
