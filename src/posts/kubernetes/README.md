@@ -76,6 +76,7 @@ tag:
 - [Secrets 管理最佳实践](./Secrets管理最佳实践.md) - 敏感信息安全管理
 - [NetworkPolicy 网络策略](./NetworkPolicy网络策略.md) - 网络安全隔离
 - [NetworkPolicy 精细化隔离落地实践](./NetworkPolicy精细化隔离落地实践.md) - 生产环境网络隔离落地
+- [Kubernetes 容器安全 CIS 基线实践](./Kubernetes容器安全CIS基线实践.md) - kube-bench、Trivy、Falco 构建纵深防御体系
 
 ### 九、运维与监控
 
@@ -145,7 +146,7 @@ tag:
 | **存储方案** | [Volume 与持久化存储](./Volume与持久化存储.md) |
 | **网络管理** | [Ingress 控制器](./Ingress控制器.md) · [CoreDNS 与服务发现](./CoreDNS与服务发现.md) · [NetworkPolicy 网络策略](./NetworkPolicy网络策略.md) · [NetworkPolicy 精细化隔离落地实践](./NetworkPolicy精细化隔离落地实践.md) |
 | **自动扩缩** | [HPA 水平自动扩缩](./HPA水平自动扩缩.md) · [VPA 垂直自动扩缩](./VPA垂直自动扩缩.md) |
-| **安全加固** | [RBAC 权限控制](./RBAC权限控制.md) · [Pod 安全标准](./Pod安全标准.md) |
+| **安全加固** | [RBAC 权限控制](./RBAC权限控制.md) · [Pod 安全标准](./Pod安全标准.md) · [CIS 基线实践](./Kubernetes容器安全CIS基线实践.md) |
 | **运维监控** | [监控与告警](./监控与告警.md) · [日志收集方案](./日志收集方案.md) · [DaemonSet 部署采集器注意事项](./Kubernetes中DaemonSet部署采集器注意事项.md) |
 | **故障排查** | [Pod 创建失败的排查流程](./Pod创建失败的排查流程.md) |
 | **工具生态** | [Helm 包管理](./Helm包管理.md) · [Operator 核心原理](./Operator核心原理.md) · [Operator 应用实践](./Operator应用实践.md) |
@@ -159,7 +160,7 @@ tag:
 | 配置应用 | [ConfigMap 与 Secret](./ConfigMap与Secret.md) · [Secrets 管理最佳实践](./Secrets管理最佳实践.md) |
 | 网络配置 | [service 概念](./service概念.md) · [Ingress 控制器](./Ingress控制器.md) · [NetworkPolicy 网络策略](./NetworkPolicy网络策略.md) |
 | 资源优化 | [资源请求与限制](./资源请求与限制.md) · [HPA 水平自动扩缩](./HPA水平自动扩缩.md) · [VPA 垂直自动扩缩](./VPA垂直自动扩缩.md) |
-| 安全加固 | [RBAC 权限控制](./RBAC权限控制.md) · [Pod 安全标准](./Pod安全标准.md) · [NetworkPolicy 网络策略](./NetworkPolicy网络策略.md) · [NetworkPolicy 精细化隔离落地实践](./NetworkPolicy精细化隔离落地实践.md) |
+| 安全加固 | [RBAC 权限控制](./RBAC权限控制.md) · [Pod 安全标准](./Pod安全标准.md) · [NetworkPolicy 网络策略](./NetworkPolicy网络策略.md) · [NetworkPolicy 精细化隔离落地实践](./NetworkPolicy精细化隔离落地实践.md) · [CIS 基线实践](./Kubernetes容器安全CIS基线实践.md) |
 | 故障排查 | [Pod 创建失败的排查流程](./Pod创建失败的排查流程.md) · [日志收集方案](./日志收集方案.md) · [监控与告警](./监控与告警.md) |
 
 ---
