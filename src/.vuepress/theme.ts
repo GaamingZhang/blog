@@ -27,7 +27,7 @@ export default hopeTheme({
   sidebar,
 
   // 页脚
-  footer: "Gaaming Zhang 的个人博客",
+  footer: '<a href="https://beian.miit.gov.cn/" target="_blank">粤ICP备2026016892号-1</a>',
   displayFooter: true,
 
   // 博客相关
@@ -61,7 +61,7 @@ export default hopeTheme({
   */
 
   // 如果想要实时查看任何改变，启用它。注: 这对更新性能有很大负面影响
-  hotReload: true,
+  hotReload: false,
 
   // 此处开启了很多功能用于演示，你应仅保留用到的功能。
   markdown: {

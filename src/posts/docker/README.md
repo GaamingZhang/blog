@@ -28,6 +28,7 @@ tag:
 - [如何创建 docker 镜像](./如何创建docker镜像.md) - 镜像创建的基本方法
 
 #### 镜像构建
+- [Docker 镜像构建原理](./docker镜像构建原理.md) - 深入 BuildKit 架构、内容寻址存储与缓存机制底层原理
 - [Dockerfile 最佳实践](./Dockerfile最佳实践.md) - 编写高效、安全的 Dockerfile
 - [多架构镜像构建](./多架构镜像构建.md) - 构建支持多平台的镜像
 

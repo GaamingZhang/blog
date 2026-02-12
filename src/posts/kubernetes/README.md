@@ -82,6 +82,7 @@ tag:
 - [监控与告警](./监控与告警.md) - 集群监控和告警方案
 - [日志收集方案](./日志收集方案.md) - 日志聚合与分析
 - [集群升级策略](./集群升级策略.md) - 集群版本升级最佳实践
+- [DaemonSet 部署采集器注意事项](./Kubernetes中DaemonSet部署采集器注意事项.md) - 生产环境 DaemonSet 采集器的七个关键配置
 
 ### 十、工具与生态
 
@@ -122,6 +123,7 @@ tag:
 8. [监控与告警](./监控与告警.md)
 9. [日志收集方案](./日志收集方案.md)
 10. [集群升级策略](./集群升级策略.md)
+11. [DaemonSet 部署采集器注意事项](./Kubernetes中DaemonSet部署采集器注意事项.md)
 
 ### 运维与故障排查路径
 1. [Pod 创建失败的排查流程](./Pod创建失败的排查流程.md)
@@ -144,7 +146,7 @@ tag:
 | **网络管理** | [Ingress 控制器](./Ingress控制器.md) · [CoreDNS 与服务发现](./CoreDNS与服务发现.md) · [NetworkPolicy 网络策略](./NetworkPolicy网络策略.md) · [NetworkPolicy 精细化隔离落地实践](./NetworkPolicy精细化隔离落地实践.md) |
 | **自动扩缩** | [HPA 水平自动扩缩](./HPA水平自动扩缩.md) · [VPA 垂直自动扩缩](./VPA垂直自动扩缩.md) |
 | **安全加固** | [RBAC 权限控制](./RBAC权限控制.md) · [Pod 安全标准](./Pod安全标准.md) |
-| **运维监控** | [监控与告警](./监控与告警.md) · [日志收集方案](./日志收集方案.md) |
+| **运维监控** | [监控与告警](./监控与告警.md) · [日志收集方案](./日志收集方案.md) · [DaemonSet 部署采集器注意事项](./Kubernetes中DaemonSet部署采集器注意事项.md) |
 | **故障排查** | [Pod 创建失败的排查流程](./Pod创建失败的排查流程.md) |
 | **工具生态** | [Helm 包管理](./Helm包管理.md) · [Operator 核心原理](./Operator核心原理.md) · [Operator 应用实践](./Operator应用实践.md) |
 

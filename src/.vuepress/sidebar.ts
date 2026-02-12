@@ -31,6 +31,13 @@ export default sidebar({
           children: "structure",
         },
         {
+          text: "Grafana",
+          icon: "devicon-plain:grafana",
+          prefix: "grafana/",
+          collapsible: true,
+          children: "structure",
+        },
+        {
           text: "Kafka",
           icon: "mdi:apache-kafka",
           prefix: "kafka/",
