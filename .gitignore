@@ -1,8 +1,6 @@
 
 node_modules/
-.DS_Store
-src/.vuepress/public/.DS_Store
-src/.vuepress/.DS_Store
+**/.DS_Store
 src/.vuepress/.cache/
 src/.vuepress/.temp/
 src/.vuepress/dist/
@@ -10,3 +8,4 @@ internal_scripts/
 internal/
 CLAUDE.md
 .claude/
+run-dev-loop.sh
