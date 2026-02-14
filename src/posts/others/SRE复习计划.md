@@ -270,19 +270,3 @@ tag:
 3. **故障诊断**：CPU 100%、OOM、Pod 崩溃、ES 集群红状态——有清晰的排查思路
 4. **监控告警体系**：Prometheus + AlertManager + Grafana 完整链路，包含多租户告警路由设计
 5. **链路追踪**：Jaeger 原理 + OpenTelemetry 标准迁移路径
-
----
-
-## 📋 按公司定制的侧重点
-
-| 公司 | 重点补充 |
-|------|---------|
-| **盈米基金** | SLI/SLO + ArgoCD + Istio + Post-mortem + 容量规划 |
-| **阿里** | K8s 大规模运维 + 容量规划 + 云成本优化 |
-| **字节跳动** | 大规模 K8s + CI/CD 流水线 + 监控体系 |
-| **拓竹** | Terraform + ArgoCD + CIS 安全基线 + Istio |
-| **九瓴科技** | Go 语言运维工具 + AIOps |
-| **如祺出行** | Nacos + K8s + 灾备方案 |
-| **钛动科技** | 云成本优化 + CI/CD + Go 开发 |
-| **网易** | ELK 全栈 + K8s 监控 + 灾备 |
-| **IMPLUS** | ArgoCD + AIOps + Go 开发 |
