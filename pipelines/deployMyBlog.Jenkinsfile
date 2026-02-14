@@ -264,14 +264,11 @@ pipeline {
         script {
           echo "部署到 Kubernetes 集群..."
           
-          withCredentials([string(credentialsId: 'kubernetes-kubeconfig', variable: 'KUBECONFIG_CONTENT')]) {
+          withCredentials([file(credentialsId: 'kubernetes-kubeconfig-file', variable: 'KUBECONFIG_FILE')]) {
             sh '''
               set -e
               
-              mkdir -p ~/.kube
-              echo "${KUBECONFIG_CONTENT}" > ~/.kube/config
-              chmod 600 ~/.kube/config
-              
+              export KUBECONFIG=${KUBECONFIG_FILE}
               REGISTRY_URL="${K8S_NODE_IP}:${REGISTRY_NODE_PORT}"
               
               echo "更新 deployment 镜像版本..."
@@ -289,8 +286,6 @@ pipeline {
               kubectl get pods -n ${K8S_NAMESPACE} -l app=gaamingzhang-blog
               kubectl get services -n ${K8S_NAMESPACE}
               kubectl get ingress -n ${K8S_NAMESPACE}
-              
-              rm -f ~/.kube/config
             '''
           }
         }
