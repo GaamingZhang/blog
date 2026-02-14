@@ -15,9 +15,11 @@ spec:
       labels:
         app: gaamingzhang-blog
     spec:
+      imagePullSecrets:
+      - name: registry-credentials
       containers:
       - name: gaamingzhang-blog
-        image: 192.168.31.54:5001/gaamingzhang-blog:latest
+        image: 192.168.31.40:30500/gaamingzhang-blog:latest
         imagePullPolicy: Always
         ports:
         - containerPort: 80

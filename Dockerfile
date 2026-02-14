@@ -1,5 +1,5 @@
 # 基础镜像
-FROM 192.168.31.54:5001/node:20-alpine AS builder
+FROM node:20-alpine AS builder
 
 # 设置工作目录
 WORKDIR /app
@@ -20,7 +20,7 @@ RUN pnpm install
 RUN pnpm run docs:build
 
 # 第二阶段：使用Nginx作为生产服务器
-FROM 192.168.31.54:5001/nginx:alpine
+FROM nginx:alpine
 
 # 复制构建产物到Nginx目录
 COPY --from=builder /app/src/.vuepress/dist /usr/share/nginx/html
