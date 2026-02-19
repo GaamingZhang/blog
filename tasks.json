@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 26,
+    "completed_articles": 34,
     "in_progress_articles": 0,
-    "pending_articles": 324
+    "pending_articles": 316
   },
   "review_criteria": {
     "content_quality": [
@@ -294,66 +294,66 @@
         {
           "id": "k8s-027",
           "filename": "不停机升级Kubernetes集群版本（一）.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-028",
           "filename": "不停机升级Kubernetes集群版本（二）.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-029",
           "filename": "单体服务迁移至Kubernetes（一）.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-030",
           "filename": "单体服务迁移至Kubernetes（二）.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-031",
           "filename": "单体服务迁移至Kubernetes（三）.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-032",
           "filename": "NetworkPolicy精细化隔离落地实践.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-033",
           "filename": "Operator应用实践.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-034",
           "filename": "Operator核心原理.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-035",
