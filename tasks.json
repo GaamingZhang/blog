@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 127,
+    "completed_articles": 129,
     "in_progress_articles": 0,
-    "pending_articles": 223
+    "pending_articles": 221
   },
   "review_criteria": {
     "content_quality": [
@@ -1130,18 +1130,18 @@
         {
           "id": "net-017",
           "filename": "CSRF攻击原理.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "net-018",
           "filename": "错误码502如何排查.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "net-019",
