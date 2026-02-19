@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 25,
+    "completed_articles": 26,
     "in_progress_articles": 0,
-    "pending_articles": 325
+    "pending_articles": 324
   },
   "review_criteria": {
     "content_quality": [
@@ -286,10 +286,10 @@
         {
           "id": "k8s-026",
           "filename": "监控与告警.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-027",
