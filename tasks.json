@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 112,
+    "completed_articles": 113,
     "in_progress_articles": 0,
-    "pending_articles": 238
+    "pending_articles": 237
   },
   "review_criteria": {
     "content_quality": [
@@ -1018,10 +1018,10 @@
         {
           "id": "net-003",
           "filename": "QUIC协议.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "net-004",
