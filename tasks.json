@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 41,
+    "completed_articles": 44,
     "in_progress_articles": 0,
-    "pending_articles": 309
+    "pending_articles": 306
   },
   "review_criteria": {
     "content_quality": [
@@ -412,26 +412,26 @@
         {
           "id": "sre-001",
           "filename": "Terraform核心概念与云资源管理实战.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "sre-002",
           "filename": "SLI-SLO-SLA体系与ErrorBudget实践.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "sre-003",
           "filename": "Prometheus长期存储方案选型指南.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "sre-004",
