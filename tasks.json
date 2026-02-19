@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 1,
+    "completed_articles": 17,
     "in_progress_articles": 0,
-    "pending_articles": 349
+    "pending_articles": 333
   },
   "review_criteria": {
     "content_quality": [
@@ -45,12 +45,14 @@
     ]
   },
   "workflow": {
-    "step0": "读取tasks.json文件中的review_criteria和workflow，确保审核按照要求进行",
+    "step0": "读取tasks.json文件中的review_criteria和workflow，确保审核按照最新的要求进行，并且选择任意一篇还未完成的审核任务进行审核",
     "step1": "审查文章内容",
     "step2": "记录修改意见",
     "step3": "根据意见修改文章",
     "step4": "重新审查修改后的文章",
-    "step5": "如果仍有修改意见，返回 step3；否则标记为完成"
+    "step5": "如果仍有修改意见，返回 step3；否则标记为完成",
+    "step6": "提交修改到本地git仓库，包括tasks.json中对该审核任务状态的更新。如果未进行任何修改，请跳过这个步骤，进行下一步",
+    "step7": "重新step0选取未完成的审核任务，继续进行审核"
   },
   "categories": {
     "kubernetes": {
@@ -74,130 +76,136 @@
         {
           "id": "k8s-002",
           "filename": "service概念.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-003",
           "filename": "Secrets管理最佳实践.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-004",
           "filename": "README.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-005",
           "filename": "RBAC权限控制.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-006",
           "filename": "Pod基础与生命周期.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-007",
           "filename": "Pod调度机制.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-008",
           "filename": "Pod创建失败的排查流程.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-009",
           "filename": "Pod安全标准.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-010",
           "filename": "NetworkPolicy网络策略.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-011",
           "filename": "Kubernetes中DaemonSet部署采集器注意事项.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-012",
           "filename": "Kubernetes容器安全CIS基线实践.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-013",
           "filename": "Job与CronJob.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-014",
           "filename": "HPA水平自动扩缩.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-015",
           "filename": "Helm包管理.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-016",
           "filename": "CoreDNS与服务发现.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-017",
           "filename": "资源请求与限制.md",
-          "status": "pending",
-          "review_round": 0,
-          "issues": [],
-          "last_reviewed": null
+          "status": "completed",
+          "review_round": 1,
+          "issues": [
+            {
+              "round": 1,
+              "description": "第287-290行：cgroup路径在Kubernetes 1.25+（cgroup v2）中不正确，补充了cgroup v1和v2两种路径",
+              "fixed": true
+            }
+          ],
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-018",
@@ -2784,11 +2792,6 @@
       "zookeeper": 1,
       "scenario_question": 2,
       "algorithm_leetcode": 150
-    },
-    "by_status": {
-      "pending": 349,
-      "in_progress": 0,
-      "completed": 1
     }
   }
 }
