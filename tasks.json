@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 19,
+    "completed_articles": 20,
     "in_progress_articles": 0,
-    "pending_articles": 331
+    "pending_articles": 330
   },
   "review_criteria": {
     "content_quality": [
@@ -232,10 +232,16 @@
         {
           "id": "k8s-020",
           "filename": "测试题.md",
-          "status": "pending",
-          "review_round": 0,
-          "issues": [],
-          "last_reviewed": null
+          "status": "completed",
+          "review_round": 1,
+          "issues": [
+            {
+              "round": 1,
+              "description": "第77题：Pod Security Policy (PSP) 在 Kubernetes 1.25+ 已移除，更新为 Pod Security Admission (PSA) 并添加说明",
+              "fixed": true
+            }
+          ],
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-021",
