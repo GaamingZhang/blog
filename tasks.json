@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 84,
+    "completed_articles": 85,
     "in_progress_articles": 0,
-    "pending_articles": 266
+    "pending_articles": 265
   },
   "review_criteria": {
     "content_quality": [
@@ -776,10 +776,10 @@
         {
           "id": "docker-013",
           "filename": "Docker Compose实战.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "docker-014",
