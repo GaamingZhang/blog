@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 70,
+    "completed_articles": 71,
     "in_progress_articles": 0,
-    "pending_articles": 280
+    "pending_articles": 279
   },
   "review_criteria": {
     "content_quality": [
@@ -658,10 +658,10 @@
         {
           "id": "es-006",
           "filename": "Elasticsearch写入查询流程与refresh_interval调优.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "es-007",
