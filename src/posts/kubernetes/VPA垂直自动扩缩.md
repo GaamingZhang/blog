@@ -14,7 +14,7 @@ tag:
 
 ## 为什么需要VPA？
 
-上一篇我们讲了HPA——通过增加Pod数量来应对负载。但有时候，增加数量不是最好的解决方案。
+HPA（水平Pod自动扩缩器）通过增加Pod数量来应对负载。但有时候，增加数量不是最好的解决方案。
 
 **场景一：有状态应用**
 
@@ -390,3 +390,9 @@ spec:
 - 配合**PodDisruptionBudget**使用，减少服务影响
 - 对于关键应用，建议先用**Off模式观察**，再决定是否自动更新
 - VPA和HPA可以配合使用，但要**基于不同指标**
+
+## 参考资源
+
+- [Kubernetes VPA 官方文档](https://github.com/kubernetes/autoscaler/tree/master/vertical-pod-autoscaler)
+- [VPA 最佳实践指南](https://github.com/kubernetes/autoscaler/blob/master/vertical-pod-autoscaler/docs/faq.md)
+- [HPA 与 VPA 配合使用](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)

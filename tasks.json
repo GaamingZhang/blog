@@ -5,17 +5,20 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 0,
+    "completed_articles": 1,
     "in_progress_articles": 0,
-    "pending_articles": 350
+    "pending_articles": 349
   },
   "review_criteria": {
     "content_quality": [
-      "标题是否清晰准确",
-      "文章结构是否合理（引言、正文、总结）",
-      "技术内容是否准确无误",
-      "代码示例是否可运行且符合最佳实践",
-      "是否有足够的示例和解释"
+      "标题应该清晰准确",
+      "文章结构应该合理（引言、正文、总结）",
+      "技术内容应该准确无误",
+      "代码示例应该可运行且符合最佳实践",
+      "应该具有足够的示例和解释",
+      "内容应该具有足够的深度",
+      "文章的中文字数是否大幅超过一万字，如果大幅超过，需要对当前主题进行分篇",
+      "内容应该着重于原理和机制的解析"
     ],
     "formatting": [
       "Markdown 格式是否正确",
@@ -35,10 +38,14 @@
       "是否有总结或要点回顾"
     ],
     "caution": [
-      "frontmatter 不允许修改（title, date, tags, categories）"
+      "不允许修改、新增和删除frontmatter的任何内容（title, date, tags, categories）",
+      "如果任意一次任务主动进行了一次或以上的修改，请及时提交修改到本地git仓库",
+      "每次只允许审查一篇博客文章，不允许同时审核多篇博客文章",
+      "当一篇文章已经完成审核后，更新tasks.json中该审核任务的状态"
     ]
   },
   "workflow": {
+    "step0": "读取tasks.json文件中的review_criteria和workflow，确保审核按照要求进行",
     "step1": "审查文章内容",
     "step2": "记录修改意见",
     "step3": "根据意见修改文章",
@@ -53,10 +60,16 @@
         {
           "id": "k8s-001",
           "filename": "VPA垂直自动扩缩.md",
-          "status": "pending",
-          "review_round": 0,
-          "issues": [],
-          "last_reviewed": null
+          "status": "completed",
+          "review_round": 1,
+          "issues": [
+            {
+              "round": 1,
+              "description": "第17行引用'上一篇'不够独立，修改为直接介绍HPA概念",
+              "fixed": true
+            }
+          ],
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-002",
@@ -2773,9 +2786,9 @@
       "algorithm_leetcode": 150
     },
     "by_status": {
-      "pending": 350,
+      "pending": 349,
       "in_progress": 0,
-      "completed": 0
+      "completed": 1
     }
   }
 }
