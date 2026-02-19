@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 17,
+    "completed_articles": 19,
     "in_progress_articles": 0,
-    "pending_articles": 333
+    "pending_articles": 331
   },
   "review_criteria": {
     "content_quality": [
@@ -51,7 +51,7 @@
     "step3": "根据意见修改文章",
     "step4": "重新审查修改后的文章",
     "step5": "如果仍有修改意见，返回 step3；否则标记为完成",
-    "step6": "提交修改到本地git仓库，包括tasks.json中对该审核任务状态的更新。如果未进行任何修改，请跳过这个步骤，进行下一步",
+    "step6": "提交修改到本地git仓库，包括tasks.json和博客文章的修改",
     "step7": "重新step0选取未完成的审核任务，继续进行审核"
   },
   "categories": {
@@ -210,18 +210,24 @@
         {
           "id": "k8s-018",
           "filename": "探针机制.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-019",
           "filename": "常用命令.md",
-          "status": "pending",
-          "review_round": 0,
-          "issues": [],
-          "last_reviewed": null
+          "status": "completed",
+          "review_round": 1,
+          "issues": [
+            {
+              "round": 1,
+              "description": "第46行：kubectl version --short 在 Kubernetes 1.25+ 中已移除，更新为 kubectl version -o yaml 并添加说明",
+              "fixed": true
+            }
+          ],
+          "last_reviewed": "2026-02-19"
         },
         {
           "id": "k8s-020",
