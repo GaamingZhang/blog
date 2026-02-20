@@ -2090,98 +2090,98 @@
         {
           "id": "lc-070",
           "filename": "70. 爬楼梯.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-071",
           "filename": "71. 简化路径.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-072",
           "filename": "72. 编辑距离.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-073",
           "filename": "73. 矩阵置零.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-074",
           "filename": "74. 搜索二维矩阵.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-076",
           "filename": "76. 最小覆盖子串.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-077",
           "filename": "77. 组合.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-079",
           "filename": "79. 单词搜索.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-080",
           "filename": "80. 删除有序数组中的重复项 II.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-082",
           "filename": "82. 删除排序链表中的重复元素 II.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-084",
           "filename": "84. 柱状图中最大的矩形.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-086",
           "filename": "86. 分隔链表.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-088",
