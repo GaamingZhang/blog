@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 225,
+    "completed_articles": 245,
     "in_progress_articles": 0,
-    "pending_articles": 125
+    "pending_articles": 105
   },
   "review_criteria": {
     "content_quality": [
@@ -2186,98 +2186,98 @@
         {
           "id": "lc-088",
           "filename": "88. 合并两个有序数组.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-092",
           "filename": "92. 反转链表 II.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-097",
           "filename": "97. 交错字符串.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-098",
           "filename": "98. 验证二叉搜索树.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-100",
           "filename": "100. 相同的树.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-101",
           "filename": "101. 对称二叉树.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-102",
           "filename": "102. 二叉树的层序遍历.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-103",
           "filename": "103. 二叉树的锯齿形层序遍历.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-104",
           "filename": "104. 二叉树的最大深度.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-105",
           "filename": "105. 从前序与中序遍历序列构造二叉树.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-106",
           "filename": "106. 从中序与后序遍历序列构造二叉树.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-108",
           "filename": "108. 将有序数组转换为二叉搜索树.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-112",
