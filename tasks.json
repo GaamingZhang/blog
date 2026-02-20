@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 156,
+    "completed_articles": 157,
     "in_progress_articles": 0,
-    "pending_articles": 194
+    "pending_articles": 193
   },
   "review_criteria": {
     "content_quality": [
@@ -1405,10 +1405,10 @@
         {
           "id": "grafana-001",
           "filename": "Grafana实战-Dashboard设计与告警配置.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "grafana-002",
