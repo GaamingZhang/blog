@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 139,
+    "completed_articles": 142,
     "in_progress_articles": 0,
-    "pending_articles": 211
+    "pending_articles": 208
   },
   "review_criteria": {
     "content_quality": [
@@ -1208,10 +1208,10 @@
         {
           "id": "os-005",
           "filename": "wc命令的基本使用方法.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "os-006",
@@ -1256,10 +1256,10 @@
         {
           "id": "os-011",
           "filename": "进程间的通讯方式.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "os-012",
@@ -1352,10 +1352,10 @@
         {
           "id": "os-023",
           "filename": "tail命令的基本使用方法.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "os-024",
