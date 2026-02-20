@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 193,
+    "completed_articles": 201,
     "in_progress_articles": 0,
-    "pending_articles": 157
+    "pending_articles": 149
   },
   "review_criteria": {
     "content_quality": [
@@ -1738,50 +1738,50 @@
         {
           "id": "lc-001",
           "filename": "1. 两数之和.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-002",
           "filename": "2. 两数相加.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-003",
           "filename": "3. 无重复字符的最长子串.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-004",
           "filename": "4. 寻找两个正序数组的中位数.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-005",
           "filename": "5. 最长回文子串.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-006",
           "filename": "6. Z 字形变换.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-011",
@@ -1818,82 +1818,82 @@
         {
           "id": "lc-015",
           "filename": "15. 三数之和.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-017",
           "filename": "17. 电话号码的字母组合.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-019",
           "filename": "19. 删除链表的倒数第 N 个结点.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-020",
           "filename": "20. 有效的括号.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-021",
           "filename": "21. 合并两个有序链表.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-022",
           "filename": "22. 括号生成.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-023",
           "filename": "23. 合并 K 个升序链表.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-025",
           "filename": "25. K 个一组翻转链表.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-026",
           "filename": "26. 删除有序数组中的重复项.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-027",
           "filename": "27. 移除元素.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-028",
