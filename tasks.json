@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 246,
+    "completed_articles": 247,
     "in_progress_articles": 0,
-    "pending_articles": 104
+    "pending_articles": 103
   },
   "review_criteria": {
     "content_quality": [
@@ -1800,10 +1800,16 @@
         {
           "id": "lc-012",
           "filename": "12. 整数转罗马数字.md",
-          "status": "pending",
-          "review_round": 0,
-          "issues": [],
-          "last_reviewed": null
+          "status": "completed",
+          "review_round": 1,
+          "issues": [
+            {
+              "round": 1,
+              "description": "缺少解题思路、代码注释、复杂度分析和总结，已补充完整；将辅助函数名res改为convertDigit",
+              "fixed": true
+            }
+          ],
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-013",
