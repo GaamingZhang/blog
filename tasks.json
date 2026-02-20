@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 154,
+    "completed_articles": 155,
     "in_progress_articles": 0,
-    "pending_articles": 196
+    "pending_articles": 195
   },
   "review_criteria": {
     "content_quality": [
@@ -1361,10 +1361,16 @@
         {
           "id": "os-022",
           "filename": "内存竞争.md",
-          "status": "pending",
-          "review_round": 0,
-          "issues": [],
-          "last_reviewed": null
+          "status": "completed",
+          "review_round": 1,
+          "issues": [
+            {
+              "round": 1,
+              "description": "第51行：代码格式问题，修正多余空格",
+              "fixed": true
+            }
+          ],
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "os-023",
