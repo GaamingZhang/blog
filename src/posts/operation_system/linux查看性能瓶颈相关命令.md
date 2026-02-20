@@ -533,7 +533,13 @@ Linux 支持多种 I/O 调度器，影响 I/O 请求的处理顺序：
 - 磁盘分析：iostat、iotop
 - 网络分析：ss、iftop、tcpdump
 
-**优化原则**：
+**优化原则**:
 - 先定位瓶颈，再针对性优化
 - 从成本低的优化开始（应用层 → 系统层 → 硬件层）
 - 优化后持续监控，验证效果
+
+## 参考资源
+
+- [Linux 性能分析工具 Brendan Gregg](https://www.brendangregg.com/linuxperf.html)
+- [USE 方法论](http://www.brendangregg.com/usemethod.html)
+- [Linux 性能观测工具速查表](https://www.brendangregg.com/Perf/linux_perf_tools_full.png)

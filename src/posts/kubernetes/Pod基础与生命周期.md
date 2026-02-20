@@ -222,3 +222,9 @@ Init容器按定义顺序依次执行，一个完成后下一个才开始。所�
 ### 如何确保Pod优雅关闭不丢失请求？
 
 设置合理的terminationGracePeriodSeconds（根据请求处理时间）；应用正确处理SIGTERM信号，停止接收新请求但完成进行中的请求；使用PreStop钩子执行清理操作或等待；配合就绪探针，关闭时让探针失败以便从Service端点移除。
+
+## 参考资源
+
+- [Kubernetes Pod 生命周期](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)
+- [配置探针](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/)
+- [Pod 生命周期钩子](https://kubernetes.io/docs/concepts/containers/container-lifecycle-hooks/)

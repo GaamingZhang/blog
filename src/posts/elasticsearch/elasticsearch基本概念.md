@@ -1552,3 +1552,9 @@ Elasticsearch作为一个强大的分布式搜索和分析引擎,其核心概念
 - 及时处理故障
 
 掌握这些基本概念是高效使用Elasticsearch的基础,在实际应用中需要根据具体场景灵活运用这些知识,并结合实践不断优化。
+
+## 参考资源
+
+- [Elasticsearch 官方文档](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html)
+- [Elasticsearch 权威指南](https://www.elastic.co/guide/en/elasticsearch/guide/current/index.html)
+- [Elasticsearch 最佳实践](https://www.elastic.co/guide/en/elasticsearch/reference/current/best-practices.html)

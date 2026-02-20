@@ -486,3 +486,9 @@ UPDATE t SET ... WHERE id=2;
 - 关键操作使用当前读（FOR UPDATE）
 - 避免长事务
 - 根据业务需求在性能和一致性间权衡
+
+## 参考资源
+
+- [MySQL 官方文档 - 事务隔离级别](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html)
+- [MySQL 官方文档 - InnoDB 锁机制](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking.html)
+- [MySQL 官方文档 - MVCC 多版本并发控制](https://dev.mysql.com/doc/refman/8.0/en/innodb-multi-versioning.html)

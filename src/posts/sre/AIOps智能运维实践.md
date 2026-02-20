@@ -652,3 +652,9 @@ AIOps擅长：
 - 提供模型决策的置信度
 - 允许人工覆盖模型决策
 - 记录模型决策过程，便于审计
+
+## 参考资源
+
+- [AIOps 实践指南](https://www.gartner.com/en/information-technology/glossary/aiops-artificial-intelligence-operations)
+- [Prometheus 异常检测](https://prometheus.io/docs/prometheus/latest/querying/functions/)
+- [OpenTelemetry 官方文档](https://opentelemetry.io/docs/)

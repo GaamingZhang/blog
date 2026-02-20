@@ -553,3 +553,9 @@ Docker 镜像构建的核心原理：
 5. 用 .dockerignore 减小构建上下文
 
 理解这些原理后，你就能构建出小巧、快速、安全的 Docker 镜像了！
+
+## 参考资源
+
+- [Dockerfile 官方文档](https://docs.docker.com/engine/reference/builder/)
+- [Docker 镜像最佳实践](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+- [多阶段构建指南](https://docs.docker.com/build/building/multi-stage/)

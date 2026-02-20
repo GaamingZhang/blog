@@ -549,3 +549,9 @@ doc_values 是**索引阶段就以列式结构写入磁盘**的数据结构：�
 将阈值从 40% 调到 60%，在 8GB 堆的机器上只是让 fielddata 从最多 3.2GB 变成 4.8GB。如果根本问题是大量 text 字段聚合，内存消耗依然会持续增长，最终触发 parent 熔断器，甚至引发 OOM。
 
 正确的处理优先级应该是：**优化 mapping（用 keyword 替代 text 字段聚合）→ 优化查询（限制聚合 size，改用 composite）→ 通过 ILM 控制索引数据量 → 扩容节点** → 最后才考虑调整阈值。
+
+## 参考资源
+
+- [Elasticsearch 熔断器官方文档](https://www.elastic.co/guide/en/elasticsearch/reference/current/circuit-breaker.html)
+- [JVM 堆内存配置指南](https://www.elastic.co/guide/en/elasticsearch/reference/current/heap-size.html)
+- [Fielddata 使用指南](https://www.elastic.co/guide/en/elasticsearch/reference/current/fielddata.html)

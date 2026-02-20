@@ -242,3 +242,9 @@ Namespace是Kubernetes实现资源隔离的基础机制：
 - 大多数资源属于Namespace，但Node、PV等是集群级别的
 - 跨Namespace访问Service用完整DNS名称
 - 真正的多租户隔离需要多种机制配合
+
+## 参考资源
+
+- [Kubernetes Namespace 官方文档](https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/)
+- [ResourceQuota 配额管理](https://kubernetes.io/docs/concepts/policy/resource-quotas/)
+- [LimitRange 默认限制](https://kubernetes.io/docs/concepts/policy/limit-range/)

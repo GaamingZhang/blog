@@ -258,3 +258,9 @@ ConfigMap和Secret解决的核心问题是：**将配置与应用镜像解耦**�
 - 环境变量方式简单但不支持热更新
 - 文件挂载方式支持热更新（注意subPath例外）
 - Secret的Base64不是加密，真正的安全需要额外措施
+
+## 参考资源
+
+- [Kubernetes ConfigMap 官方文档](https://kubernetes.io/docs/concepts/configuration/configmap/)
+- [Kubernetes Secret 官方文档](https://kubernetes.io/docs/concepts/configuration/secret/)
+- [配置 Pod 使用 ConfigMap 和 Secret](https://kubernetes.io/docs/tasks/configure-pod-container/configure-pod-configmap/)

@@ -456,3 +456,9 @@ cat /proc/<pid>/status
 - 结合shell工具解析(grep, awk)
 - 编写脚本时使用/proc(更灵活)
 - 了解/proc可以更好理解系统工具的工作原理
+
+## 参考资源
+
+- [Linux /proc 文件系统文档](https://man7.org/linux/man-pages/man5/proc.5.html)
+- [Linux 内核文档 - /proc](https://www.kernel.org/doc/html/latest/filesystems/proc.html)
+- [Linux 进程状态详解](https://www.kernel.org/doc/html/latest/process/index.html)

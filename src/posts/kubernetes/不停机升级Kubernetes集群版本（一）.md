@@ -438,3 +438,9 @@ kubeadm 是管理 Kubernetes 生命周期的官方工具，它把控制平面升
 ### Q5：如何验证控制平面升级成功，有哪些健康检查手段？
 
 控制平面升级后，应从以下几个维度验证健康状态。首先，检查所有控制平面节点的状态：`kubectl get nodes` 确认所有节点仍处于 `Ready` 状态，`kubectl get pods -n kube-system` 确认所有系统组件 Pod 正常运行。其次，验证 API 可用性：`kubectl cluster-info` 返回正确的 apiserver 地址，简单的读写操作（如创建并删除一个测试 Namespace）能正常完成。再次，检查组件的版本一致性：`kubectl version` 和 `kubectl get nodes -o wide` 应显示与目标版本一致的结果。最后，查看控制平面组件的日志：`kubectl logs -n kube-system kube-apiserver-<node>` 确认没有异常错误，特别是与 etcd 连接、证书有效性相关的错误。
+
+## 参考资源
+
+- [Kubernetes 版本升级官方文档](https://kubernetes.io/docs/tasks/administer-cluster/kubeadm/kubeadm-upgrade/)
+- [Kubernetes 版本偏差策略](https://kubernetes.io/docs/setup/release/version-skew-policy/)
+- [etcd 运维指南](https://etcd.io/docs/latest/op-guide/)

@@ -560,3 +560,9 @@ Operator 检测到带有 `instrumentation.opentelemetry.io/inject-java` 注解�
 ### Q5：OTel 的 Attribute 语义约定（Semantic Conventions）有多重要？
 
 语义约定非常重要，是 OTel 实现跨语言、跨框架可观测性的基础。例如，所有 HTTP 服务统一使用 `http.method`、`http.route`、`http.status_code`，就可以在 Grafana 中写一个通用 Dashboard 展示所有服务的 HTTP 错误率，无需为每个服务定制。违反语义约定会导致跨服务分析困难，Grafana/Jaeger 的内置查询面板也依赖这些约定才能正常工作。OTel 官方维护的语义约定文档（`opentelemetry.io/docs/specs/semconv`）是接入时必读的参考资料。
+
+## 参考资源
+
+- [OpenTelemetry 官方文档](https://opentelemetry.io/docs/)
+- [OTLP 协议规范](https://opentelemetry.io/docs/specs/otlp/)
+- [OpenTelemetry 语义约定](https://opentelemetry.io/docs/specs/semconv/)

@@ -1078,3 +1078,9 @@ volumes:
 4. 如果是遗留系统改造困难 → 先用hostPath过渡，但制定明确的改造计划
 
 关键原则是：容器化的目标之一是实现应用的可移植性和弹性，强依赖本地文件系统会破坏这个目标。因此应该尽可能地将文件存储外部化，这样才能充分发挥Kubernetes的能力。
+
+## 参考资源
+
+- [12-Factor App 方法论](https://12factor.net/)
+- [Docker 官方最佳实践](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+- [Kubernetes 迁移指南](https://kubernetes.io/docs/tasks/administer-cluster/)

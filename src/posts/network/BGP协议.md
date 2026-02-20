@@ -551,3 +551,9 @@ BGP主要通过以下机制防止路由环路：
   - 使用MED属性或AS路径操作影响流入流量的ISP选择
   - 配置适当的路由过滤和策略，确保路由的正确传播
   - 实现故障检测和自动切换机制，提高网络可靠性
+
+## 参考资源
+
+- [RFC 4271 - BGP-4 协议规范](https://datatracker.ietf.org/doc/html/rfc4271)
+- [RFC 4760 - BGP 多协议扩展](https://datatracker.ietf.org/doc/html/rfc4760)
+- [RFC 5065 - 自治系统联盟](https://datatracker.ietf.org/doc/html/rfc5065)

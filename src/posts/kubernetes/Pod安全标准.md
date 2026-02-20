@@ -206,3 +206,9 @@ kubectl label namespace kube-system \
 | SecurityContext | 在Pod/Container级别设置安全配置 |
 
 记住核心原则：**最小权限**。容器应该只拥有运行所必需的权限，多一点都不应该给。这样即使应用被攻破，攻击者能做的事情也非常有限。
+
+## 参考资源
+
+- [Kubernetes Pod 安全标准](https://kubernetes.io/docs/concepts/security/pod-security-standards/)
+- [Pod SecurityContext 配置](https://kubernetes.io/docs/tasks/configure-pod-container/security-context/)
+- [Linux Capabilities 详解](https://man7.org/linux/man-pages/man7/capabilities.7.html)

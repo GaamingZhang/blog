@@ -571,3 +571,9 @@ Istio 的故障注入在 Envoy 层面实现，它注入的是 **HTTP/gRPC 层面
 ### Q5：Istio 升级风险很高，有没有安全的升级策略？
 
 Istio 的升级相比普通应用复杂，因为涉及控制面和数据面（Envoy Sidecar）两个部分的版本兼容性。推荐的**金丝雀升级**策略是 Istio 官方提供的 `revision` 机制：部署一个新版本的 Istiod，打上新的 revision 标签（如 `istio.io/rev=1-21`），同时保留旧版本 Istiod。先将测试 Namespace 切换到新 revision（修改 Namespace 标签），观察稳定后再逐步迁移生产 Namespace，最后下线旧版本 Istiod。这种方式下，旧 Namespace 继续由旧 Istiod 管理，新旧版本并行运行，任何问题可以立即回滚（将 Namespace 标签切回旧 revision）。升级前还需要确认 Istio 版本与 Kubernetes 版本的兼容矩阵，Istio 通常只支持最新的三个 Kubernetes 次版本。
+
+## 参考资源
+
+- [Istio 官方文档](https://istio.io/latest/docs/)
+- [Envoy 代理文档](https://www.envoyproxy.io/docs/envoy/latest/)
+- [Istio 最佳实践指南](https://istio.io/latest/docs/ops/best-practices/)

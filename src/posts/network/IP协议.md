@@ -1161,3 +1161,9 @@ arp -d 192.168.1.100     # 删除 ARP 缓存条目
 | 延迟高       | `ping host`, `mtr host`   | 路由路径长、网络拥塞      |
 | IP 冲突      | `arp -a`, `ip neigh show` | DHCP 分配冲突、手动冲突   |
 | 路由异常     | `traceroute host`         | 路由配置错、网络分区      |
+
+## 参考资源
+
+- [RFC 791 - IP 协议规范](https://datatracker.ietf.org/doc/html/rfc791)
+- [RFC 2460 - IPv6 规范](https://datatracker.ietf.org/doc/html/rfc2460)
+- [Linux IP 网络配置指南](https://www.kernel.org/doc/Documentation/networking/ip-sysctl.txt)

@@ -572,3 +572,9 @@ MySQL使用多种事务日志来保证事务的ACID特性：
 1. 主服务器将数据修改记录到二进制日志（Binlog）
 2. 从服务器读取主服务器的二进制日志，并将其保存到中继日志（Relay Log）
 3. 从服务器执行中继日志中的SQL语句，将数据同步到从服务器
+
+## 参考资源
+
+- [MySQL 官方文档](https://dev.mysql.com/doc/refman/8.0/en/)
+- [MySQL 官方文档 - InnoDB 存储引擎](https://dev.mysql.com/doc/refman/8.0/en/innodb-storage-engine.html)
+- [MySQL 官方文档 - 数据类型](https://dev.mysql.com/doc/refman/8.0/en/data-types.html)

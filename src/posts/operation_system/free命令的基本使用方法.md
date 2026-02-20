@@ -254,3 +254,9 @@ pmap -x <进程ID>
 5. **最佳实践**：结合其他监控工具，定期监控内存变化，关注交换内存使用情况
 
 通过掌握`free`命令的使用方法和内存概念，可以更好地管理系统内存资源，提高系统性能和稳定性。
+
+## 参考资源
+
+- [Linux free 命令手册](https://man7.org/linux/man-pages/man1/free.1.html)
+- [Linux 内存管理文档](https://www.kernel.org/doc/html/latest/admin-guide/mm/index.html)
+- [Linux /proc/meminfo 说明](https://man7.org/linux/man-pages/man5/proc.5.html)

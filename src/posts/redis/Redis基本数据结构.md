@@ -363,3 +363,9 @@ Redis选择跳跃表而不是红黑树作为Sorted Set的主要实现，主要�
 - 如果需要带权重的有序集合：使用Sorted Set
 
 在实际应用中，有时也需要结合多种数据结构来解决复杂问题。
+
+## 参考资源
+
+- [Redis 官方文档 - 数据类型](https://redis.io/docs/latest/develop/data-types/)
+- [Redis 官方文档 - 数据类型简介](https://redis.io/docs/latest/develop/data-types/tutorial/)
+- [Redis 官方文档 - 命令参考](https://redis.io/docs/latest/commands/)

@@ -363,3 +363,9 @@ X.509是数字证书的国际标准格式，定义了证书的结构和内容。
   1. 减少客户端延迟（无需额外的OCSP查询）
   2. 保护客户端隐私（避免OCSP查询泄露访问记录）
   3. 避免OCSP服务不可用导致的连接失败
+
+## 参考资源
+
+- [RFC 8446 - TLS 1.3 规范](https://datatracker.ietf.org/doc/html/rfc8446)
+- [RFC 5246 - TLS 1.2 规范](https://datatracker.ietf.org/doc/html/rfc5246)
+- [OWASP - TLS 安全指南](https://cheatsheetseries.owasp.org/cheatsheets/Transport_Layer_Protection_Cheat_Sheet.html)

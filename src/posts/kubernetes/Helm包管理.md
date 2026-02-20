@@ -315,3 +315,9 @@ Helm 解决了 Kubernetes 应用部署的几个核心问题：
 - **依赖管理**：自动处理应用之间的依赖关系
 
 对于初学者，建议先熟悉基本的安装、升级、回滚命令，然后再学习如何创建自己的 Chart。Helm 的官方文档和社区 Chart 都是很好的学习资源。
+
+## 参考资源
+
+- [Helm 官方文档](https://helm.sh/docs/)
+- [Helm Chart 模板指南](https://helm.sh/docs/chart_template_guide/)
+- [Artifact Hub - Chart 仓库](https://artifacthub.io/)

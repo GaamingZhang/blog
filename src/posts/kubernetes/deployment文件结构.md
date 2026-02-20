@@ -558,3 +558,9 @@ Deployment 的核心机制：
 - 在正确的场景使用正确的资源（Deployment vs StatefulSet vs DaemonSet）
 
 Deployment 不只是一个 YAML 文件，它是 Kubernetes 声明式 API 设计哲学的完美体现。
+
+## 参考资源
+
+- [Kubernetes Deployment 官方文档](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+- [滚动更新策略详解](https://kubernetes.io/docs/tutorials/kubernetes-basics/update/update-intro/)
+- [Pod 生命周期官方文档](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)

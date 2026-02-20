@@ -710,3 +710,9 @@ Session 机制的核心要点：
 - 无状态化：JWT 方案
 
 理解 Session 的工作原理，是构建 Web 应用身份认证系统的基础。在实际应用中，需要根据业务场景选择合适的存储方案和安全策略。
+
+## 参考资源
+
+- [MDN - HTTP Session](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Session_management)
+- [OWASP - Session 管理安全指南](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)
+- [Redis 官方文档](https://redis.io/docs/)

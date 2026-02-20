@@ -405,3 +405,9 @@ DB1 事务：
 - 最终一致性放宽要求提升性能
 
 理解一致性的本质——从一个有效状态到另一个有效状态——是设计可靠数据库应用的基础。在实际系统中，需要根据业务场景在强一致性、性能、可用性之间做出合理的权衡。
+
+## 参考资源
+
+- [MySQL 官方文档 - 事务 ACID 特性](https://dev.mysql.com/doc/refman/8.0/en/mysql-acid.html)
+- [MySQL 官方文档 - InnoDB 事务模型](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-model.html)
+- [MySQL 官方文档 - 外键约束](https://dev.mysql.com/doc/refman/8.0/en/create-table-foreign-keys.html)

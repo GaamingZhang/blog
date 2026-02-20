@@ -369,3 +369,9 @@ preStop hook的执行结果是Exec类型的preStop退出码非0或HTTP类型的p
 正确的preStop设计包括简单可靠的方案使用sleep,优点是简单不会失败兼容性好所有镜像都支持延迟时间可预测,缺点是固定延迟不够灵活。应用感知的方案使用HTTP hook,优点是应用可以执行自定义逻辑可以从负载均衡器注销自己更精细的控制,缺点是依赖应用实现实现错误可能导致preStop失败。混合方案使用带错误处理的脚本尝试HTTP调用如果失败fallback到sleep,优点是应用实现了接口就用接口应用没实现就fallback到sleep健壮性高。
 
 建议简单应用使用sleep 5可靠不会失败大多数场景足够,复杂应用实现HTTP hook可以执行自定义清理逻辑记得处理错误避免preStop失败,生产环境测试preStop的执行手动删除Pod观察日志检查Events确认preStop正常执行没有FailedPreStopHook警告,时间规划terminationGracePeriodSeconds大于等于preStop时间加应用关闭时间加缓冲。
+
+## 参考资源
+
+- [Kubernetes Deployment 官方文档](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+- [配置 Pod 的服务质量](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/)
+- [Pod 生命周期](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)

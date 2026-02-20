@@ -776,3 +776,9 @@ https://grafana.internal/explore?orgId=1&left={"datasource":"Tempo","queries":[{
 配置完成后，在 Kibana Discover 中，`traceId` 字段会渲染为可点击的链接，点击直接跳转到 Jaeger/Tempo 中对应的完整调用链视图——从日志到 Trace，零复制粘贴。
 
 反向联动（从 Trace 跳转到日志）需要在 Grafana 的 Tempo 数据源配置 Derived Fields，将 Trace 中的 `service.name` 和 `traceId` 映射为一个 Elasticsearch/Loki 的查询链接，实现双向导航。
+
+## 参考资源
+
+- [Elasticsearch 官方文档](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html)
+- [Logstash 配置指南](https://www.elastic.co/guide/en/logstash/current/configuration.html)
+- [Filebeat 官方文档](https://www.elastic.co/guide/en/beats/filebeat/current/index.html)

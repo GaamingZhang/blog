@@ -431,3 +431,9 @@ Inventory 分组设计：
 ### Q5：如何测试和验证 Playbook 在不同场景下的错误处理行为？
 
 **A：** 验证 Playbook 错误处理主要有三种方法：一是使用 `--check` 模式（Dry Run），它会模拟执行但不实际变更，可以快速发现语法和逻辑错误，但无法模拟真实的运行时失败；二是使用 Molecule 框架，它可以在 Docker 容器或虚拟机中执行完整的 Playbook 生命周期，并支持编写 Verify 步骤来断言执行结果，是目前最接近真实环境的 Playbook 测试方案；三是在 staging 环境中使用故障注入：通过手动设置 `fail` 任务、修改文件权限等方式模拟各种失败场景，验证 Rescue 块和 `max_fail_percentage` 熔断逻辑是否按预期工作。对于生产发布，强烈建议 Playbook 中的每个 Block/Rescue 结构都在 staging 上做过失败路径验证，不要把生产环境当作错误处理逻辑的首次测试场地。
+
+## 参考资源
+
+- [Ansible 官方文档](https://docs.ansible.com/)
+- [Ansible Best Practices](https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.html)
+- [Molecule 测试框架](https://molecule.readthedocs.io/)

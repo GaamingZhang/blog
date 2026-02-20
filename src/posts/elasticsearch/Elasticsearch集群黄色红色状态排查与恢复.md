@@ -705,3 +705,11 @@ yellow 状态下查询**不受影响**。因为 yellow 表示所有主分片都�
 ### Q5：磁盘水位线的百分比和字节数哪个优先级更高？
 
 ES 的磁盘水位线支持两种设置方式：百分比（如 `"85%"`）和绝对剩余字节数（如 `"15gb"`）。它们不是互斥的——你可以同时指定两种方式，ES 会取**更严格**的那个作为实际水位线。例如，设置 `low: "85%"` 且磁盘只有 20GB，那么低水位线是 17GB（85% × 20GB），即剩余 3GB 时触发；如果同时设置了 `low: "5gb"`，则剩余 5GB 时就触发，以更严格的 5GB 为准。在实际生产中，推荐为大容量磁盘（如 2TB 以上）设置绝对字节数而非百分比，避免 95% 时仍有 100GB 可用空间却触发 flood_stage 的尴尬。
+
+---
+
+## 参考资源
+
+- [Elasticsearch 集群健康官方文档](https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-health.html)
+- [分片分配解释 API](https://www.elastic.co/guide/en/elasticsearch/reference/current/cluster-allocation-explain.html)
+- [Elasticsearch 故障排查指南](https://www.elastic.co/guide/en/elasticsearch/reference/current/troubleshooting.html)

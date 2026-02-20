@@ -604,3 +604,9 @@ CSRF攻击是一种常见的Web安全漏洞，攻击者通过诱导用户在已�
 开发者在开发Web应用时，应该始终考虑CSRF攻击的风险，为所有修改操作添加CSRF防护。同时，应该定期进行安全测试和代码审计，及时发现和修复CSRF漏洞。用户也应该提高安全意识，不要点击可疑链接，保护自己的账户安全。
 
 随着Web技术的发展，CSRF攻击的防护技术也在不断演进。新的技术如SameSite Cookie、CORS等为CSRF防护提供了更多的选择。开发者应该关注最新的安全技术和最佳实践，构建安全可靠的Web应用。
+
+## 参考资源
+
+- [OWASP CSRF 防护指南](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)
+- [RFC 6265 - HTTP State Management Mechanism](https://datatracker.ietf.org/doc/html/rfc6265)
+- [MDN - CSRF 攻击防护](https://developer.mozilla.org/zh-CN/docs/Glossary/CSRF)

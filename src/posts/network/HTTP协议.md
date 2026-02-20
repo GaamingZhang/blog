@@ -685,3 +685,9 @@ Access-Control-Max-Age: 86400
   - **独立重传**：单个 Stream 丢包仅重传该 Stream 数据
   - **无顺序依赖**：Stream 间数据传输无顺序依赖，互不影响
 - **优势**：彻底消除 TCP 队头阻塞，提高传输效率
+
+## 参考资源
+
+- [MDN - HTTP 协议](https://developer.mozilla.org/zh-CN/docs/Web/HTTP)
+- [RFC 7230-7235 - HTTP/1.1 规范](https://datatracker.ietf.org/doc/html/rfc7230)
+- [HTTP/3 官方规范](https://www.rfc-editor.org/rfc/rfc9114.html)

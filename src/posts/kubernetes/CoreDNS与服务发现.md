@@ -188,3 +188,9 @@ spec:
 | ndots | 控制什么时候使用search域 |
 
 理解了这些，你就掌握了Kubernetes服务发现的核心原理。记住最重要的一点：**用名字，不用IP**。
+
+## 参考资源
+
+- [Kubernetes DNS 官方文档](https://kubernetes.io/docs/concepts/services-networking/dns-pod-service/)
+- [CoreDNS 文档](https://coredns.io/manual/toc/)
+- [服务发现原理](https://kubernetes.io/docs/concepts/services-networking/service/#dns)

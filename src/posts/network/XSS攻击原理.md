@@ -1167,3 +1167,9 @@ function sanitizeInput(input) {
 XSS攻击是一种常见的Web安全漏洞，通过在网页中注入恶意脚本，在用户浏览器中执行恶意代码。XSS攻击主要分为反射型、存储型和DOM型三种类型，每种类型都有其特点和危害。
 
 防止XSS攻击需要采用多层防护策略，包括输入验证、输出编码、CSP策略、HttpOnly Cookie等。在实际开发中，应该遵循安全编码规范，使用安全的API和库，定期进行安全测试和代码审查。
+
+## 参考资源
+
+- [OWASP - XSS 攻击防护指南](https://owasp.org/www-community/attacks/xss/)
+- [MDN - 内容安全策略](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/CSP)
+- [DOMPurify 官方文档](https://github.com/cure53/DOMPurify)

@@ -435,3 +435,9 @@ MySQL选择B+树作为主要索引数据结构的原因包括：
 - **监控索引使用情况**：使用`SHOW INDEX`和`EXPLAIN`命令分析索引的使用情况
 - **避免索引失效**：避免导致索引失效的查询操作
 - **考虑数据分布**：根据数据的分布情况调整索引策略
+
+## 参考资源
+
+- [MySQL 官方文档 - 索引](https://dev.mysql.com/doc/refman/8.0/en/mysql-indexes.html)
+- [MySQL 官方文档 - InnoDB 索引结构](https://dev.mysql.com/doc/refman/8.0/en/innodb-index-types.html)
+- [MySQL 官方文档 - 优化索引](https://dev.mysql.com/doc/refman/8.0/en/optimization-indexes.html)

@@ -511,3 +511,9 @@ awk '{ for (i=1; i<=NF; i++) count[$i]++ } END { for (w in count) print w, count
 - 复杂逻辑考虑Python/Perl
 - 配合管道使用(grep | awk | sort)
 - 测试时先不加`-i`,确认结果再修改原文件
+
+## 参考资源
+
+- [GNU awk 用户手册](https://www.gnu.org/software/gawk/manual/gawk.html)
+- [Linux awk 命令手册](https://man7.org/linux/man-pages/man1/awk.1p.html)
+- [awk 编程语言教程](https://www.gnu.org/software/gawk/manual/html_node/index.html)

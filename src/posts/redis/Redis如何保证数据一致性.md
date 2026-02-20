@@ -479,3 +479,9 @@ Redis 数据一致性的核心机制：
 - 通过WAIT、min-replicas等机制缓解（但无法完全保证）
 
 理解这些机制，才能在实际应用中合理使用 Redis，避免因误解一致性保证而导致数据问题。
+
+## 参考资源
+
+- [Redis 官方文档 - 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/)
+- [Redis 官方文档 - 哨兵](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/)
+- [Redis 官方文档 - 集群](https://redis.io/docs/latest/operate/oss_and_stack/management/scaling/)

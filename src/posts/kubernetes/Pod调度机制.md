@@ -313,3 +313,9 @@ spec:
 - **Taints/Tolerations**是"反向选择"，用于保护专用节点
 - **Topology Spread**用于实现均匀分布
 - 调度失败时，先用`kubectl describe pod`查看具体原因
+
+## 参考资源
+
+- [Kubernetes 调度器文档](https://kubernetes.io/docs/concepts/scheduling-eviction/kube-scheduler/)
+- [将 Pod 指派给节点](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/)
+- [污点和容忍](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)

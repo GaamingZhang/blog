@@ -526,3 +526,9 @@ ArgoCD 在处理 Helm Chart 时，**将 Helm Hook 转换为对应的 ArgoCD Hook
 4. PostSync Hook（包含 Helm post-install/upgrade hook）
 
 **推荐实践**：尽量避免在同一个应用中混用两套 Hook 机制，如果使用 Helm Chart，优先使用 Helm 原生的 Hook 注解，只在需要跨多个资源协调顺序时才引入 ArgoCD 的 Sync Wave。
+
+## 参考资源
+
+- [ArgoCD 官方文档](https://argo-cd.readthedocs.io/)
+- [GitOps 最佳实践](https://opengitops.dev/)
+- [ArgoCD ApplicationSet 控制器](https://argo-cd.readthedocs.io/en/stable/operator-manual/applicationset/)

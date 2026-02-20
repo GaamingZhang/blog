@@ -378,3 +378,9 @@ ICMP 报文作为 IP 数据报的有效载荷，可以被分片传输，具体�
    - 常见 ICMP 攻击类型
 
 掌握 ICMP 协议和 ping 命令的原理，对于网络诊断、故障排查和系统设计都有重要意义，是网络工程师和运维人员的必备知识。
+
+## 参考资源
+
+- [RFC 792 - ICMP 协议规范](https://datatracker.ietf.org/doc/html/rfc792)
+- [RFC 4443 - ICMPv6 规范](https://datatracker.ietf.org/doc/html/rfc4443)
+- [Linux ping 命令手册](https://man7.org/linux/man-pages/man8/ping.8.html)

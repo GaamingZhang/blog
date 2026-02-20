@@ -287,3 +287,9 @@ Ingress 体系的核心认知：
 ### Q5：如何对 Ingress Controller 本身进行高可用和性能调优？
 
 高可用方面：将 Controller 以 DaemonSet 或 Deployment（至少 2 副本）部署，配合 PodDisruptionBudget 确保维护时不中断；使用 `externalTrafficPolicy: Local` 保留客户端真实 IP 的同时减少跨节点跳转（但需注意流量均衡性问题）。性能调优的关键参数：`worker-processes` 设为节点 CPU 核数；`max-worker-connections` 控制每个 worker 的并发连接数，默认 16384，高流量场景可适当调大；开启 `enable-brotli` 和 `use-gzip` 减少传输带宽；对于延迟敏感的服务，关闭 access log 或异步写日志可降低 P99 延迟。监控指标上重点关注：Controller 的 CPU/内存使用率、`nginx_ingress_controller_requests` 请求速率、`nginx_ingress_controller_ingress_upstream_latency_seconds` 上游延迟分布。
+
+## 参考资源
+
+- [Kubernetes Ingress 官方文档](https://kubernetes.io/docs/concepts/services-networking/ingress/)
+- [NGINX Ingress Controller 文档](https://kubernetes.github.io/ingress-nginx/)
+- [IngressClass 配置](https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-class)

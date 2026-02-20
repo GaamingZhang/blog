@@ -526,3 +526,9 @@ env -i /bin/sh -c '/usr/local/bin/script.sh'
 - 定期备份 crontab 配置
 - 避免在高峰期运行资源密集型任务
 - 为关键任务添加告警通知
+
+## 参考资源
+
+- [Linux crontab 命令手册](https://man7.org/linux/man-pages/man5/crontab.5.html)
+- [cron 守护进程文档](https://man7.org/linux/man-pages/man8/cron.8.html)
+- [systemd timers 替代方案](https://www.freedesktop.org/software/systemd/man/systemd.timer.html)

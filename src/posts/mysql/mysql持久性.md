@@ -454,3 +454,9 @@ MySQL 持久性的核心机制：
 - 自动恢复到一致状态
 
 理解持久性机制，是数据库调优和故障恢复的关键。在实际应用中，需要根据业务特点在安全性和性能之间找到平衡点。
+
+## 参考资源
+
+- [MySQL 官方文档 - Redo Log](https://dev.mysql.com/doc/refman/8.0/en/innodb-redo-log.html)
+- [MySQL 官方文档 - 崩溃恢复](https://dev.mysql.com/doc/refman/8.0/en/innodb-recovery.html)
+- [MySQL 官方文档 - Doublewrite Buffer](https://dev.mysql.com/doc/refman/8.0/en/innodb-doublewrite-buffer.html)

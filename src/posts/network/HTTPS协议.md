@@ -370,3 +370,9 @@ TLS 1.3相比TLS 1.2主要有以下改进：
 - **加密套件**：只支持最安全的加密套件，减少了攻击面
 - **密钥交换**：只支持前向安全的密钥交换算法（如ECDHE）
 - **扩展支持**：支持更多安全扩展，如0-RTT握手
+
+## 参考资源
+
+- [RFC 8446 - TLS 1.3 规范](https://datatracker.ietf.org/doc/html/rfc8446)
+- [RFC 5246 - TLS 1.2 规范](https://datatracker.ietf.org/doc/html/rfc5246)
+- [MDN - HTTPS 协议](https://developer.mozilla.org/zh-CN/docs/Glossary/HTTPS)

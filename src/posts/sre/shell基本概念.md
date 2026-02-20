@@ -995,3 +995,9 @@ Shell是用户与操作系统之间的重要接口，它不仅是命令解释器
 - Shell的使用方法和常用命令
 - Shell脚本编程的基本概念和技巧
 - 与Shell相关的常见问题及答案
+
+## 参考资源
+
+- [Bash 官方手册](https://www.gnu.org/software/bash/manual/)
+- [ShellCheck 静态分析工具](https://www.shellcheck.net/)
+- [Advanced Bash-Scripting Guide](https://tldp.org/LDP/abs/html/)

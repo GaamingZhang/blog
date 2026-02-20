@@ -682,3 +682,9 @@ QUIC 选择基于 UDP 的主要原因：
 QUIC 是为现代网络环境设计的新一代传输层协议，通过创新的设计解决了 TCP 在移动网络和弱网环境中的诸多痛点。它的 0-RTT/1-RTT 握手、无队头阻塞的多路复用、连接迁移等特性，使其在延迟敏感和移动应用场景中具有显著优势。尽管面临中间盒兼容性和 CPU 开销等挑战，但随着技术的不断成熟和广泛部署，QUIC 有望成为未来互联网的主要传输协议之一。
 
 掌握 QUIC 协议的核心原理、特性和应用场景，对于理解现代网络协议的发展趋势和应对常见问题具有重要意义。
+
+## 参考资源
+
+- [RFC 9000 - QUIC 协议规范](https://www.rfc-editor.org/rfc/rfc9000.html)
+- [RFC 9001 - QUIC 加密](https://www.rfc-editor.org/rfc/rfc9001.html)
+- [RFC 9002 - QUIC 拥塞控制](https://www.rfc-editor.org/rfc/rfc9002.html)

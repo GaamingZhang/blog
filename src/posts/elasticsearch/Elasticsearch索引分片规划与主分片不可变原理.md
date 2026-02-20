@@ -425,3 +425,9 @@ Reindex 本身只是一次全量快照迁移，不能实时同步增量数据。
 
 - 仍在持续写入的活跃索引。`_forcemerge` 产生的大 Segment 会立刻被新写入的小 Segment 打破，Merge 工作白做，反而消耗了大量 I/O。
 - 集群负载高峰期。Forcemerge 是重 I/O 操作，应在业务低峰期执行，并设置低优先级或限速。
+
+## 参考资源
+
+- [Elasticsearch 分片规划指南](https://www.elastic.co/guide/en/elasticsearch/reference/current/size-your-shards.html)
+- [索引设置官方文档](https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules.html)
+- [Split 和 Shrink API](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-split-index.html)

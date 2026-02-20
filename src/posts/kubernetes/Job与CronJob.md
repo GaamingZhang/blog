@@ -232,3 +232,9 @@ kubectl logs <pod-name>
 - **CronJob**适合定时任务：定期备份、报表生成、日志清理等
 - 选择合适的`restartPolicy`和`concurrencyPolicy`能避免很多问题
 - 让你的任务具备幂等性，这样即使重试也不会出问题
+
+## 参考资源
+
+- [Kubernetes Job 官方文档](https://kubernetes.io/docs/concepts/workloads/controllers/job/)
+- [CronJob 文档](https://kubernetes.io/docs/concepts/workloads/controllers/cron-jobs/)
+- [Cron 表达式语法](https://crontab.guru/)

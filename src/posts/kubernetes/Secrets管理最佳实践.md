@@ -266,3 +266,9 @@ Kubernetes的Secret是namespace级别的，不能跨namespace共享。
 2. **最小权限** - 只给真正需要的人/程序访问权限
 3. **不要信任Git** - 即使是私有仓库也不要提交明文Secret
 4. **外部管理更安全** - 专业的密钥管理系统比Kubernetes自己管理更靠谱
+
+## 参考资源
+
+- [Kubernetes Secrets 官方文档](https://kubernetes.io/docs/concepts/configuration/secret/)
+- [Secret 安全最佳实践](https://kubernetes.io/docs/concepts/configuration/secret/#best-practices)
+- [External Secrets Operator](https://external-secrets.io/)

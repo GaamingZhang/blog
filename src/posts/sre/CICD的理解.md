@@ -224,3 +224,9 @@ CI/CD 是持续集成（Continuous Integration）与持续交付/部署（Contin
   - 选择Monorepo：小型团队、紧密相关的服务、希望统一依赖管理
   - 选择Polyrepo：大型团队、独立的服务、需要技术栈灵活性
   - 混合方案：核心共享库使用Monorepo，独立服务使用Polyrepo
+
+## 参考资源
+
+- [CI/CD 最佳实践](https://www.atlassian.com/continuous-delivery/principles/continuous-integration-vs-delivery-vs-deployment)
+- [GitLab CI/CD 文档](https://docs.gitlab.com/ee/ci/)
+- [Jenkins 官方文档](https://www.jenkins.io/doc/)

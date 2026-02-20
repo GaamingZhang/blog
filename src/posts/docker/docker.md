@@ -492,3 +492,9 @@ Docker 通过巧妙地利用 Linux 内核的隔离机制，实现了轻量级、
 - **Docker 网络详解**：深入理解各种网络模式的应用场景
 - **容器编排**：学习 Docker Compose 和 Kubernetes
 - **安全最佳实践**：了解容器安全加固方法
+
+## 参考资源
+
+- [Docker 官方文档](https://docs.docker.com/)
+- [Docker 入门教程](https://docs.docker.com/get-started/)
+- [Docker Hub 镜像仓库](https://hub.docker.com/)

@@ -379,3 +379,9 @@ VictoriaMetrics 单机版的 Kubernetes 部署更简单：一个 Deployment + �
 ### Q5：长期存储方案是否会影响告警的实时性？
 
 不会，只要告警规则仍然在 Prometheus 本地执行。Prometheus 的 Alert Rules 使用本地数据计算，与 remote write 完全无关，延迟与不接入长期存储时完全相同。需要注意的场景是使用 Thanos Ruler 或 VictoriaMetrics 的 vmalert 在**全局层面**执行跨集群告警规则，此时查询数据需经过 Querier，会引入额外的网络延迟（通常在几百毫秒以内）。对于绝大多数告警规则（评估间隔 1 分钟），这点延迟完全可以忽略。
+
+## 参考资源
+
+- [Prometheus Remote Write 协议](https://prometheus.io/docs/prometheus/latest/configuration/configuration/#remote_write)
+- [Thanos 官方文档](https://thanos.io/tip/thanos/getting-started.md/)
+- [VictoriaMetrics 官方文档](https://docs.victoriametrics.com/)

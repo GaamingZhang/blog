@@ -768,3 +768,9 @@ netstat -anp | grep udp | awk '{print $5}' | cut -d: -f1 | sort | uniq -c | sort
 - 合理的限流对正常用户影响最小
 - 过度限流可能影响服务质量
 - 需要根据实际业务调整防护策略
+
+## 参考资源
+
+- [RFC 768 - UDP 协议规范](https://datatracker.ietf.org/doc/html/rfc768)
+- [RFC 8085 - UDP 使用指南](https://datatracker.ietf.org/doc/html/rfc8085)
+- [QUIC 协议官方文档](https://www.rfc-editor.org/rfc/rfc9000.html)

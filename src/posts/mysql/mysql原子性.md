@@ -361,3 +361,9 @@ MySQL 通过 Undo Log 实现原子性的核心机制：
 - 长事务会阻止 Undo Log 清理，导致空间暴涨
 
 理解 Undo Log 的工作原理，是理解 MySQL 事务机制的关键一步。它不仅实现了原子性，还为 MVCC 的一致性读提供了基础。
+
+## 参考资源
+
+- [MySQL 官方文档 - Undo Log](https://dev.mysql.com/doc/refman/8.0/en/innodb-undo-logs.html)
+- [MySQL 官方文档 - 事务回滚](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-model.html)
+- [MySQL 官方文档 - InnoDB 多版本控制](https://dev.mysql.com/doc/refman/8.0/en/innodb-multi-versioning.html)

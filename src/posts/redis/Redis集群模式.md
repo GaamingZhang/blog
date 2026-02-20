@@ -504,3 +504,9 @@ DC1                          DC2
 - 需要处理双向同步冲突
 
 **推荐**：单DC部署为主，跨DC异步复制为辅。核心业务考虑多活架构。
+
+## 参考资源
+
+- [Redis 官方文档 - Redis Cluster](https://redis.io/docs/latest/operate/oss_and_stack/management/scaling/)
+- [Redis 官方文档 - 哨兵](https://redis.io/docs/latest/operate/oss_and_stack/management/sentinel/)
+- [Redis 官方文档 - 复制](https://redis.io/docs/latest/operate/oss_and_stack/management/replication/)

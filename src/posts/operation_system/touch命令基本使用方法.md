@@ -463,3 +463,9 @@ touch directory/
 - 批量操作结合 `find` 命令
 - 理解atime的性能影响
 - 注意ctime的不可伪造特性
+
+## 参考资源
+
+- [GNU Coreutils - touch 文档](https://www.gnu.org/software/coreutils/manual/html_node/touch-invocation.html)
+- [Linux touch 命令手册](https://man7.org/linux/man-pages/man1/touch.1.html)
+- [Linux 文件时间戳详解](https://www.kernel.org/doc/html/latest/filesystems/ext4/index.html)

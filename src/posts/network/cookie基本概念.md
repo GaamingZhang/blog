@@ -363,3 +363,9 @@ deleteCookie('username');
 Cookie是Web开发中重要的状态管理机制，它解决了HTTP协议无状态的问题，为会话管理、用户识别、个性化设置等功能提供了基础。通过理解Cookie的工作原理、属性配置、安全问题和最佳实践，开发者可以更好地使用Cookie，构建安全、高效的Web应用。
 
 随着Web技术的发展，Cookie的使用也在不断演进。现代浏览器对第三方Cookie的限制越来越严格，新的技术如JWT、LocalStorage等也在不断涌现。开发者应根据实际需求选择合适的状态管理方案，在安全性、性能和用户体验之间找到平衡。
+
+## 参考资源
+
+- [RFC 6265 - HTTP Cookie 规范](https://datatracker.ietf.org/doc/html/rfc6265)
+- [MDN - HTTP Cookie](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Cookies)
+- [OWASP - Cookie 安全指南](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html)

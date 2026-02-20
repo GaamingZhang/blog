@@ -266,3 +266,9 @@ MySQL死锁是并发数据库系统中不可避免的现象，但通过了解死
 5. 定期监控和分析死锁日志
 
 通过这些措施，我们可以提高数据库系统的并发性能和稳定性，确保应用程序的正常运行。
+
+## 参考资源
+
+- [MySQL 官方文档 - 死锁检测](https://dev.mysql.com/doc/refman/8.0/en/innodb-deadlocks.html)
+- [MySQL 官方文档 - InnoDB 锁机制](https://dev.mysql.com/doc/refman/8.0/en/innodb-locking.html)
+- [MySQL 官方文档 - 事务隔离级别](https://dev.mysql.com/doc/refman/8.0/en/innodb-transaction-isolation-levels.html)

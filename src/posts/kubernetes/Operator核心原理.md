@@ -271,3 +271,9 @@ Operator的核心原理可以总结为:
 - **Reconcile循环**保证了"一定做到"——持续重试直到成功
 
 下一篇文章将介绍常见的Operator实现(Prometheus Operator、MySQL Operator等)及其应用场景,以及如何选择合适的Operator开发框架。
+
+## 参考资源
+
+- [Kubernetes Operator 官方文档](https://kubernetes.io/docs/concepts/extend-kubernetes/operator/)
+- [Kubebuilder 官方文档](https://book.kubebuilder.io/)
+- [Operator SDK 文档](https://sdk.operatorframework.io/docs/)

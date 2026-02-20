@@ -373,3 +373,9 @@ Linux系统提供了丰富的IO监控工具，可以从不同角度和粒度监�
 在分析IO性能时，需要关注IOPS、带宽、延迟、队列长度和设备使用率等关键指标，并根据应用程序的IO模式（随机/顺序、读/写）选择合适的监控和优化策略。
 
 通过合理使用这些工具和优化方法，可以有效提高系统的IO性能，确保应用程序的高效运行。
+
+## 参考资源
+
+- [Linux iostat 命令手册](https://man7.org/linux/man-pages/man1/iostat.1.html)
+- [Linux iotop 命令手册](https://man7.org/linux/man-pages/man8/iotop.8.html)
+- [Linux 块设备IO调度文档](https://www.kernel.org/doc/html/latest/block/switching-sched.html)

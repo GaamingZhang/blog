@@ -395,3 +395,9 @@ Operator适合将**运维专业知识产品化**的场景:
 3. **替代方案**:是否有成熟的开源Operator可直接使用
 
 在合适的场景下,Operator能显著提升运维效率,但过度使用会增加系统复杂度。理解其原理后,才能做出正确的技术选型。
+
+## 参考资源
+
+- [Prometheus Operator 官方文档](https://prometheus-operator.dev/docs/)
+- [Cert-Manager 官方文档](https://cert-manager.io/docs/)
+- [Operator 成熟度模型](https://operatorframework.io/operator-capabilities/)

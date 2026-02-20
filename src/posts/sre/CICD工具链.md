@@ -344,3 +344,9 @@ CI/CD 工具链是支撑持续集成、持续交付与持续部署的完整技�
   - **可测试性**：可对流水线定义进行静态分析和测试
   - **自动化**：流水线变更自动应用，无需手动配置
   主流实现：Jenkinsfile（Groovy）、GitLab CI YAML、GitHub Actions YAML、Tekton YAML
+
+## 参考资源
+
+- [Jenkins 官方文档](https://www.jenkins.io/doc/)
+- [GitLab CI/CD 文档](https://docs.gitlab.com/ee/ci/)
+- [GitHub Actions 文档](https://docs.github.com/en/actions)

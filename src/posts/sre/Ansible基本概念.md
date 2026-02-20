@@ -795,3 +795,9 @@ Vault可以加密整个文件或特定变量。
 - 禁用不必要的事实收集：在Play中设置`gather_facts: no`
 - 优化任务顺序：将频繁执行的任务放在前面
 - 使用Roles和Collections提高代码重用性
+
+## 参考资源
+
+- [Ansible 官方文档](https://docs.ansible.com/)
+- [Ansible Galaxy](https://galaxy.ansible.com/)
+- [Ansible 最佳实践](https://docs.ansible.com/ansible/latest/user_guide/playbooks_best_practices.html)

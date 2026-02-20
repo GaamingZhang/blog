@@ -426,3 +426,9 @@ CDN提供的安全防护功能可以应用于各种安全场景：
 - **证券交易系统**：证券交易系统的数据传输加速
 - **保险行业应用**：保险行业的在线服务加速
 - **金融数据分发**：金融数据的实时分发和推送
+
+## 参考资源
+
+- [Cloudflare CDN 学习中心](https://www.cloudflare.com/learning/cdn/what-is-a-cdn/)
+- [AWS CloudFront 文档](https://docs.aws.amazon.com/AmazonCloudFront/latest/DeveloperGuide/Introduction.html)
+- [阿里云 CDN 文档](https://help.aliyun.com/product/27099.html)

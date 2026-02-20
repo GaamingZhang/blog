@@ -397,3 +397,9 @@ ChainID 则用于定位本地存储中的层。在 `/var/lib/docker/image/overla
 - **在 CI 环境中构建**：BuildKit 支持缓存导出/导入，可以把本地缓存推送到 Registry，让 CI 机器也能复用
 
 Docker 23.0 以上版本默认启用 BuildKit，通常不需要额外配置。如果是旧版本，可以设置环境变量 `export DOCKER_BUILDKIT=1` 来启用。
+
+## 参考资源
+
+- [Docker BuildKit 官方文档](https://docs.docker.com/build/buildkit/)
+- [Dockerfile 最佳实践](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+- [BuildKit 缓存管理](https://docs.docker.com/build/cache/)

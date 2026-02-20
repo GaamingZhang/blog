@@ -720,3 +720,9 @@ Terraform 在执行 `plan` 时默认会先从云平台 API 刷新资源状态（
 ### Q5：Terraform 能否管理 Kubernetes 资源？和直接写 YAML 有什么区别？
 
 可以，通过 `hashicorp/kubernetes` Provider，Terraform 可以管理 Namespace、Deployment、Service、ConfigMap 等 Kubernetes 资源。相比直接写 YAML，Terraform 的优势在于：可以在同一套代码中同时描述云基础设施（VPC、EKS/ACK 集群本身）和集群内的 Kubernetes 资源，形成统一的管理入口；可以通过变量和模块实现 Kubernetes 资源的参数化复用；状态追踪让变更更安全。劣势在于：Kubernetes 的 YAML 生态工具链（Helm、Kustomize）更为丰富，且 Kubernetes 资源变更频繁时，Terraform 的执行速度相对较慢。实践中，通常推荐用 Terraform 管理集群本身和少量基础资源（Namespace、RBAC），应用的 Deployment/Service 则交由 Helm 或 ArgoCD 管理。
+
+## 参考资源
+
+- [Terraform 官方文档](https://developer.hashicorp.com/terraform/docs)
+- [Terraform 最佳实践指南](https://developer.hashicorp.com/terraform/language/best-practices)
+- [Terraform AWS Provider 文档](https://registry.terraform.io/providers/hashicorp/aws/latest/docs)

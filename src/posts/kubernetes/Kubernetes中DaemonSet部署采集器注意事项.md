@@ -583,3 +583,9 @@ liveness 探针的核心参数是 `failureThreshold * periodSeconds`，这个值
 （2）用标签选择器批量操作：`kubectl delete pod -n monitoring -l app=node-exporter --field-selector=status.phase=Failed`，清理所有 Failed 状态的采集器 Pod。
 
 （3）为 DaemonSet 配置 Prometheus 告警规则，监控每个节点是否都有对应的 Pod 在运行：`count(kube_pod_info{namespace="monitoring",pod=~"node-exporter.*"}) != count(kube_node_info)`，节点数与采集器 Pod 数不一致时告警。这样任何节点缺少采集器都能第一时间发现。
+
+## 参考资源
+
+- [Kubernetes DaemonSet 官方文档](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/)
+- [Prometheus Node Exporter 最佳实践](https://prometheus.io/docs/guides/node-exporter/)
+- [Kubernetes 资源管理指南](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)

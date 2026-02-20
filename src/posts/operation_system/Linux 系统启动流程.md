@@ -559,3 +559,9 @@ systemd-analyze blame    # 各服务耗时
 - 保留旧内核以防新内核失败
 - 了解系统启动流程便于快速诊断
 - 使用systemd-analyze优化启动速度
+
+## 参考资源
+
+- [Linux 内核启动文档](https://www.kernel.org/doc/html/latest/admin-guide/kernel-parameters.html)
+- [systemd 官方文档](https://systemd.io/)
+- [GRUB 手册](https://www.gnu.org/software/grub/manual/grub/grub.html)

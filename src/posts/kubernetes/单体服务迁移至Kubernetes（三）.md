@@ -1802,3 +1802,9 @@ echo "迁移完成"
 **分层处理**：应用指标（QPS、错误率）替换为Prometheus；容器和Pod指标是新增的（cAdvisor、kube-state-metrics）；节点硬件、机房环境、网络设备的监控不属于Kubernetes职责，需保留传统工具。
 
 **关键原则**：保留至少1-2个月的overlap期，告警双写确保没有监控盲区。
+
+## 参考资源
+
+- [Kubernetes 滚动更新策略](https://kubernetes.io/docs/tutorials/kubernetes-basics/update/update-intro/)
+- [Deployment 滚动更新配置](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#rolling-update-deployment)
+- [Prometheus 监控最佳实践](https://prometheus.io/docs/practices/)

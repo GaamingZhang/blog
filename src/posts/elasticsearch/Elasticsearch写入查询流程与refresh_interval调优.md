@@ -390,3 +390,9 @@ POST /my_index/_forcemerge?max_num_segments=1
 **refresh_interval 的影响**：控制每个分片的 Segment 产生频率。分片数不变的前提下，调大 `refresh_interval` 直接减少每个分片的 Segment 碎片。
 
 **协同效应**：在分片数较多的情况下（如 20 个分片），如果 `refresh_interval` 仍为 1s，每秒会产生 20 个新 Segment（每个分片一个），Merge 压力倍增。此时将 `refresh_interval` 调大到 30s，Merge 压力可降低 30 倍，写入吞吐量提升会非常明显。因此，**分片数越多，调大 `refresh_interval` 的收益越显著**。
+
+## 参考资源
+
+- [Elasticsearch 写入性能调优](https://www.elastic.co/guide/en/elasticsearch/reference/current/tune-for-indexing-speed.html)
+- [Refresh 机制官方文档](https://www.elastic.co/guide/en/elasticsearch/reference/current/indices-refresh.html)
+- [搜索分页最佳实践](https://www.elastic.co/guide/en/elasticsearch/reference/current/paginate-search-results.html)

@@ -272,3 +272,9 @@ DaemonSet是Kubernetes中专门用于"每节点运行一个Pod"场景的控制�
 - 日志收集、监控、网络插件等节点级服务适合用DaemonSet
 - 要在Master节点运行需要配置污点容忍
 - DaemonSet的Pod数量由节点数决定，不能手动设置replicas
+
+## 参考资源
+
+- [Kubernetes DaemonSet 官方文档](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/)
+- [DaemonSet 更新策略](https://kubernetes.io/docs/tasks/manage-daemon/update-daemon-set/)
+- [污点和容忍](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/)

@@ -801,3 +801,9 @@ JWT 认证机制的核心要点：
 - 非对称加密（微服务架构）
 
 理解 JWT 的设计哲学，才能在合适的场景选择合适的认证方案。JWT 不是银弹，它解决了分布式和跨域的问题，但也引入了无法主动失效的限制。在实际应用中，需要根据业务需求权衡 Session 和 JWT 的优劣。
+
+## 参考资源
+
+- [RFC 7519 - JWT 规范](https://datatracker.ietf.org/doc/html/rfc7519)
+- [JWT.io - JWT 调试工具](https://jwt.io/)
+- [OWASP - JWT 安全指南](https://cheatsheetseries.owasp.org/cheatsheets/JSON_Web_Token_for_Java_Cheat_Sheet.html)

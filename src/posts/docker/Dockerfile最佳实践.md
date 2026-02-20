@@ -340,3 +340,9 @@ docker run -it <中间镜像ID> /bin/sh
 | 入口点 | 用exec格式，配合HEALTHCHECK |
 
 记住：好的Dockerfile = 小镜像 + 快构建 + 安全可靠
+
+## 参考资源
+
+- [Dockerfile 官方文档](https://docs.docker.com/engine/reference/builder/)
+- [Docker 镜像最佳实践](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/)
+- [Docker 安全最佳实践](https://docs.docker.com/develop/security-best-practices/)

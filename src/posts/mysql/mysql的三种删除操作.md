@@ -1666,3 +1666,9 @@ END;
 
 -- 这样既保留了短期恢复能力,又避免了长期的性能和存储问题
 ```
+
+## 参考资源
+
+- [MySQL 官方文档 - DELETE 语句](https://dev.mysql.com/doc/refman/8.0/en/delete.html)
+- [MySQL 官方文档 - TRUNCATE TABLE 语句](https://dev.mysql.com/doc/refman/8.0/en/truncate-table.html)
+- [MySQL 官方文档 - DROP TABLE 语句](https://dev.mysql.com/doc/refman/8.0/en/drop-table.html)

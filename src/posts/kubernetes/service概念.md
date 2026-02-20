@@ -359,3 +359,9 @@ Service是Kubernetes网络模型的核心组件：
 - 生产环境对外服务推荐LoadBalancer + Ingress组合
 - 理解Endpoints对排查问题很有帮助
 - 无状态设计优于会话保持
+
+## 参考资源
+
+- [Kubernetes Service 官方文档](https://kubernetes.io/docs/concepts/services-networking/service/)
+- [Service 类型详解](https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types)
+- [无头服务（Headless Service）](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services)

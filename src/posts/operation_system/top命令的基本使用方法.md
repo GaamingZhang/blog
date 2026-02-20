@@ -339,7 +339,13 @@ available ≈ free + 大部分 buff/cache
 - 按 `1` 查看每个 CPU 核心，识别负载不均
 - `wa%` 高表示 I/O 瓶颈，需要优化磁盘
 
-**最佳实践**：
+**最佳实践**:
 - 性能问题第一步就是运行 top
 - 持续观察，而不是看一次就退出
 - 结合其他工具（iostat、vmstat）深入分析
+
+## 参考资源
+
+- [Linux top 命令手册](https://man7.org/linux/man-pages/man1/top.1.html)
+- [Linux 性能分析工具指南](https://www.brendangregg.com/linuxperf.html)
+- [htop 官方文档](https://htop.dev/)

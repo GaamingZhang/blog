@@ -605,3 +605,9 @@ Span是Trace中的基本单元，表示一个服务或组件中的一个操作�
    - 结合Prometheus收集系统和应用指标
    - 使用Grafana创建统一的监控仪表板，整合追踪数据和指标
    - 实现基于追踪数据的自定义指标
+
+## 参考资源
+
+- [Jaeger 官方文档](https://www.jaegertracing.io/docs/)
+- [OpenTelemetry 官方文档](https://opentelemetry.io/docs/)
+- [Jaeger Kubernetes 部署指南](https://www.jaegertracing.io/docs/latest/operator/)

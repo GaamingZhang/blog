@@ -417,3 +417,9 @@ grep -v "^$" file.txt | wc -l
 - 统计代码行数用 `-l`
 - 提高性能用重定向代替管道
 - 批量统计结合 find + xargs
+
+## 参考资源
+
+- [GNU Coreutils - wc 文档](https://www.gnu.org/software/coreutils/manual/html_node/wc-invocation.html)
+- [Linux wc 命令手册](https://man7.org/linux/man-pages/man1/wc.1.html)
+- [UTF-8 编码规范](https://www.unicode.org/versions/Unicode15.0.0/ch03.pdf)

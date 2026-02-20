@@ -440,3 +440,9 @@ kubectl delete networkpolicy --all -n <namespace>
 | **验证方法** | 功能测试 + 策略审计 + 监控告警 |
 
 记住：精细化隔离不是一蹴而就的，需要逐步建立 Label 体系、逐步收紧策略、持续验证效果。就像建造一座安全的城堡，需要一砖一瓦地加固，而不是一夜之间完成。
+
+## 参考资源
+
+- [Kubernetes NetworkPolicy 官方文档](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
+- [Calico 网络策略文档](https://docs.projectcalico.org/security/calico-network-policy)
+- [Cilium 网络策略指南](https://docs.cilium.io/en/stable/policy/)

@@ -508,3 +508,9 @@ GET /logs-app-000001/_ilm/explain
 - **Data Stream** 是时序数据的推荐管理模式，统一写入别名、自动管理 backing index 命名和滚动，与 ILM 深度集成。
 - **Searchable Snapshot** 是降低冷数据成本的关键技术，将数据迁入对象存储的同时保持查询接口兼容，Frozen 层场景下可将归档成本降低 80% 以上。
 - 生产落地的三个关键决策：**各层保留时长的规划**、**Shrink 前分片分配的准备**、**Shared Cache 大小与查询性能的平衡**，直接决定分层架构能否稳定运行。
+
+## 参考资源
+
+- [Elasticsearch ILM 官方文档](https://www.elastic.co/guide/en/elasticsearch/reference/current/ilm-policy.html)
+- [冷热分层架构指南](https://www.elastic.co/guide/en/elasticsearch/reference/current/hot-warm-cold-architecture.html)
+- [Searchable Snapshot 文档](https://www.elastic.co/guide/en/elasticsearch/reference/current/searchable-snapshots.html)

@@ -712,3 +712,9 @@ RDMA能带来的性能提升主要包括：
 - **吞吐量提升**：数据传输吞吐量可提高数倍甚至数十倍
 
 这些性能提升使得RDMA成为现代高性能计算和数据中心的关键技术之一。
+
+## 参考资源
+
+- [RDMA Consortium 官方文档](https://www.rdmaconsortium.org/)
+- [Linux RDMA 文档](https://www.kernel.org/doc/html/latest/infiniband/index.html)
+- [InfiniBand Trade Association 规范](https://www.infinibandta.org/)

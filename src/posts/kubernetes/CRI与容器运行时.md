@@ -373,3 +373,9 @@ devicemapper在历史上是RHEL/CentOS早期版本的选择（overlayfs当时未
 使用containerd时，由于其版本独立于K8s，需要关注兼容性矩阵。通常一个K8s版本支持两到三个containerd大版本。升级K8s前，先查阅目标K8s版本的CRI要求，确认当前containerd版本在支持范围内。如果需要升级containerd，由于containerd-shim与daemon解耦，可以先停止containerd、升级二进制、重新启动，**运行中的容器不受影响**，这是滚动升级的重要保障。
 
 使用CRI-O时，由于版本与K8s严格对齐，策略更简单：升级K8s到v1.X就必须同时升级CRI-O到v1.X，不存在版本兼容性研究的问题。无论哪种运行时，节点排空（kubectl drain）后再升级是最安全的操作流程，确保升级过程中没有Pod在该节点上运行。
+
+## 参考资源
+
+- [Kubernetes CRI 官方文档](https://kubernetes.io/docs/concepts/architecture/cri/)
+- [containerd 官方文档](https://containerd.io/docs/)
+- [OCI Runtime Spec 规范](https://github.com/opencontainers/runtime-spec)

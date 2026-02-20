@@ -459,8 +459,14 @@ done
 - `-L` 跟随重定向
 - `-o/-O` 保存响应到文件
 
-**最佳实践**：
+**最佳实践**:
 - 测试环境可以用 `-k` 忽略 SSL
 - 生产环境必须验证证书
 - 敏感数据不要直接写在命令行（使用文件或环境变量）
 - 配合 jq、grep 等工具处理响应数据
+
+## 参考资源
+
+- [curl 官方文档](https://curl.se/docs/)
+- [curl 命令行选项手册](https://curl.se/docs/manpage.html)
+- [HTTP/1.1 规范 RFC 7231](https://datatracker.ietf.org/doc/html/rfc7231)

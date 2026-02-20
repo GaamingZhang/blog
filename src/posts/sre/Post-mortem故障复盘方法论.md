@@ -286,3 +286,9 @@ Post-mortem 的主持人（Facilitator）应该是一个能够保持中立、引
 ### Q5：小团队或创业公司是否需要正式的 Post-mortem 流程？
 
 对于规模小的团队，完整的正式流程确实可能显得繁重。但 Post-mortem 的核心价值与团队规模无关：**记录发生了什么、找到根因、制定改进措施**，这三个步骤在任何规模下都值得做。建议小团队采用轻量化版本：省略正式的文档模板，用一个简短的内部文档（一页纸）记录故障时间线、根因和改进措施即可；复盘会议控制在 30-45 分钟；改进措施直接进入迭代 Backlog。随着团队成长和系统复杂度提升，再逐步完善流程细节。重要的是建立习惯，而不是一开始就追求流程完美。
+
+## 参考资源
+
+- [Google SRE Book - Postmortem](https://sre.google/sre-book/postmortem-culture/)
+- [Google SRE Book - 无责文化](https://sre.google/workbook/postmortem/)
+- [Atlassian 事故复盘指南](https://www.atlassian.com/incident-management/postmortem)

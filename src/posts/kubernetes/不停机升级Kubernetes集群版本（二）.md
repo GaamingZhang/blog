@@ -483,3 +483,9 @@ terminationGracePeriodSeconds: 60
 这个配置的作用机制是：Pod 进入 Terminating 状态后，Kubernetes 先执行 preStop hook（sleep 15 秒），这段时间内 Endpoint Controller 已经将该 Pod 从 Service Endpoints 移除，kube-proxy 也已在各节点更新了流量规则，不会有新请求路由到这个 Pod。Sleep 结束后，SIGTERM 发送给进程，`terminationGracePeriodSeconds` 给进程最多 60 秒的时间自然结束正在处理的请求，超时后 SIGKILL 强制结束。
 
 这不如应用自身实现优雅关闭效果好，但在无法修改代码的约束下是一个可行的缓解手段。根本解决方案仍然是应用实现对 SIGTERM 的正确处理：停止接受新连接，等待现有请求处理完毕，然后主动退出，而不是被 SIGKILL 强制终止。
+
+## 参考资源
+
+- [PodDisruptionBudget 官方文档](https://kubernetes.io/docs/concepts/workloads/pods/disruptions/)
+- [节点维护与安全驱逐](https://kubernetes.io/docs/tasks/administer-cluster/safely-drain-node/)
+- [Kubernetes 版本偏差策略](https://kubernetes.io/docs/setup/release/version-skew-policy/)

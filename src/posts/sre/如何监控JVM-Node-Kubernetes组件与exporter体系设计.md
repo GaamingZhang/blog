@@ -471,6 +471,12 @@ inhibit_rules:
 - ServiceMonitor 和 PodMonitor 是 K8s 环境中 scrape 配置的推荐方式，实现声明式自动化采集
 - 标签统一（cluster、pod、node）是多层数据关联的前提，AlertManager 抑制规则是避免告警风暴的关键
 
+## 参考资源
+
+- [Prometheus JMX Exporter](https://github.com/prometheus/jmx_exporter)
+- [Node Exporter 官方文档](https://github.com/prometheus/node_exporter)
+- [Kubernetes 监控架构](https://kubernetes.io/docs/concepts/cluster-administration/system-metrics/)
+
 ---
 
 ## 常见问题

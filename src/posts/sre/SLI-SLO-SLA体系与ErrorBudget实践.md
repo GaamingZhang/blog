@@ -564,3 +564,9 @@ SLO 的制定需要工程和产品共同参与，但两方的角色不同。工�
 ### Q5：如何向非技术的业务方解释 Error Budget 的概念？
 
 可以用"运维预算"来类比。就像财务预算规定了一个季度能花多少钱一样，Error Budget 规定了一个月内系统"能出多少故障"。每当出现一次故障，就是在花费这个预算；每当做一次发布变更，也会消耗一小部分预算（因为发布可能引入问题）。当预算花光了，就像钱花完了一样，需要暂停"消费"（变更），让余额恢复（新的月份重置）。对业务方来说，最重要的信息是：Error Budget 不是工程团队阻碍业务发展的借口，而是一个透明的、对双方都公平的决策框架。如果业务方觉得发布节奏太慢，他们也可以选择降低 SLO，换取更多的 Error Budget，前提是接受相应的用户体验风险。这个 tradeoff 变得可量化、可讨论。
+
+## 参考资源
+
+- [Google SRE Book - SLO](https://sre.google/sre-book/service-level-objectives/)
+- [Google SRE Book - Error Budget](https://sre.google/sre-book/embracing-risk/)
+- [Prometheus SLO 实践指南](https://prometheus.io/docs/practices/alerting/)

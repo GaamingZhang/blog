@@ -361,3 +361,9 @@ Docker Compose的核心价值：
 - **方便的配置覆盖**：开发和生产用不同配置
 
 记住：Compose适合**单机**多容器应用。如果需要跨多台机器运行，要考虑Kubernetes或Docker Swarm。
+
+## 参考资源
+
+- [Docker Compose 官方文档](https://docs.docker.com/compose/)
+- [Compose 文件格式参考](https://docs.docker.com/compose/compose-file/)
+- [Docker Compose 入门教程](https://docs.docker.com/compose/gettingstarted/)

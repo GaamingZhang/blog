@@ -372,3 +372,9 @@ at-least-once 意味着在 Agent 崩溃重启后，上次 Checkpoint 到崩溃�
 - **配置文件**（YAML/TOML）用于复杂的结构化配置（如多个探测目标列表、清理规则），用 `embed` 将默认配置编译进二进制，确保工具在没有外部配置文件时仍能以合理的默认值运行
 
 配置验证应在工具启动时完成，发现错误立即退出并打印清晰的错误信息，而不是在运行中途因配置缺失而崩溃。`go-playground/validator` 提供了声明式的结构体字段校验，与 `mapstructure` 配合使用可以覆盖大多数配置解析和校验场景。
+
+## 参考资源
+
+- [Go 官方文档](https://golang.org/doc/)
+- [Prometheus Go Client](https://github.com/prometheus/client_golang)
+- [Cobra CLI 框架](https://github.com/spf13/cobra)

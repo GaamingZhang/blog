@@ -393,8 +393,14 @@ cat file.txt | sed 's/old/new/g' | head
 - `s/old/new/g`：全局替换
 - 使用 `|` 或其他分隔符避免 `/` 冲突
 
-**最佳实践**：
+**最佳实践**:
 - 先不加 `-i` 测试效果
 - 重要文件先备份（`-i.bak`）
 - 复杂操作考虑使用 awk 或脚本语言
 - 配合管道使用（grep + sed + awk）
+
+## 参考资源
+
+- [GNU sed 手册](https://www.gnu.org/software/sed/manual/sed.html)
+- [Linux sed 命令手册](https://man7.org/linux/man-pages/man1/sed.1.html)
+- [正则表达式教程](https://www.gnu.org/software/sed/manual/html_node/Regular-Expressions.html)

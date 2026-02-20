@@ -658,4 +658,10 @@ pt-online-schema-change \
   --execute
 ```
 
-这些工具可以实现真正的零停机迁移,适合生产环境的大表转换。
+这些工具可以实现真正的零停机迁移，适合生产环境的大表转换。
+
+## 参考资源
+
+- [MySQL 官方文档 - 存储引擎](https://dev.mysql.com/doc/refman/8.0/en/storage-engines.html)
+- [MySQL 官方文档 - InnoDB 存储引擎](https://dev.mysql.com/doc/refman/8.0/en/innodb-storage-engine.html)
+- [MySQL 官方文档 - 选择存储引擎](https://dev.mysql.com/doc/refman/8.0/en/storage-engine-selection.html)

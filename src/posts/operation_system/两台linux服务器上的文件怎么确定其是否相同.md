@@ -215,3 +215,9 @@ gpg --verify file.sha256.asc
 # 验证文件完整性
 sha256sum -c file.sha256
 ```
+
+## 参考资源
+
+- [Linux md5sum 命令手册](https://man7.org/linux/man-pages/man1/md5sum.1.html)
+- [Linux sha256sum 命令手册](https://man7.org/linux/man-pages/man1/sha256sum.1.html)
+- [rsync 文档](https://man7.org/linux/man-pages/man1/rsync.1.html)

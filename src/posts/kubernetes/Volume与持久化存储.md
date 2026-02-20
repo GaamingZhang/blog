@@ -310,3 +310,9 @@ Kubernetes的存储体系围绕着**解耦**的思想设计：
 - 访问模式决定了能否多节点共享
 - 回收策略决定了数据的安全性，生产环境用Retain
 - 云环境推荐使用StorageClass实现动态供给
+
+## 参考资源
+
+- [Kubernetes 存储概念](https://kubernetes.io/docs/concepts/storage/)
+- [Persistent Volumes](https://kubernetes.io/docs/concepts/storage/persistent-volumes/)
+- [StorageClass 动态供给](https://kubernetes.io/docs/concepts/storage/storage-classes/)

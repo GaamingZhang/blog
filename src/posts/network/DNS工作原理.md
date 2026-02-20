@@ -678,3 +678,9 @@ DNS 工作原理的核心要点：
 - 快速 DNS 服务（减少延迟）
 
 理解 DNS 的分布式、层级化设计，是理解互联网基础设施的关键。DNS 不仅仅是域名解析，还承载着负载均衡、故障转移、安全防护等重要功能。
+
+## 参考资源
+
+- [RFC 1034 - DNS 概念](https://datatracker.ietf.org/doc/html/rfc1034)
+- [RFC 1035 - DNS 协议](https://datatracker.ietf.org/doc/html/rfc1035)
+- [Cloudflare DNS 学习中心](https://www.cloudflare.com/learning/dns/what-is-dns/)

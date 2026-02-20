@@ -516,3 +516,9 @@ GitLab CI `needs` 关键字的并行是**Job 级别的**。每个 Job 运行在�
 串行等待用 DAG 重构解决；重复工作通过 GitLab CI 的 `cache` 或 Jenkins 的 `stash` 解决——例如将 Maven 的 `~/.m2/repository` 目录纳入 Cache，在多次 Pipeline 运行之间复用；资源竞争需要扩展 Runner/Agent 节点或调整并发限制。
 
 第三步是**关注关键路径（Critical Path）**：DAG 中从起点到终点耗时最长的那条路径决定了总耗时，对关键路径上的 Stage 优化才有实际效果，对非关键路径的优化对总耗时没有贡献。找到关键路径后，优先在关键路径上实施并行化或缓存策略，通常能获得最大的时间收益。
+
+## 参考资源
+
+- [Jenkins 官方文档](https://www.jenkins.io/doc/)
+- [GitLab CI/CD 文档](https://docs.gitlab.com/ee/ci/)
+- [Jenkins Shared Library](https://www.jenkins.io/doc/book/pipeline/shared-libraries/)

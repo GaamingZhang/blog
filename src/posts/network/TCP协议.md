@@ -497,3 +497,9 @@ SYN Flood 攻击是一种 DDoS 攻击，攻击者发送大量 SYN 报文但不�
 4. **调整重传次数**：`net.ipv4.tcp_synack_retries`
 5. **启用 RST 攻击防护**：`net.ipv4.tcp_rfc1337`
 6. **使用防火墙**：限制 SYN 报文的速率
+
+## 参考资源
+
+- [RFC 793 - TCP 协议规范](https://datatracker.ietf.org/doc/html/rfc793)
+- [RFC 6268 - TCP 拥塞控制](https://datatracker.ietf.org/doc/html/rfc6268)
+- [Linux 内核 TCP 参数调优](https://www.kernel.org/doc/Documentation/networking/ip-sysctl.txt)

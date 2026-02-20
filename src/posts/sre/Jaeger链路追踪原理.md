@@ -265,3 +265,9 @@ Jaeger的工作流程主要包括数据采集、传输、存储和查询四个�
 
 ## 总结
 Jaeger作为CNCF毕业的分布式链路追踪系统，为微服务架构提供了强大的可观测性能力。它基于现代分布式系统的设计理念，提供了高可用、可扩展的架构，支持多种编程语言和存储后端，帮助开发者更好地理解和优化分布式系统。随着云原生技术的发展，Jaeger在微服务架构中的应用越来越广泛，成为构建可靠、高性能分布式系统的重要工具。
+
+## 参考资源
+
+- [Jaeger 官方文档](https://www.jaegertracing.io/docs/)
+- [OpenTelemetry 官方文档](https://opentelemetry.io/docs/)
+- [CNCF Jaeger 项目](https://www.cncf.io/projects/jaeger/)

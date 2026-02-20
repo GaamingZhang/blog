@@ -337,3 +337,9 @@ RESTful API广泛使用HTTP状态码表示操作结果：
 - 包含足够的上下文信息，帮助客户端调试
 - 对于4xx错误，明确指出客户端需要如何修正请求
 - 对于5xx错误，避免暴露敏感的服务器内部信息
+
+## 参考资源
+
+- [MDN - HTTP 状态码](https://developer.mozilla.org/zh-CN/docs/Web/HTTP/Status)
+- [RFC 7231 - HTTP/1.1 语义](https://datatracker.ietf.org/doc/html/rfc7231)
+- [HTTP 状态码速查表](https://httpstatuses.com/)

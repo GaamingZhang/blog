@@ -324,3 +324,9 @@ stat file.txt              # 查看文件详细信息（包括修改时间）
 ls -l file.txt             # 查看文件修改时间
 tail -n 10 file.txt        # 查看最后修改的内容
 ```
+
+## 参考资源
+
+- [Linux tail 命令手册](https://man7.org/linux/man-pages/man1/tail.1.html)
+- [GNU Coreutils tail 文档](https://www.gnu.org/software/coreutils/manual/html_node/tail-invocation.html)
+- [Linux 日志文件管理指南](https://man7.org/linux/man-pages/man5/syslog.conf.5.html)

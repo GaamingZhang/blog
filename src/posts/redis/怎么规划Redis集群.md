@@ -715,3 +715,9 @@ DC1集群 ◄──双向同步──► DC2集群
 - RedisShake：阿里开源，支持全量+增量同步
 - Redis-CDC：基于复制流的增量同步
 - 自研方案：解析AOF文件实现同步
+
+## 参考资源
+
+- [Redis 官方文档 - 集群规范](https://redis.io/docs/latest/operate/oss_and_stack/reference/cluster-spec/)
+- [Redis 官方文档 - 集群教程](https://redis.io/docs/latest/operate/oss_and_stack/management/scaling/)
+- [Redis 官方文档 - 内存优化](https://redis.io/docs/latest/operate/oss_and_stack/management/optimization/memory-optimization/)

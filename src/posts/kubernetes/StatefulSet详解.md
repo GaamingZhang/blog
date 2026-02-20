@@ -268,3 +268,9 @@ StatefulSet是Kubernetes为有状态应用量身定制的控制器：
 - volumeClaimTemplates为每个Pod创建独立PVC
 - 删除StatefulSet不会删除PVC（保护数据）
 - 适用于数据库、消息队列等有状态应用
+
+## 参考资源
+
+- [Kubernetes StatefulSet 官方文档](https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/)
+- [有状态应用部署最佳实践](https://kubernetes.io/docs/tutorials/stateful-application/)
+- [Headless Service 详解](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services)

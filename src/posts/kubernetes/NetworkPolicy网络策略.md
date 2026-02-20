@@ -234,3 +234,9 @@ policyTypes:
 | 默认行为 | 无策略=全允许；有策略=默认拒绝，只允许明确规定的 |
 
 记住最重要的一点：**NetworkPolicy是"白名单"机制**。一旦你开始控制某个方向的流量，就需要明确列出所有允许的来源/目标，其他的都会被拒绝。
+
+## 参考资源
+
+- [Kubernetes NetworkPolicy 官方文档](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
+- [NetworkPolicy 实践指南](https://kubernetes.io/docs/tasks/administer-cluster/declare-network-policy/)
+- [Calico 网络策略](https://docs.projectcalico.org/security/calico-network-policy)

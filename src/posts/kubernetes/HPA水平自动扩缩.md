@@ -330,3 +330,9 @@ HPA的minReplicas最小是1，不能缩到0。
 - 可以基于**CPU、内存、自定义指标**来扩缩容
 - 使用HPA前确保安装了**Metrics Server**，Pod配置了**resources.requests**
 - 如果显示`<unknown>`，先检查metrics和资源配置
+
+## 参考资源
+
+- [Kubernetes HPA 官方文档](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)
+- [HPA 行为配置](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/#configurable-scaling-behavior)
+- [Metrics Server 安装](https://github.com/kubernetes-sigs/metrics-server)

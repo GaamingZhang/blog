@@ -674,3 +674,9 @@ Docker Compose通过声明式配置简化了多容器应用的管理：
 - 配置覆盖机制支持多环境部署
 
 Docker Compose让"基础设施即代码"成为现实，团队只需共享一个YAML文件，就能保证环境的完全一致。
+
+## 参考资源
+
+- [Docker Compose 官方文档](https://docs.docker.com/compose/)
+- [Compose 文件格式参考](https://docs.docker.com/compose/compose-file/)
+- [Docker Compose 入门教程](https://docs.docker.com/compose/gettingstarted/)

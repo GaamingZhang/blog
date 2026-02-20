@@ -273,3 +273,9 @@ kubectl delete rolebinding read-pods -n development
 | ServiceAccount | 给Pod使用的身份 |
 
 记住核心思想：**权限给角色，角色给人（或程序）**。这样当一个人离职时，只需要删除他的RoleBinding，而不用修改Role本身。
+
+## 参考资源
+
+- [Kubernetes RBAC 官方文档](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+- [使用 RBAC 鉴权](https://kubernetes.io/zh/docs/reference/access-authn-authz/rbac/)
+- [预定义角色参考](https://kubernetes.io/docs/reference/access-authn-authz/rbac/#default-roles-and-role-bindings)

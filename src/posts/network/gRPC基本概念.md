@@ -382,3 +382,9 @@ gRPC 是一个由 Google 开发的高性能、开源的跨语言 RPC 框架，�
 5. **标准化实现**：由 Google 维护，具有完善的文档和活跃的社区支持
 
 尽管 gRPC 存在学习曲线较陡、浏览器原生支持不足等局限性，但它仍然是构建高性能微服务架构的理想选择。在实际应用中，应根据具体需求（如性能要求、语言生态、团队熟悉度等）综合考虑 gRPC 和其他通信框架的优缺点，选择最适合的解决方案。
+
+## 参考资源
+
+- [gRPC 官方文档](https://grpc.io/docs/)
+- [Protocol Buffers 官方文档](https://protobuf.dev/)
+- [gRPC 快速入门指南](https://grpc.io/docs/languages/)

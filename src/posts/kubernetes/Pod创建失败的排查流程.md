@@ -997,3 +997,9 @@ kubectl exec -it <pod-name> -- curl http://localhost:8080/health
 - 如果只有特定应用的Pod失败: 应用配置问题
 - 如果某节点上所有新Pod都失败: 节点问题
 - 如果集群范围内随机失败: 基础设施问题(网络、存储、镜像仓库)
+
+## 参考资源
+
+- [Kubernetes Pod 生命周期官方文档](https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/)
+- [Kubernetes 调试 Pod 官方指南](https://kubernetes.io/docs/tasks/debug/debug-application/)
+- [kubectl 命令参考文档](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands)

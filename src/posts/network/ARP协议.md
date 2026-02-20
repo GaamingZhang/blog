@@ -620,3 +620,9 @@ ARP协议用于IPv4网络，NDP（Neighbor Discovery Protocol）用于IPv6网络
 - **虚拟IP宣告**：在集群环境中宣告虚拟IP地址的MAC绑定
 
 免费ARP可以是请求型（目标MAC为广播地址）或响应型（目标MAC为发送方MAC地址）。
+
+## 参考资源
+
+- [RFC 826 - ARP 协议规范](https://datatracker.ietf.org/doc/html/rfc826)
+- [RFC 5227 - IPv4 地址冲突检测](https://datatracker.ietf.org/doc/html/rfc5227)
+- [RFC 903 - 反向 ARP 协议](https://datatracker.ietf.org/doc/html/rfc903)
