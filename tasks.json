@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 148,
+    "completed_articles": 150,
     "in_progress_articles": 0,
-    "pending_articles": 202
+    "pending_articles": 200
   },
   "review_criteria": {
     "content_quality": [
@@ -1288,10 +1288,10 @@
         {
           "id": "os-015",
           "filename": "文件权限.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "os-016",
@@ -1368,10 +1368,10 @@
         {
           "id": "os-025",
           "filename": "堆和栈有什么区别.md",
-          "status": "pending",
-          "review_round": 0,
+          "status": "completed",
+          "review_round": 1,
           "issues": [],
-          "last_reviewed": null
+          "last_reviewed": "2026-02-20"
         }
       ]
     },
