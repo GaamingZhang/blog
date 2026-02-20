@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 310,
+    "completed_articles": 311,
     "in_progress_articles": 0,
-    "pending_articles": 40
+    "pending_articles": 39
   },
   "review_criteria": {
     "content_quality": [
@@ -3160,10 +3160,16 @@
         {
           "id": "lc-295",
           "filename": "295. 数据流的中位数.md",
-          "status": "pending",
-          "review_round": 0,
-          "issues": [],
-          "last_reviewed": null
+          "status": "completed",
+          "review_round": 1,
+          "issues": [
+            {
+              "round": 1,
+              "description": "缺少解题思路、代码注释、复杂度分析和总结，已补充完整；添加设计tag",
+              "fixed": true
+            }
+          ],
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "lc-300",
