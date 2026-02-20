@@ -5,9 +5,9 @@
     "created_at": "2026-02-19",
     "description": "博客文章审查计划 - 审查每篇文章并循环修改直到无修改意见",
     "total_articles": 350,
-    "completed_articles": 150,
+    "completed_articles": 151,
     "in_progress_articles": 0,
-    "pending_articles": 200
+    "pending_articles": 199
   },
   "review_criteria": {
     "content_quality": [
@@ -1296,10 +1296,21 @@
         {
           "id": "os-016",
           "filename": "文件系统缓存.md",
-          "status": "pending",
-          "review_round": 0,
-          "issues": [],
-          "last_reviewed": null
+          "status": "completed",
+          "review_round": 1,
+          "issues": [
+            {
+              "round": 1,
+              "description": "第151行：pdflush/kdmflush已过时，更新为writeback工作队列(per-bdi writeback机制)",
+              "fixed": true
+            },
+            {
+              "round": 1,
+              "description": "第338行：vfs_cache_pressure参数描述错误，修正为'增加该值可提高缓存回收优先级'",
+              "fixed": true
+            }
+          ],
+          "last_reviewed": "2026-02-20"
         },
         {
           "id": "os-017",
