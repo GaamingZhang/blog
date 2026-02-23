@@ -1304,3 +1304,1025 @@ func (rts *RefreshTokenStore) ValidateRefreshToken(ctx context.Context, userID i
 - 限制每个用户同时有效的Refresh Token数量
 - 记录Refresh Token的使用设备和IP
 - 检测到异常使用时立即撤销所有Token
+
+---
+
+## JWT攻击防护详解
+
+### 常见攻击类型与防护
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           JWT常见攻击类型与防护措施                               │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│  攻击类型                        风险等级      防护措施                          │
+│  ─────────────────────────────────────────────────────────────────────────────  │
+│                                                                                 │
+│  1. None算法攻击                  🔴 高危      强制验证签名算法                  │
+│     将alg设为none绕过签名验证                                                    │
+│                                                                                 │
+│  2. 算法混淆攻击                  🔴 高危      区分对称/非对称密钥使用            │
+│     RS256→HS256降级攻击                                                         │
+│                                                                                 │
+│  3. 弱密钥攻击                    🔴 高危      使用强密钥(≥256位)                │
+│     暴力破解或字典攻击                                                           │
+│                                                                                 │
+│  4. JWT注入攻击                   🟠 中危      严格验证所有Claims                │
+│     注入恶意payload                                                              │
+│                                                                                 │
+│  5. Token重放攻击                 🟠 中危      使用jti+黑名单机制                 │
+│     截获Token后重复使用                                                          │
+│                                                                                 │
+│  6. 时序攻击                      🟡 低危      使用恒定时间比较                   │
+│     通过响应时间推断信息                                                         │
+│                                                                                 │
+│  7. 信息泄露                      🟡 低危      敏感数据加密或存服务端             │
+│     Payload明文可见                                                              │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 1. None算法攻击防护
+
+#### 攻击原理
+
+攻击者将JWT Header中的alg字段设为"none"或"None"，服务器如果未严格验证算法，会跳过签名验证直接接受Token。
+
+```
+攻击示例：
+原始Token:
+{
+  "alg": "HS256",
+  "typ": "JWT"
+}
+{
+  "user": "guest",
+  "role": "user"
+}
+
+篡改后Token:
+{
+  "alg": "none",
+  "typ": "JWT"
+}
+{
+  "user": "admin",
+  "role": "admin"
+}
+签名部分为空
+```
+
+#### 防护实现
+
+```go
+package main
+
+import (
+	"crypto/subtle"
+	"fmt"
+	"strings"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+type SecureTokenParser struct {
+	allowedAlgorithms map[string]bool
+	secret            []byte
+}
+
+func NewSecureTokenParser(secret []byte) *SecureTokenParser {
+	return &SecureTokenParser{
+		allowedAlgorithms: map[string]bool{
+			"HS256": true,
+			"HS384": true,
+			"HS512": true,
+		},
+		secret: secret,
+	}
+}
+
+func (p *SecureTokenParser) ParseToken(tokenString string) (*jwt.Token, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// 防护1: 检查算法是否为空
+		if token.Header["alg"] == nil {
+			return nil, fmt.Errorf("missing algorithm in token header")
+		}
+
+		// 防护2: 检查算法是否为none（大小写不敏感）
+		alg := strings.ToLower(fmt.Sprintf("%v", token.Header["alg"]))
+		if alg == "none" {
+			return nil, fmt.Errorf("none algorithm is not allowed")
+		}
+
+		// 防护3: 白名单验证算法
+		algUpper := strings.ToUpper(alg)
+		if !p.allowedAlgorithms[algUpper] {
+			return nil, fmt.Errorf("algorithm %s is not allowed, allowed: %v", 
+				algUpper, p.allowedAlgorithms)
+		}
+
+		// 防护4: 验证算法类型与预期一致
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method type: %T", token.Method)
+		}
+
+		return p.secret, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if !token.Valid {
+		return nil, fmt.Errorf("token is invalid")
+	}
+
+	return token, nil
+}
+
+// 测试None算法攻击
+func TestNoneAlgorithmAttack() {
+	parser := NewSecureTokenParser([]byte("test-secret-key-32-bytes-long"))
+
+	testCases := []string{
+		// 正常Token
+		"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjoiYWRtaW4ifQ.signature",
+		// None算法攻击
+		"eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJ1c2VyIjoiYWRtaW4ifQ.",
+		// None大写
+		"eyJhbGciOiJOb25lIiwidHlwIjoiSldUIn0.eyJ1c2VyIjoiYWRtaW4ifQ.",
+		// NONE全大写
+		"eyJhbGciOiJOT05FIiwidHlwIjoiSldUIn0.eyJ1c2VyIjoiYWRtaW4ifQ.",
+	}
+
+	for i, token := range testCases {
+		_, err := parser.ParseToken(token)
+		if err != nil {
+			fmt.Printf("Test %d: BLOCKED - %v\n", i+1, err)
+		} else {
+			fmt.Printf("Test %d: ACCEPTED - WARNING!\n", i+1)
+		}
+	}
+}
+```
+
+### 2. 算法混淆攻击防护
+
+#### 攻击原理
+
+当服务器同时支持RS256（非对称）和HS256（对称）算法时，攻击者可以：
+1. 获取服务器的公钥
+2. 将Token的算法改为HS256
+3. 用公钥作为HS256的密钥签名Token
+4. 服务器可能用公钥验证HS256签名，导致验证通过
+
+```
+攻击流程：
+┌─────────────┐     获取公钥      ┌─────────────┐
+│   攻击者    │ ───────────────→ │   服务器    │
+└─────────────┘                   └─────────────┘
+       │
+       │ 1. 获取公钥 (PEM格式)
+       │ 2. 创建Token: alg=HS256
+       │ 3. 用公钥作为HMAC密钥签名
+       │
+       ▼
+┌─────────────────────────────────────────────┐
+│  篡改Token:                                  │
+│  Header: {"alg": "HS256", "typ": "JWT"}     │
+│  Payload: {"user": "admin", "role": "admin"}│
+│  Signature: HMAC(公钥, header.payload)      │
+└─────────────────────────────────────────────┘
+       │
+       │ 发送篡改Token
+       ▼
+┌─────────────┐                   ┌─────────────┐
+│   服务器    │ ←──────────────── │   攻击者    │
+│             │   验证通过!       │             │
+│ 用公钥验证   │                   │             │
+│ HS256签名   │                   │             │
+└─────────────┘                   └─────────────┘
+```
+
+#### 防护实现
+
+```go
+package main
+
+import (
+	"crypto/rsa"
+	"fmt"
+
+	"github.com/golang-jwt/jwt/v5"
+)
+
+type AlgorithmSafeValidator struct {
+	hmacSecret   []byte
+	rsaPublicKey *rsa.PublicKey
+	rsaPrivateKey *rsa.PrivateKey
+}
+
+func NewAlgorithmSafeValidator(hmacSecret []byte, rsaPublicKey *rsa.PublicKey) *AlgorithmSafeValidator {
+	return &AlgorithmSafeValidator{
+		hmacSecret:   hmacSecret,
+		rsaPublicKey: rsaPublicKey,
+	}
+}
+
+func (v *AlgorithmSafeValidator) ParseHMACToken(tokenString string) (*jwt.Token, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// 严格验证必须是HMAC算法
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("expected HMAC algorithm, got %v", token.Header["alg"])
+		}
+
+		// 只允许特定的HMAC算法
+		alg := token.Method.Alg()
+		if alg != "HS256" && alg != "HS384" && alg != "HS512" {
+			return nil, fmt.Errorf("HMAC algorithm %s not allowed", alg)
+		}
+
+		return v.hmacSecret, nil
+	})
+
+	return token, err
+}
+
+func (v *AlgorithmSafeValidator) ParseRSAToken(tokenString string) (*jwt.Token, error) {
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// 严格验证必须是RSA算法
+		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
+			return nil, fmt.Errorf("expected RSA algorithm, got %v", token.Header["alg"])
+		}
+
+		// 只允许特定的RSA算法
+		alg := token.Method.Alg()
+		if alg != "RS256" && alg != "RS384" && alg != "RS512" {
+			return nil, fmt.Errorf("RSA algorithm %s not allowed", alg)
+		}
+
+		// 关键：返回公钥用于验证，而不是用于签名
+		return v.rsaPublicKey, nil
+	})
+
+	return token, err
+}
+
+// 统一的安全验证入口
+func (v *AlgorithmSafeValidator) ParseToken(tokenString string, expectedAlg string) (*jwt.Token, error) {
+	switch expectedAlg {
+	case "HS256", "HS384", "HS512":
+		return v.ParseHMACToken(tokenString)
+	case "RS256", "RS384", "RS512":
+		return v.ParseRSAToken(tokenString)
+	default:
+		return nil, fmt.Errorf("unsupported algorithm: %s", expectedAlg)
+	}
+}
+
+// 防止密钥混淆的关键检查
+func (v *AlgorithmSafeValidator) ValidateTokenSafely(tokenString string) (*jwt.Token, error) {
+	// 先解析Header，不验证签名
+	parser := jwt.NewParser(jwt.WithoutClaimsValidation())
+	unverifiedToken, _, err := parser.ParseUnverified(tokenString, &jwt.MapClaims{})
+	if err != nil {
+		return nil, err
+	}
+
+	alg, ok := unverifiedToken.Header["alg"].(string)
+	if !ok {
+		return nil, fmt.Errorf("missing or invalid algorithm in header")
+	}
+
+	// 根据算法类型选择正确的验证方法
+	switch alg {
+	case "HS256", "HS384", "HS512":
+		return v.ParseHMACToken(tokenString)
+	case "RS256", "RS384", "RS512":
+		return v.ParseRSAToken(tokenString)
+	default:
+		return nil, fmt.Errorf("unsupported algorithm: %s", alg)
+	}
+}
+```
+
+### 3. 弱密钥攻击防护
+
+#### 攻击原理
+
+使用弱密钥（如"secret"、"password"）的JWT可以被暴力破解或字典攻击。
+
+```python
+# 攻击脚本示例
+import jwt
+import hashlib
+
+# 常见弱密钥字典
+weak_secrets = [
+    "secret", "password", "123456", "admin", "key",
+    "jwt-secret", "my-secret-key", "super-secret",
+    "changeme", "default", "qwerty", "letmein"
+]
+
+def crack_jwt(token):
+    for secret in weak_secrets:
+        try:
+            payload = jwt.decode(token, secret, algorithms=["HS256"])
+            print(f"Cracked! Secret: {secret}")
+            print(f"Payload: {payload}")
+            return secret
+        except jwt.InvalidSignatureError:
+            continue
+    return None
+```
+
+#### 防护实现
+
+```go
+package main
+
+import (
+	"crypto/rand"
+	"crypto/subtle"
+	"encoding/base64"
+	"fmt"
+	"os"
+	"strings"
+)
+
+var commonWeakSecrets = []string{
+	"secret", "password", "123456", "admin", "key",
+	"jwt-secret", "my-secret-key", "super-secret",
+	"changeme", "default", "qwerty", "letmein",
+	"test", "demo", "example", "sample",
+}
+
+func ValidateSecretStrength(secret []byte) error {
+	secretStr := string(secret)
+
+	// 检查1: 最小长度
+	if len(secret) < 32 {
+		return fmt.Errorf("secret must be at least 32 bytes, got %d", len(secret))
+	}
+
+	// 检查2: 检查是否为常见弱密钥
+	lowerSecret := strings.ToLower(secretStr)
+	for _, weak := range commonWeakSecrets {
+		if subtle.ConstantTimeCompare([]byte(lowerSecret), []byte(weak)) == 1 {
+			return fmt.Errorf("secret is a common weak password")
+		}
+		if strings.Contains(lowerSecret, weak) {
+			return fmt.Errorf("secret contains common weak password: %s", weak)
+		}
+	}
+
+	// 检查3: 熵值检查（简化版）
+	uniqueChars := make(map[rune]bool)
+	for _, c := range secretStr {
+		uniqueChars[c] = true
+	}
+	if len(uniqueChars) < 8 {
+		return fmt.Errorf("secret has low entropy, only %d unique characters", len(uniqueChars))
+	}
+
+	// 检查4: 不能是纯数字或纯字母
+	hasDigit := false
+	hasLetter := false
+	hasSpecial := false
+	for _, c := range secretStr {
+		switch {
+		case c >= '0' && c <= '9':
+			hasDigit = true
+		case (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'):
+			hasLetter = true
+		default:
+			hasSpecial = true
+		}
+	}
+
+	if !hasDigit || !hasLetter {
+		return fmt.Errorf("secret must contain both letters and numbers")
+	}
+
+	return nil
+}
+
+// 生成安全的随机密钥
+func GenerateSecureSecret(length int) (string, error) {
+	if length < 32 {
+		length = 32
+	}
+
+	bytes := make([]byte, length)
+	if _, err := rand.Read(bytes); err != nil {
+		return "", err
+	}
+
+	return base64.URLEncoding.EncodeToString(bytes), nil
+}
+
+// 从环境变量安全读取密钥
+func GetSecretFromEnv() ([]byte, error) {
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return nil, fmt.Errorf("JWT_SECRET environment variable not set")
+	}
+
+	if err := ValidateSecretStrength([]byte(secret)); err != nil {
+		return nil, fmt.Errorf("secret validation failed: %w", err)
+	}
+
+	return []byte(secret), nil
+}
+
+// 密钥轮换管理
+type SecretManager struct {
+	currentSecret  []byte
+	previousSecret []byte
+	rotationDays   int
+}
+
+func NewSecretManager(rotationDays int) *SecretManager {
+	return &SecretManager{
+		rotationDays: rotationDays,
+	}
+}
+
+func (sm *SecretManager) RotateSecret(newSecret []byte) error {
+	if err := ValidateSecretStrength(newSecret); err != nil {
+		return err
+	}
+
+	sm.previousSecret = sm.currentSecret
+	sm.currentSecret = newSecret
+	return nil
+}
+
+func (sm *SecretManager) GetCurrentSecret() []byte {
+	return sm.currentSecret
+}
+
+func (sm *SecretManager) GetPreviousSecret() []byte {
+	return sm.previousSecret
+}
+```
+
+### 4. Token重放攻击防护
+
+#### 攻击原理
+
+攻击者截获有效Token后，在有效期内重复使用该Token访问资源。
+
+```
+攻击场景：
+时间线：
+T0: 用户登录获取Token
+T1: Token被攻击者截获
+T2: 用户正常使用Token
+T3: 攻击者使用截获的Token（重放攻击）
+T4: Token过期
+
+防护策略：
+1. 使用jti (JWT ID) 唯一标识
+2. 记录已使用的jti
+3. 检测短时间内重复使用
+```
+
+#### 防护实现
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/redis/go-redis/v9"
+)
+
+type ReplayProtection struct {
+	redisClient *redis.Client
+	windowSize  time.Duration
+}
+
+func NewReplayProtection(redisClient *redis.Client, windowSize time.Duration) *ReplayProtection {
+	return &ReplayProtection{
+		redisClient: redisClient,
+		windowSize:  windowSize,
+	}
+}
+
+// 检查并记录Token使用
+func (rp *ReplayProtection) CheckAndRecord(ctx context.Context, jti string, userID int64) error {
+	if jti == "" {
+		return fmt.Errorf("token has no jti claim")
+	}
+
+	key := fmt.Sprintf("jwt:used:%s", jti)
+	userKey := fmt.Sprintf("jwt:user:%d:recent", userID)
+
+	// 检查1: Token是否已被使用
+	exists, err := rp.redisClient.Exists(ctx, key).Result()
+	if err != nil {
+		return fmt.Errorf("failed to check token usage: %w", err)
+	}
+	if exists > 0 {
+		return fmt.Errorf("token has already been used (replay attack detected)")
+	}
+
+	// 检查2: 用户在时间窗口内的Token使用频率
+	count, err := rp.redisClient.Incr(ctx, userKey).Result()
+	if err != nil {
+		return fmt.Errorf("failed to increment usage count: %w", err)
+	}
+
+	// 设置过期时间
+	if count == 1 {
+		rp.redisClient.Expire(ctx, userKey, rp.windowSize)
+	}
+
+	// 检查频率限制
+	maxUsagePerWindow := int64(100)
+	if count > maxUsagePerWindow {
+		return fmt.Errorf("too many token uses in time window")
+	}
+
+	// 记录Token已使用
+	err = rp.redisClient.Set(ctx, key, time.Now().Unix(), 24*time.Hour).Err()
+	if err != nil {
+		return fmt.Errorf("failed to record token usage: %w", err)
+	}
+
+	return nil
+}
+
+// 单次使用Token（一次性Token）
+type OneTimeTokenValidator struct {
+	redisClient *redis.Client
+}
+
+func (v *OneTimeTokenValidator) ValidateAndConsume(ctx context.Context, jti string) error {
+	key := fmt.Sprintf("jwt:onetime:%s", jti)
+
+	// 使用原子操作检查并删除
+	result, err := v.redisClient.Del(ctx, key).Result()
+	if err != nil {
+		return err
+	}
+
+	if result == 0 {
+		return fmt.Errorf("token already used or invalid")
+	}
+
+	return nil
+}
+
+// 生成一次性Token
+func (v *OneTimeTokenValidator) PrepareOneTimeToken(ctx context.Context, jti string, ttl time.Duration) error {
+	key := fmt.Sprintf("jwt:onetime:%s", jti)
+	return v.redisClient.Set(ctx, key, "1", ttl).Err()
+}
+```
+
+### 5. JWT注入攻击防护
+
+#### 攻击原理
+
+攻击者通过注入恶意数据到JWT Payload中，可能导致：
+- SQL注入
+- 命令注入
+- 路径遍历
+- 权限提升
+
+```go
+package main
+
+import (
+	"fmt"
+	"regexp"
+	"strings"
+)
+
+type ClaimsValidator struct {
+	maxStringLength int
+	allowedRoles    map[string]bool
+}
+
+func NewClaimsValidator() *ClaimsValidator {
+	return &ClaimsValidator{
+		maxStringLength: 256,
+		allowedRoles: map[string]bool{
+			"user":  true,
+			"admin": true,
+			"guest": true,
+		},
+	}
+}
+
+// 验证字符串是否包含危险字符
+func (v *ClaimsValidator) validateString(input string, fieldName string) error {
+	if len(input) > v.maxStringLength {
+		return fmt.Errorf("%s exceeds maximum length of %d", fieldName, v.maxStringLength)
+	}
+
+	// 检查危险模式
+	dangerousPatterns := []string{
+		"<script", "javascript:", "onerror=", "onload=",
+		"../", "..\\", "/etc/", "passwd", "shadow",
+		"SELECT", "INSERT", "UPDATE", "DELETE", "DROP",
+		";", "|", "&", "$(", "`",
+	}
+
+	lowerInput := strings.ToLower(input)
+	for _, pattern := range dangerousPatterns {
+		if strings.Contains(lowerInput, strings.ToLower(pattern)) {
+			return fmt.Errorf("%s contains dangerous pattern: %s", fieldName, pattern)
+		}
+	}
+
+	return nil
+}
+
+// 验证Claims中的所有字段
+func (v *ClaimsValidator) ValidateClaims(claims *CustomClaims) error {
+	// 验证用户名
+	if err := v.validateString(claims.Username, "username"); err != nil {
+		return err
+	}
+
+	// 验证角色
+	if !v.allowedRoles[claims.Role] {
+		return fmt.Errorf("invalid role: %s", claims.Role)
+	}
+
+	// 验证用户ID范围
+	if claims.UserID <= 0 {
+		return fmt.Errorf("invalid user ID: %d", claims.UserID)
+	}
+
+	// 验证邮箱格式（如果有）
+	if claims.Email != "" {
+		emailRegex := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+		if !emailRegex.MatchString(claims.Email) {
+			return fmt.Errorf("invalid email format")
+		}
+	}
+
+	return nil
+}
+
+// 安全地使用Claims
+func SafeUseClaims(claims *CustomClaims) {
+	// 使用参数化查询，而不是拼接字符串
+	// 正确示例
+	// db.Query("SELECT * FROM users WHERE id = ?", claims.UserID)
+
+	// 错误示例（不要这样做）
+	// db.Query(fmt.Sprintf("SELECT * FROM users WHERE username = '%s'", claims.Username))
+}
+```
+
+### 6. 安全配置检查清单
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+)
+
+type SecurityCheck struct {
+	Name        string
+	Description string
+	Check       func() bool
+	Severity    string
+}
+
+func RunSecurityChecks() []SecurityCheck {
+	checks := []SecurityCheck{
+		{
+			Name:        "JWT_SECRET_LENGTH",
+			Description: "JWT secret should be at least 32 bytes",
+			Check: func() bool {
+				secret := os.Getenv("JWT_SECRET")
+				return len(secret) >= 32
+			},
+			Severity: "HIGH",
+		},
+		{
+			Name:        "JWT_SECRET_NOT_DEFAULT",
+			Description: "JWT secret should not be a default value",
+			Check: func() bool {
+				secret := os.Getenv("JWT_SECRET")
+				defaults := []string{"secret", "changeme", "your-secret-key"}
+				for _, d := range defaults {
+					if secret == d {
+						return false
+					}
+				}
+				return true
+			},
+			Severity: "HIGH",
+		},
+		{
+			Name:        "TOKEN_EXPIRATION_SET",
+			Description: "Tokens should have expiration time",
+			Check: func() bool {
+				return os.Getenv("JWT_EXPIRATION") != ""
+			},
+			Severity: "MEDIUM",
+		},
+		{
+			Name:        "HTTPS_ENABLED",
+			Description: "JWT should only be transmitted over HTTPS",
+			Check: func() bool {
+				return os.Getenv("HTTPS_ENABLED") == "true"
+			},
+			Severity: "HIGH",
+		},
+		{
+			Name:        "TOKEN_BLACKLIST_ENABLED",
+			Description: "Token blacklist should be enabled for logout",
+			Check: func() bool {
+				return os.Getenv("REDIS_URL") != ""
+			},
+			Severity: "MEDIUM",
+		},
+	}
+
+	fmt.Println("┌─────────────────────────────────────────────────────────────────────────────────┐")
+	fmt.Println("│                         JWT Security Configuration Check                        │")
+	fmt.Println("├─────────────────────────────────────────────────────────────────────────────────┤")
+
+	for _, check := range checks {
+		status := "✅ PASS"
+		if !check.Check() {
+			status = "❌ FAIL"
+		}
+		fmt.Printf("│ [%-6s] %-25s: %-40s │\n", check.Severity, check.Name, status)
+	}
+
+	fmt.Println("└─────────────────────────────────────────────────────────────────────────────────┘")
+
+	return checks
+}
+```
+
+### 7. 完整安全验证中间件
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"net/http"
+	"strings"
+	"time"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/redis/go-redis/v9"
+)
+
+type SecureJWTMiddleware struct {
+	validator        *AlgorithmSafeValidator
+	claimsValidator  *ClaimsValidator
+	replayProtection *ReplayProtection
+	blacklist        *TokenBlacklist
+}
+
+func NewSecureJWTMiddleware(secret []byte, redisClient *redis.Client) *SecureJWTMiddleware {
+	return &SecureJWTMiddleware{
+		validator:        NewAlgorithmSafeValidator(secret, nil),
+		claimsValidator:  NewClaimsValidator(),
+		replayProtection: NewReplayProtection(redisClient, time.Minute),
+		blacklist:        NewTokenBlacklist(redisClient),
+	}
+}
+
+func (m *SecureJWTMiddleware) Middleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// 步骤1: 提取Token
+		tokenString, err := m.extractToken(r)
+		if err != nil {
+			m.writeError(w, "TOKEN_EXTRACTION_FAILED", err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		// 步骤2: 安全解析Token（防止算法攻击）
+		token, err := m.validator.ValidateTokenSafely(tokenString)
+		if err != nil {
+			m.writeError(w, "TOKEN_PARSE_FAILED", err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		claims, ok := token.Claims.(*CustomClaims)
+		if !ok {
+			m.writeError(w, "INVALID_CLAIMS", "Invalid token claims", http.StatusUnauthorized)
+			return
+		}
+
+		// 步骤3: 验证Claims内容（防止注入攻击）
+		if err := m.claimsValidator.ValidateClaims(claims); err != nil {
+			m.writeError(w, "CLAIMS_VALIDATION_FAILED", err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		// 步骤4: 检查黑名单
+		ctx := r.Context()
+		if claims.ID != "" {
+			blacklisted, err := m.blacklist.IsBlacklisted(ctx, claims.ID)
+			if err != nil {
+				m.writeError(w, "BLACKLIST_CHECK_FAILED", "Internal error", http.StatusInternalServerError)
+				return
+			}
+			if blacklisted {
+				m.writeError(w, "TOKEN_BLACKLISTED", "Token has been revoked", http.StatusUnauthorized)
+				return
+			}
+		}
+
+		// 步骤5: 重放攻击防护
+		if err := m.replayProtection.CheckAndRecord(ctx, claims.ID, claims.UserID); err != nil {
+			m.writeError(w, "REPLAY_ATTACK_DETECTED", err.Error(), http.StatusUnauthorized)
+			return
+		}
+
+		// 步骤6: 将用户信息存入Context
+		ctx = context.WithValue(ctx, "user_claims", claims)
+		ctx = context.WithValue(ctx, "user_id", claims.UserID)
+		ctx = context.WithValue(ctx, "user_role", claims.Role)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (m *SecureJWTMiddleware) extractToken(r *http.Request) (string, error) {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return "", fmt.Errorf("missing authorization header")
+	}
+
+	parts := strings.SplitN(authHeader, " ", 2)
+	if len(parts) != 2 {
+		return "", fmt.Errorf("invalid authorization header format")
+	}
+
+	if parts[0] != "Bearer" {
+		return "", fmt.Errorf("invalid authorization scheme")
+	}
+
+	if parts[1] == "" {
+		return "", fmt.Errorf("empty token")
+	}
+
+	return parts[1], nil
+}
+
+func (m *SecureJWTMiddleware) writeError(w http.ResponseWriter, code, message string, status int) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	fmt.Fprintf(w, `{"error": {"code": "%s", "message": "%s"}}`, code, message)
+}
+```
+
+### 8. 攻击检测与告警
+
+```go
+package main
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/redis/go-redis/v9"
+)
+
+type AttackDetector struct {
+	redisClient *redis.Client
+	alertChan   chan Alert
+}
+
+type Alert struct {
+	Type        string
+	Severity    string
+	SourceIP    string
+	TokenID     string
+	UserID      int64
+	Description string
+	Timestamp   time.Time
+}
+
+func NewAttackDetector(redisClient *redis.Client) *AttackDetector {
+	return &AttackDetector{
+		redisClient: redisClient,
+		alertChan:   make(chan Alert, 100),
+	}
+}
+
+// 检测暴力破解
+func (d *AttackDetector) DetectBruteForce(ctx context.Context, userID int64, sourceIP string) bool {
+	key := fmt.Sprintf("attack:bruteforce:%d:%s", userID, sourceIP)
+	count, _ := d.redisClient.Incr(ctx, key).Result()
+
+	if count == 1 {
+		d.redisClient.Expire(ctx, key, 5*time.Minute)
+	}
+
+	if count > 10 {
+		d.alertChan <- Alert{
+			Type:        "BRUTE_FORCE",
+			Severity:    "HIGH",
+			SourceIP:    sourceIP,
+			UserID:      userID,
+			Description: fmt.Sprintf("Too many failed attempts: %d", count),
+			Timestamp:   time.Now(),
+		}
+		return true
+	}
+
+	return false
+}
+
+// 检测异常使用模式
+func (d *AttackDetector) DetectAnomalousUsage(ctx context.Context, userID int64, sourceIP string) bool {
+	// 检查短时间内来自不同IP的请求
+	key := fmt.Sprintf("attack:ips:%d", userID)
+	d.redisClient.SAdd(ctx, key, sourceIP)
+	d.redisClient.Expire(ctx, key, 10*time.Minute)
+
+	count, _ := d.redisClient.SCard(ctx, key).Result()
+
+	if count > 5 {
+		d.alertChan <- Alert{
+			Type:        "MULTIPLE_IPS",
+			Severity:    "MEDIUM",
+			SourceIP:    sourceIP,
+			UserID:      userID,
+			Description: fmt.Sprintf("Token used from %d different IPs", count),
+			Timestamp:   time.Now(),
+		}
+		return true
+	}
+
+	return false
+}
+
+// 启动告警处理器
+func (d *AttackDetector) StartAlertHandler() {
+	go func() {
+		for alert := range d.alertChan {
+			d.handleAlert(alert)
+		}
+	}()
+}
+
+func (d *AttackDetector) handleAlert(alert Alert) {
+	// 记录日志
+	fmt.Printf("[ALERT][%s] %s - User: %d, IP: %s, %s\n",
+		alert.Severity, alert.Type, alert.UserID, alert.SourceIP, alert.Description)
+
+	// 可以集成到告警系统
+	// - 发送邮件
+	// - 发送Slack消息
+	// - 调用Webhook
+	// - 记录到SIEM系统
+}
+
+// 自动响应：锁定可疑账户
+func (d *AttackDetector) LockSuspiciousAccount(ctx context.Context, userID int64, duration time.Duration) error {
+	key := fmt.Sprintf("account:locked:%d", userID)
+	return d.redisClient.Set(ctx, key, "1", duration).Err()
+}
+
+func (d *AttackDetector) IsAccountLocked(ctx context.Context, userID int64) bool {
+	key := fmt.Sprintf("account:locked:%d", userID)
+	exists, _ := d.redisClient.Exists(ctx, key).Result()
+	return exists > 0
+}
+```
+
+### 防护措施总结
+
+| 攻击类型 | 防护措施 | 实现要点 |
+|---------|---------|---------|
+| None算法攻击 | 白名单算法验证 | 拒绝alg=none，只允许预期算法 |
+| 算法混淆攻击 | 严格区分算法类型 | HMAC和RSA使用不同验证逻辑 |
+| 弱密钥攻击 | 密钥强度验证 | ≥32字节，高熵值，非字典词 |
+| Token重放攻击 | jti+黑名单 | 记录已使用Token，检测重复使用 |
+| JWT注入攻击 | Claims验证 | 过滤危险字符，验证字段格式 |
+| 时序攻击 | 恒定时间比较 | 使用crypto/subtle |
+| 信息泄露 | 敏感数据保护 | Payload不存敏感信息，或加密 |
+| 暴力破解 | 频率限制+检测 | 限制验证次数，异常告警 |
+
+**关键防护原则**：
+
+1. **永远不要信任Token的Header**：攻击者可以任意修改
+2. **严格验证算法类型**：使用白名单而非黑名单
+3. **密钥管理是核心**：强密钥、定期轮换、安全存储
+4. **多层防护**：签名验证 + Claims验证 + 黑名单 + 重放检测
+5. **监控与告警**：实时检测异常行为，快速响应

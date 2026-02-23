@@ -9,7 +9,9 @@ tag:
   - 监控
 ---
 
-# Prometheus基本概念
+# Prometheus基本概念：深入理解监控系统的核心原理
+
+> **技术版本说明**：本文基于 Prometheus 2.x 版本编写，主要特性适用于 2.40+ 版本。TSDB 存储机制从 Prometheus 2.0 开始引入，与 1.x 版本有较大差异。
 
 ## 详细解答
 
@@ -459,3 +461,1100 @@ PromQL（Prometheus Query Language）是Prometheus的核心查询语言，支持
 2. **告警触发**：当查询结果满足告警条件时，Prometheus Server生成告警
 3. **告警处理**：Alertmanager接收告警，进行分组、抑制和路由
 4. **告警通知**：Alertmanager将告警发送到指定的接收渠道（邮箱、Slack等）
+
+---
+
+## TSDB存储原理深度解析
+
+Prometheus的时序数据库（TSDB）是其高性能的核心所在。理解TSDB的存储原理对于容量规划、性能调优和故障排查至关重要。
+
+### 存储架构设计
+
+Prometheus TSDB采用**分层存储架构**，主要包含以下层次：
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    内存层 (Head Block)                    │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │  Chunk 1  │  Chunk 2  │  Chunk 3  │  ...       │   │
+│  └─────────────────────────────────────────────────┘   │
+│  最新数据存储在内存中，定期刷写到磁盘                        │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                  磁盘层 (Persistent Blocks)               │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐             │
+│  │ Block 1  │  │ Block 2  │  │ Block 3  │  ...        │
+│  │ (2h)     │  │ (2h)     │  │ (2h)     │             │
+│  └──────────┘  └──────────┘  └──────────┘             │
+│  每个Block包含：index, chunks, tombstones, meta.json    │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                  压缩层 (Compaction)                      │
+│  小Block合并为大Block：2h → 6h → 18h → 54h → ...        │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 数据写入流程
+
+**写入过程详解**：
+
+1. **数据接收**：Prometheus通过HTTP抓取目标，接收指标数据
+2. **内存写入**：数据首先写入内存中的Head Block
+3. **Chunk填充**：数据按时间序列组织成Chunk（默认每个Chunk包含120个样本）
+4. **内存刷写**：当Chunk填满或达到时间阈值，刷写到磁盘
+5. **Block形成**：每2小时将内存数据持久化为一个Block
+
+**Chunk结构**：
+
+```go
+// Chunk的数据结构（简化版）
+type Chunk struct {
+    // 样本数据：时间戳和值
+    samples []Sample
+    // 压缩后的字节数据
+    bytes   []byte
+    // Chunk的时间范围
+    minTime int64
+    maxTime int64
+}
+
+type Sample struct {
+    timestamp int64  // 时间戳（毫秒）
+    value     float64 // 样本值
+}
+```
+
+### 压缩编码算法
+
+Prometheus使用两种核心压缩算法来减少存储空间：
+
+#### 1. Delta编码（时间戳压缩）
+
+**原理**：相邻样本的时间戳通常相差固定间隔，存储差值而非绝对值
+
+```
+原始时间戳：1609459200000, 1609459215000, 1609459230000, 1609459245000
+时间间隔：  15000ms,        15000ms,        15000ms
+
+存储方式：
+- 第一个时间戳：1609459200000（完整存储）
+- 后续时间戳：15000, 15000, 15000（存储差值）
+```
+
+**实现细节**：
+
+```go
+// Delta编码伪代码
+func encodeTimestamps(timestamps []int64) []byte {
+    result := make([]byte, 0)
+    
+    // 第一个时间戳完整存储
+    result = append(result, encodeVarint(timestamps[0])...)
+    
+    // 计算并存储差值
+    for i := 1; i < len(timestamps); i++ {
+        delta := timestamps[i] - timestamps[i-1]
+        result = append(result, encodeVarint(delta)...)
+    }
+    
+    return result
+}
+```
+
+#### 2. XOR编码（值压缩）
+
+**原理**：相邻样本的值通常变化不大，利用XOR运算提取公共部分
+
+```
+原始值：    100.5, 100.6, 100.7, 100.8
+二进制表示：...
+
+XOR运算：
+- 第一个值：完整存储
+- 后续值：存储与前一个值的XOR结果
+- 如果XOR结果很小，只需存储少量位
+```
+
+**XOR编码优化**：
+
+```go
+// XOR编码伪代码
+func encodeValues(values []float64) []byte {
+    result := make([]byte, 0)
+    
+    // 第一个值完整存储（64位）
+    result = append(result, encodeFloat64(values[0])...)
+    
+    prev := math.Float64bits(values[0])
+    
+    for i := 1; i < len(values); i++ {
+        current := math.Float64bits(values[i])
+        xor := current ^ prev
+        
+        if xor == 0 {
+            // 值完全相同，只存储1位标记
+            result = append(result, 0)
+        } else {
+            // 存储XOR结果，但只存储有效位
+            leading := bits.LeadingZeros64(xor)
+            trailing := bits.TrailingZeros64(xor)
+            
+            // 存储前导零、后导零和有效位
+            result = append(result, encodeXOR(xor, leading, trailing)...)
+        }
+        
+        prev = current
+    }
+    
+    return result
+}
+```
+
+**压缩效果**：
+
+| 数据类型 | 原始大小 | 压缩后大小 | 压缩比 |
+|---------|---------|-----------|-------|
+| 稳定值（如CPU 50%） | 16 bytes | ~2 bytes | 8:1 |
+| 缓慢变化（如温度） | 16 bytes | ~4 bytes | 4:1 |
+| 快速变化（如请求率） | 16 bytes | ~8 bytes | 2:1 |
+
+### 索引结构
+
+Prometheus使用**倒排索引（Inverted Index）**来快速查找时间序列：
+
+```
+索引结构：
+
+Label → 时间序列ID列表
+
+示例：
+job="api-server" → [1, 5, 8, 12, 15]
+instance="server1" → [1, 2, 3, 4, 5]
+method="GET" → [1, 3, 5, 7, 9]
+
+查询：job="api-server" AND instance="server1"
+结果：[1, 5]（两个列表的交集）
+```
+
+**索引文件结构**：
+
+```
+index文件结构：
+├── Symbol Table（符号表）
+│   └── 所有标签名和标签值的字符串池
+├── Series（时间序列元数据）
+│   └── 每个时间序列的标签集合和Chunk引用
+├── Label Index（标签索引）
+│   └── 标签名 → 标签值列表
+├── Postings（倒排列表）
+│   └── 标签键值对 → 时间序列ID列表
+└── Postings Offset Table（倒排列表偏移表）
+    └── 快速定位倒排列表的位置
+```
+
+### Compaction机制
+
+**Compaction（压缩合并）**是TSDB的关键维护操作：
+
+**目的**：
+1. 合并小Block为大Block，减少文件数量
+2. 删除已过期的数据（根据retention配置）
+3. 重建索引，优化查询性能
+4. 清理已删除的时间序列（tombstones）
+
+**合并策略**：
+
+```
+时间窗口合并：
+2h blocks → 6h block → 18h block → 54h block → ...
+
+合并规则：
+- 时间范围重叠的Block会被合并
+- 合并后删除原始Block
+- 新Block包含所有数据，重建索引
+```
+
+**Compaction过程**：
+
+```go
+// Compaction伪代码
+func compactBlocks(blocks []Block) Block {
+    // 1. 选择需要合并的Block
+    toCompact := selectBlocksForCompaction(blocks)
+    
+    // 2. 创建新Block
+    newBlock := createNewBlock()
+    
+    // 3. 合并数据
+    for _, block := range toCompact {
+        // 合并Chunk数据
+        newBlock.mergeChunks(block.chunks)
+        // 合并索引
+        newBlock.mergeIndex(block.index)
+        // 应用tombstones（删除标记）
+        newBlock.applyTombstones(block.tombstones)
+    }
+    
+    // 4. 重建索引
+    newBlock.rebuildIndex()
+    
+    // 5. 删除旧Block
+    for _, block := range toCompact {
+        block.delete()
+    }
+    
+    return newBlock
+}
+```
+
+### 存储容量规划
+
+**容量估算公式**：
+
+```
+每个样本存储大小 ≈ 1-2 bytes（压缩后）
+每天数据量 = 样本数 × 样本大小 × 86400秒
+
+示例计算：
+- 时间序列数量：100,000
+- 抓取间隔：15秒
+- 保留时间：15天
+
+每天样本数 = 100,000 × (86400 / 15) = 576,000,000
+每天存储量 = 576,000,000 × 2 bytes ≈ 1.1 GB
+15天总量 = 1.1 GB × 15 ≈ 16.5 GB
+
+加上索引和元数据，实际需求约为 20-25 GB
+```
+
+**存储优化建议**：
+
+1. **调整抓取间隔**：非关键指标可以降低抓取频率
+2. **减少标签基数**：避免高基数标签
+3. **使用recording rules**：预计算常用查询
+4. **配置合理保留期**：根据实际需求设置
+
+---
+
+## PromQL查询引擎原理
+
+PromQL是Prometheus的核心查询语言，理解其执行原理对于编写高效查询至关重要。
+
+### 查询执行流程
+
+```
+┌─────────────────────────────────────────────────────────┐
+│ 1. 解析阶段 (Parsing)                                     │
+│    PromQL字符串 → 抽象语法树(AST)                          │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│ 2. 优化阶段 (Optimization)                                │
+│    查询优化、常量折叠、表达式简化                            │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│ 3. 执行阶段 (Execution)                                   │
+│    从TSDB读取数据 → 应用函数和操作符                        │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│ 4. 结果返回 (Result)                                      │
+│    返回即时向量、区间向量或标量                              │
+└─────────────────────────────────────────────────────────┘
+```
+
+### 向量匹配机制
+
+PromQL的核心是**向量匹配**，理解匹配规则是编写复杂查询的关键：
+
+#### 一对一匹配（One-to-One）
+
+```promql
+# 相同标签的时间序列进行匹配
+rate(http_requests_total[5m]) 
+  / 
+rate(http_requests_total[5m] offset 1h)
+```
+
+**匹配规则**：两个向量中标签完全相同的时间序列才会匹配
+
+#### 多对一匹配（Many-to-One）
+
+```promql
+# 每个实例的请求率除以总请求率
+rate(http_requests_total[5m]) 
+  / 
+on(job) 
+group_left 
+sum by (job) (rate(http_requests_total[5m]))
+```
+
+**匹配规则**：
+- `on(job)`：只按job标签匹配
+- `group_left`：左侧（分子）可以有多个时间序列匹配右侧（分母）的一个时间序列
+
+#### 一对多匹配（One-to-Many）
+
+```promql
+# 总请求率分配到每个实例
+sum by (job) (rate(http_requests_total[5m])) 
+  / 
+on(job) 
+group_right 
+rate(http_requests_total[5m])
+```
+
+**匹配规则**：
+- `group_right`：右侧可以有多个时间序列匹配左侧的一个时间序列
+
+### 查询性能优化
+
+#### 1. 减少时间范围
+
+```promql
+# 差：查询1年数据
+rate(http_requests_total[1y])
+
+# 好：查询5分钟数据
+rate(http_requests_total[5m])
+```
+
+**原因**：时间范围越大，需要扫描的Chunk越多
+
+#### 2. 使用标签过滤
+
+```promql
+# 差：先聚合再过滤
+sum(rate(http_requests_total[5m])) by (job)
+  and on(job) 
+job_info{critical="true"}
+
+# 好：先过滤再聚合
+sum by (job) (
+  rate(http_requests_total{job=~"critical.*"}[5m])
+)
+```
+
+**原因**：先过滤可以减少需要处理的时间序列数量
+
+#### 3. 避免高基数查询
+
+```promql
+# 差：按高基数标签分组
+sum by (user_id) (rate(http_requests_total[5m]))
+
+# 好：按低基数标签分组
+sum by (job, instance) (rate(http_requests_total[5m]))
+```
+
+**原因**：高基数分组会产生大量结果，消耗大量内存
+
+#### 4. 使用Recording Rules
+
+```yaml
+# prometheus.yml
+groups:
+  - name: example
+    interval: 30s
+    rules:
+      - record: job:http_requests:rate5m
+        expr: sum by (job) (rate(http_requests_total[5m]))
+```
+
+```promql
+# 查询时直接使用预计算结果
+job:http_requests:rate5m
+```
+
+**原因**：预计算可以避免重复执行复杂查询
+
+### 查询执行示例
+
+**示例查询**：
+
+```promql
+sum by (job) (
+  rate(http_requests_total{status="200"}[5m])
+) > 100
+```
+
+**执行过程**：
+
+```go
+// 伪代码展示执行过程
+func executeQuery(expr Expr, timestamp time.Time) Vector {
+    switch e := expr.(type) {
+    case *VectorSelector:
+        // 1. 从索引中查找匹配的时间序列
+        series := lookupSeries(e.LabelMatchers)
+        
+        // 2. 从TSDB读取数据
+        result := Vector{}
+        for _, s := range series {
+            samples := tsdb.Query(s.ID, timestamp.Add(-e.Range), timestamp)
+            result = append(result, Sample{Metric: s.Labels, Value: samples})
+        }
+        return result
+    
+    case *Call:
+        // 执行函数（如rate）
+        args := executeQuery(e.Args[0], timestamp)
+        return e.Func.Call(args)
+    
+    case *BinaryExpr:
+        // 执行二元操作（如>）
+        left := executeQuery(e.LHS, timestamp)
+        right := executeQuery(e.RHS, timestamp)
+        return binaryOperation(left, right, e.Op)
+    
+    case *AggregateExpr:
+        // 执行聚合操作（如sum by）
+        vector := executeQuery(e.Expr, timestamp)
+        return aggregate(vector, e.Op, e.Grouping, e.Without)
+    }
+}
+```
+
+---
+
+## 高基数问题深度分析
+
+高基数（High Cardinality）是Prometheus用户面临的最大挑战之一。深入理解其根因和解决方案对于构建可扩展的监控系统至关重要。
+
+### 根本原因分析
+
+#### 1. 什么是基数？
+
+**基数（Cardinality）**是指一个标签可以取的不同值的数量。
+
+```
+低基数示例：
+- job: "api-server", "web-server", "database"  (3个值)
+- environment: "prod", "staging", "dev"         (3个值)
+
+高基数示例：
+- user_id: "user1", "user2", ..., "user1000000"  (100万个值)
+- request_id: "req-xxx-xxx-xxx"                  (无限个值)
+- timestamp: "2024-01-01 00:00:00", ...          (无限个值)
+```
+
+#### 2. 时间序列爆炸原理
+
+**时间序列数量计算**：
+
+```
+时间序列数 = 各标签基数的乘积
+
+示例：
+- job: 10个值
+- instance: 100个值
+- method: 5个值
+- status: 10个值
+- user_id: 10000个值
+
+总时间序列数 = 10 × 100 × 5 × 10 × 10000 = 50,000,000 (5000万)
+```
+
+**影响**：
+
+```
+内存占用：
+- 每个时间序列约占用 1-2 KB 内存
+- 5000万时间序列 = 50-100 GB 内存
+
+存储占用：
+- 每个样本约 1-2 bytes（压缩后）
+- 5000万时间序列 × 4样本/分钟 = 2亿样本/分钟
+- 每天存储 = 2亿 × 1440分钟 × 2 bytes ≈ 576 GB/天
+
+查询性能：
+- 需要扫描大量时间序列
+- 查询超时或内存溢出
+```
+
+#### 3. 常见高基数场景
+
+**场景一：用户ID作为标签**
+
+```go
+// 错误示例
+httpRequestsTotal.WithLabelValues(
+    userID,    // 高基数！
+    method,
+    path,
+).Inc()
+
+// 正确做法：不记录用户ID，或使用聚合
+httpRequestsTotal.WithLabelValues(
+    method,
+    path,
+    userTier,  // 低基数：free/premium/enterprise
+).Inc()
+```
+
+**场景二：请求ID作为标签**
+
+```go
+// 错误示例
+requestDuration.WithLabelValues(
+    requestID,  // 高基数！
+    endpoint,
+).Observe(duration)
+
+// 正确做法：不记录请求ID
+requestDuration.WithLabelValues(
+    endpoint,
+    method,
+).Observe(duration)
+```
+
+**场景三：时间戳作为标签**
+
+```go
+// 错误示例
+eventsTotal.WithLabelValues(
+    time.Now().Format("2006-01-02 15:04:05"),  // 高基数！
+    eventType,
+).Inc()
+
+// 正确做法：不记录时间戳，使用Prometheus自带的时间
+eventsTotal.WithLabelValues(
+    eventType,
+).Inc()
+```
+
+### 影响范围评估
+
+#### 1. 内存影响
+
+**内存占用计算**：
+
+```go
+// 每个时间序列的内存占用
+type memSeries struct {
+    labels     labels.Labels  // 标签：约 100 bytes
+    chunks     []*chunk       // Chunk指针：约 100 bytes
+    samples    []sample       // 样本缓冲：约 1 KB
+    // 其他元数据：约 500 bytes
+}
+
+// 总计：每个时间序列约 1-2 KB
+```
+
+**内存溢出场景**：
+
+```
+Prometheus默认内存限制：无限制（受系统内存限制）
+
+内存溢出过程：
+1. 高基数标签导致时间序列数激增
+2. 内存占用持续增长
+3. 触发OOM Killer或系统内存耗尽
+4. Prometheus进程被杀死
+```
+
+#### 2. 查询性能影响
+
+**查询时间复杂度**：
+
+```
+简单查询：O(n)
+- n = 匹配的时间序列数量
+- 高基数标签导致n很大
+
+聚合查询：O(n × m)
+- n = 时间序列数量
+- m = 时间范围内的样本数量
+- 高基数标签 + 大时间范围 = 极慢查询
+```
+
+**查询超时示例**：
+
+```promql
+# 查询超时（假设user_id有100万个值）
+sum by (user_id) (rate(http_requests_total[5m]))
+
+# 查询成功（按job分组，只有10个值）
+sum by (job) (rate(http_requests_total[5m]))
+```
+
+#### 3. 存储成本影响
+
+**存储容量计算**：
+
+```
+假设：
+- 时间序列数：10,000,000 (1000万)
+- 抓取间隔：15秒
+- 样本大小：2 bytes（压缩后）
+- 保留时间：15天
+
+每天样本数 = 10,000,000 × (86400 / 15) = 57,600,000,000 (576亿)
+每天存储量 = 57,600,000,000 × 2 bytes ≈ 107 GB
+15天总量 = 107 GB × 15 ≈ 1.6 TB
+
+加上索引和元数据，实际需求约为 2-2.5 TB
+```
+
+### 解决方案详解
+
+#### 1. 使用Relabel过滤标签
+
+**原理**：在数据采集阶段过滤或修改标签
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'my-app'
+    static_configs:
+      - targets: ['localhost:8080']
+    metric_relabel_configs:
+      # 删除高基数标签
+      - source_labels: [user_id]
+        regex: '(.+)'
+        action: labeldrop
+      
+      # 或替换为低基数标签
+      - source_labels: [user_id]
+        regex: '(user_[0-9]+)'
+        target_label: user_tier
+        replacement: 'premium'
+      
+      # 或完全丢弃包含高基数标签的指标
+      - source_labels: [__name__]
+        regex: 'http_requests_with_user_id'
+        action: drop
+```
+
+**Relabel配置详解**：
+
+```yaml
+metric_relabel_configs:
+  # 保留特定标签
+  - source_labels: [job, instance]
+    regex: 'api-server;.*'
+    action: keep
+  
+  # 替换标签值
+  - source_labels: [path]
+    regex: '/api/v1/users/([0-9]+)'
+    target_label: path
+    replacement: '/api/v1/users/:id'
+  
+  # 提取标签值的一部分
+  - source_labels: [instance]
+    regex: '([0-9.]+):[0-9]+'
+    target_label: ip
+    replacement: '$1'
+```
+
+#### 2. 使用聚合减少序列数
+
+**原理**：在数据采集或查询时聚合高基数标签
+
+**方法一：应用层聚合**
+
+```go
+// 在应用代码中预聚合
+var (
+    httpRequestsTotal = prometheus.NewCounterVec(
+        prometheus.CounterOpts{
+            Name: "http_requests_total",
+            Help: "Total HTTP requests",
+        },
+        []string{"method", "path", "status"}, // 不包含user_id
+    )
+)
+
+// 使用中间件聚合
+func metricsMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        start := time.Now()
+        
+        // 调用下一个处理器
+        next.ServeHTTP(w, r)
+        
+        // 记录指标（不包含user_id）
+        duration := time.Since(start).Seconds()
+        httpRequestsTotal.WithLabelValues(
+            r.Method,
+            r.URL.Path,
+            strconv.Itoa(w.Status),
+        ).Inc()
+    })
+}
+```
+
+**方法二：Recording Rules聚合**
+
+```yaml
+# prometheus.yml
+groups:
+  - name: aggregation_rules
+    interval: 30s
+    rules:
+      # 预聚合：按job和方法分组
+      - record: job:http_requests:rate5m
+        expr: sum by (job, method) (rate(http_requests_total[5m]))
+      
+      # 预聚合：按状态码分组
+      - record: job:http_requests_by_status:rate5m
+        expr: sum by (job, status) (rate(http_requests_total[5m]))
+```
+
+#### 3. 使用分布式Prometheus
+
+**方案一：Thanos**
+
+```
+架构：
+┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│ Prometheus 1│  │ Prometheus 2│  │ Prometheus 3│
+│ (Zone A)    │  │ (Zone B)    │  │ (Zone C)    │
+└──────┬──────┘  └──────┬──────┘  └──────┬──────┘
+       │                │                │
+       └────────────────┼────────────────┘
+                        │
+                        ▼
+              ┌──────────────────┐
+              │   Thanos Query   │
+              │  (全局查询视图)    │
+              └──────────────────┘
+                        │
+                        ▼
+              ┌──────────────────┐
+              │  Object Storage  │
+              │  (长期存储)        │
+              └──────────────────┘
+```
+
+**优势**：
+- 支持无限存储保留期
+- 全局查询视图
+- 高可用性
+- 降低单个Prometheus压力
+
+**方案二：VictoriaMetrics**
+
+```
+架构：
+┌─────────────┐  ┌─────────────┐  ┌─────────────┐
+│ Prometheus 1│  │ Prometheus 2│  │ Prometheus 3│
+└──────┬──────┘  └──────┬──────┘  └──────┬──────┘
+       │                │                │
+       └────────────────┼────────────────┘
+                        │
+                        ▼
+              ┌──────────────────┐
+              │ VictoriaMetrics  │
+              │  (单节点或集群)    │
+              └──────────────────┘
+```
+
+**优势**：
+- 更高的压缩率（比Prometheus高7倍）
+- 支持高基数场景
+- 兼容PromQL
+- 更低的资源消耗
+
+#### 4. 使用标签基数监控
+
+**监控自身基数**：
+
+```promql
+# 查看每个标签的基数
+count by (__name__) ({__name__=~".+"})
+
+# 查看总时间序列数
+count({__name__=~".+"})
+
+# 查看特定指标的标签基数
+count by (job) (http_requests_total)
+
+# 查看标签值数量最多的标签
+topk(10, count by (__name__) ({__name__=~".+"}))
+```
+
+**告警规则**：
+
+```yaml
+groups:
+  - name: cardinality_alerts
+    rules:
+      - alert: HighCardinality
+        expr: count({__name__=~".+"}) > 1000000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High cardinality detected"
+          description: "Total time series count is {{ $value }}"
+      
+      - alert: LabelCardinalitySpike
+        expr: |
+          (count by (__name__) ({__name__=~".+"})
+           / 
+          count by (__name__) ({__name__=~".+"} offset 1h)) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cardinality spike detected for {{ $labels.__name__ }}"
+          description: "Time series count increased by {{ $value | printf '%.2f' }}x"
+```
+
+---
+
+## Prometheus性能调优最佳实践
+
+### 1. 配置优化
+
+#### Prometheus配置优化
+
+```yaml
+# prometheus.yml
+global:
+  # 抓取间隔：根据实际需求调整
+  scrape_interval: 15s
+  # 评估规则间隔
+  evaluation_interval: 15s
+  # 抓取超时：应小于scrape_interval
+  scrape_timeout: 10s
+
+# 存储配置
+storage:
+  tsdb:
+    # 数据保留时间
+    retention.time: 15d
+    # 最大存储空间
+    retention.size: 50GB
+    # 最小Block保留时间
+    min_block_duration: 2h
+    # 最大Block保留时间
+    max_block_duration: 6h
+    # 是否启用WAL压缩
+    wal_compression: true
+
+# 查询配置
+query:
+  # 最大并发查询数
+  max_concurrency: 20
+  # 查询超时时间
+  timeout: 2m
+  # 最大样本数限制
+  max_samples: 50000000
+```
+
+#### 抓取配置优化
+
+```yaml
+scrape_configs:
+  - job_name: 'critical-services'
+    # 关键服务：高频抓取
+    scrape_interval: 10s
+    scrape_timeout: 5s
+    static_configs:
+      - targets: ['api-server:9090']
+  
+  - job_name: 'normal-services'
+    # 普通服务：标准频率
+    scrape_interval: 30s
+    scrape_timeout: 15s
+    static_configs:
+      - targets: ['web-server:9090']
+  
+  - job_name: 'batch-jobs'
+    # 批处理任务：低频抓取
+    scrape_interval: 60s
+    scrape_timeout: 30s
+    static_configs:
+      - targets: ['batch-processor:9090']
+```
+
+### 2. 查询优化
+
+#### 使用Recording Rules
+
+```yaml
+groups:
+  - name: precomputed_rules
+    interval: 30s
+    rules:
+      # 预计算常用查询
+      - record: instance:cpu:rate5m
+        expr: 100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+      
+      - record: instance:memory:usage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+      
+      - record: job:http_requests:rate5m
+        expr: sum by (job) (rate(http_requests_total[5m]))
+```
+
+#### 查询优化技巧
+
+```promql
+# 差：查询所有数据再过滤
+sum(rate(http_requests_total[5m])) by (job)
+  and on(job)
+job_info{critical="true"}
+
+# 好：先过滤再查询
+sum by (job) (
+  rate(http_requests_total{job=~"critical.*"}[5m])
+)
+
+# 差：大时间范围
+rate(http_requests_total[30d])
+
+# 好：合理时间范围
+rate(http_requests_total[5m])
+
+# 差：高基数分组
+sum by (user_id) (rate(http_requests_total[5m]))
+
+# 好：低基数分组
+sum by (job, instance) (rate(http_requests_total[5m]))
+```
+
+### 3. 存储优化
+
+#### 容量规划
+
+```bash
+# 监控存储使用情况
+curl http://localhost:9090/api/v1/status/tsdb
+
+# 输出示例
+{
+  "status": "success",
+  "data": {
+    "headStats": {
+      "numSeries": 1000000,
+      "numLabelPairs": 5000000,
+      "chunkCount": 50000000,
+      "minTime": 1609459200000,
+      "maxTime": 1609545600000
+    },
+    "seriesCountByMetricName": [...],
+    "labelValueCountByLabelName": [...],
+    "memoryInBytesByLabelName": [...]
+  }
+}
+```
+
+#### 存储清理
+
+```bash
+# 手动触发Compaction
+curl -X POST http://localhost:9090/api/v1/admin/tsdb/clean_tombstones
+
+# 删除特定时间序列
+curl -X POST \
+  -g \
+  'http://localhost:9090/api/v1/admin/tsdb/delete_series?match[]=http_requests_total{job="old-job"}' \
+  --data-urlencode 'start=1609459200000' \
+  --data-urlencode 'end=1609545600000'
+```
+
+### 4. 资源限制
+
+#### 内存限制
+
+```bash
+# 启动Prometheus时设置内存限制
+prometheus \
+  --storage.tsdb.retention.time=15d \
+  --storage.tsdb.retention.size=50GB \
+  --query.max-samples=50000000 \
+  --query.timeout=2m
+```
+
+#### CPU限制
+
+```bash
+# 使用GOMAXPROCS限制CPU使用
+GOMAXPROCS=4 prometheus \
+  --config.file=/etc/prometheus/prometheus.yml
+```
+
+### 5. 监控Prometheus自身
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+# 告警规则
+groups:
+  - name: prometheus_alerts
+    rules:
+      - alert: PrometheusConfigReloadFailed
+        expr: prometheus_config_last_reload_successful == 0
+        for: 5m
+        labels:
+          severity: error
+        annotations:
+          summary: "Prometheus configuration reload failed"
+      
+      - alert: PrometheusNotConnectedToAlertmanager
+        expr: prometheus_notifications_alertmanagers_discovered < 1
+        for: 5m
+        labels:
+          severity: error
+        annotations:
+          summary: "Prometheus is not connected to any Alertmanager"
+      
+      - alert: PrometheusTSDBCompactionsFailing
+        expr: rate(prometheus_tsdb_compactions_failed_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: error
+        annotations:
+          summary: "Prometheus TSDB compactions are failing"
+      
+      - alert: PrometheusTSDBWALCorruptions
+        expr: prometheus_tsdb_wal_corruptions_total > 0
+        for: 5m
+        labels:
+          severity: error
+        annotations:
+          summary: "Prometheus TSDB WAL has corruptions"
+```
+
+---
+
+## 总结
+
+Prometheus作为云原生监控的事实标准，其设计理念和技术实现都值得深入理解：
+
+**核心设计理念**：
+- **Pull模式**：主动拉取数据，便于检测目标存活状态
+- **多维数据模型**：标签系统提供灵活的查询和聚合能力
+- **时序数据库**：高效的压缩和存储机制
+- **强大的查询语言**：PromQL支持复杂的数据分析
+
+**技术实现要点**：
+- **TSDB存储**：Delta编码和XOR编码实现高效压缩
+- **倒排索引**：快速查找时间序列
+- **Compaction机制**：合并Block，优化存储和查询性能
+- **向量匹配**：灵活的数据关联和计算
+
+**最佳实践建议**：
+- 避免高基数标签，控制时间序列数量
+- 使用Recording Rules预计算常用查询
+- 合理配置抓取间隔和保留时间
+- 监控Prometheus自身的健康状态
+- 考虑使用Thanos或VictoriaMetrics扩展规模
+
+深入理解Prometheus的核心原理，将帮助你构建可靠、高效、可扩展的监控系统，真正实现"可观测性"的DevOps理念。

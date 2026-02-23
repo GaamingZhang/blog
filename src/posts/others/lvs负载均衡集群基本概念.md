@@ -441,3 +441,613 @@ systemctl enable keepalived
   ```bash
   ipvsadm -A -t 192.168.1.100:80 -s rr -p 300
   ```
+
+---
+
+## 负载均衡算法深度解析
+
+### 算法性能对比
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                          负载均衡算法性能对比                                      │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│  计算复杂度（低→高）                                                              │
+│  ┌────────┐   ┌────────┐   ┌────────┐   ┌────────┐   ┌────────┐              │
+│  │   RR   │ → │  WRR   │ → │  SH/DH │ → │   LC   │ → │  WLC   │              │
+│  │  O(1)  │   │  O(1)  │   │  O(1)  │   │  O(n)  │   │  O(n)  │              │
+│  └────────┘   └────────┘   └────────┘   └────────┘   └────────┘              │
+│                                                                                 │
+│  负载均衡效果（差→好）                                                            │
+│  ┌────────┐   ┌────────┐   ┌────────┐   ┌────────┐   ┌────────┐              │
+│  │   RR   │ → │  WRR   │ → │  SH/DH │ → │   LC   │ → │  WLC   │              │
+│  │  一般  │   │  较好  │   │  一般  │   │  较好  │   │  最好  │              │
+│  └────────┘   └────────┘   └────────┘   └────────┘   └────────┘              │
+│                                                                                 │
+│  会话保持能力                                                                    │
+│  ┌────────┐   ┌────────┐   ┌────────┐   ┌────────┐   ┌────────┐              │
+│  │   RR   │   │  WRR   │   │  SH/DH │   │   LC   │   │  WLC   │              │
+│  │   无   │   │   无   │   │   有   │   │   无   │   │   无   │              │
+│  └────────┘   └────────┘   └────────┘   └────────┘   └────────┘              │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 算法实现原理详解
+
+#### 1. 轮询算法（RR）实现原理
+
+```c
+// Linux内核 ip_vs_rr.c 简化实现
+struct ip_vs_dest *ip_vs_rr_schedule(struct ip_vs_service *svc) {
+    struct list_head *p;
+    struct ip_vs_dest *dest;
+    
+    // 从当前位置开始遍历
+    p = svc->destinations;
+    while (1) {
+        p = p->next;
+        if (p == &svc->destinations) {
+            // 遍历一圈回到起点
+            return NULL;
+        }
+        dest = list_entry(p, struct ip_vs_dest, n_list);
+        if (dest->flags & IP_VS_DEST_F_AVAILABLE) {
+            // 找到可用的服务器，更新指针
+            svc->scheduler_data = p;
+            return dest;
+        }
+    }
+}
+```
+
+**特点分析**：
+- 时间复杂度：O(1) 平均情况
+- 空间复杂度：O(1)
+- 优点：实现简单，无状态
+- 缺点：不考虑服务器性能差异
+
+#### 2. 加权轮询算法（WRR）实现原理
+
+```c
+// Linux内核 ip_vs_wrr.c 核心逻辑
+struct ip_vs_dest *ip_vs_wrr_schedule(struct ip_vs_service *svc) {
+    struct ip_vs_wrr_mark *mark = svc->scheduler_data;
+    struct ip_vs_dest *dest;
+    
+    while (1) {
+        if (mark->cl == mark->destinations) {
+            // 新的一轮开始
+            mark->cl = mark->destinations->next;
+            mark->cw = mark->cw - mark->gcd;
+            if (mark->cw <= 0) {
+                mark->cw = mark->max_weight;
+                if (mark->cw == 0) {
+                    return NULL;
+                }
+            }
+        }
+        
+        dest = list_entry(mark->cl, struct ip_vs_dest, n_list);
+        mark->cl = mark->cl->next;
+        
+        if (dest->weight >= mark->cw) {
+            return dest;
+        }
+    }
+}
+```
+
+**算法示例**：
+
+```
+服务器配置：
+- Server A: weight = 5
+- Server B: weight = 3  
+- Server C: weight = 2
+
+GCD(最大公约数) = 1
+Max Weight = 5
+
+调度序列（权重递减）：
+cw=5: A (A>=5) ✓
+cw=4: A (A>=4) ✓, B (B>=4) ✗, C (C>=4) ✗
+cw=3: A (A>=3) ✓, B (B>=3) ✓, C (C>=3) ✗
+cw=2: A (A>=2) ✓, B (B>=2) ✓, C (C>=2) ✓
+cw=1: A (A>=1) ✓, B (B>=1) ✓, C (C>=1) ✓
+
+最终序列: A, A, B, A, B, C, A, B, C, A
+比例: A:5, B:3, C:2 (符合权重比例)
+```
+
+#### 3. 源地址哈希算法（SH）实现原理
+
+```c
+// Linux内核 ip_vs_sh.c 核心逻辑
+struct ip_vs_dest *ip_vs_sh_schedule(struct ip_vs_service *svc,
+                                      const struct iphdr *iph) {
+    struct ip_vs_sh_state *state = svc->scheduler_data;
+    struct ip_vs_dest *dest;
+    unsigned int hash;
+    
+    // 计算源IP的哈希值
+    hash = ip_vs_sh_hashkey(iph->saddr);
+    
+    // 查找哈希表
+    dest = state->buckets[hash % IP_VS_SH_TAB_SIZE].dest;
+    
+    // 如果服务器不可用，查找下一个
+    while (dest && !(dest->flags & IP_VS_DEST_F_AVAILABLE)) {
+        hash++;
+        dest = state->buckets[hash % IP_VS_SH_TAB_SIZE].dest;
+    }
+    
+    return dest;
+}
+
+// 哈希函数
+static inline unsigned int ip_vs_sh_hashkey(__be32 addr) {
+    return ntohl(addr) * 2654435761UL;  // 黄金分割数
+}
+```
+
+**哈希一致性分析**：
+
+```
+假设哈希表大小为 256
+
+客户端IP分布：
+192.168.1.1 → hash = 0x12345678 → bucket[120] → Server A
+192.168.1.2 → hash = 0x23456789 → bucket[137] → Server B
+192.168.1.3 → hash = 0x3456789A → bucket[154] → Server C
+
+特点：
+- 同一IP始终映射到同一服务器
+- 服务器变化时，只有部分映射改变
+- 适合会话保持场景
+```
+
+#### 4. 最少连接算法（LC）实现原理
+
+```c
+// Linux内核 ip_vs_lc.c 核心逻辑
+struct ip_vs_dest *ip_vs_lc_schedule(struct ip_vs_service *svc) {
+    struct ip_vs_dest *dest, *least = NULL;
+    unsigned int loh = 0, doh;
+    
+    list_for_each_entry(dest, &svc->destinations, n_list) {
+        if (!(dest->flags & IP_VS_DEST_F_AVAILABLE))
+            continue;
+        
+        // 计算负载值 = 活跃连接数 + 非活跃连接数
+        doh = atomic_read(&dest->activeconns) + 
+              atomic_read(&dest->inactconns);
+        
+        if (!least || doh < loh) {
+            least = dest;
+            loh = doh;
+        }
+    }
+    
+    return least;
+}
+```
+
+**负载计算模型**：
+
+```
+服务器状态：
+┌─────────────┬──────────────┬────────────────┬─────────┐
+│   Server    │ Active Conns │ Inactive Conns │  Load   │
+├─────────────┼──────────────┼────────────────┼─────────┤
+│  Server A   │      50      │       30       │   80    │
+│  Server B   │      30      │       20       │   50    │ ← 最小负载
+│  Server C   │      60      │       40       │  100    │
+└─────────────┴──────────────┴────────────────┴─────────┘
+
+新请求将分配给 Server B
+```
+
+#### 5. 加权最少连接算法（WLC）实现原理
+
+```c
+// Linux内核 ip_vs_wlc.c 核心逻辑
+struct ip_vs_dest *ip_vs_wlc_schedule(struct ip_vs_service *svc) {
+    struct ip_vs_dest *dest, *least = NULL;
+    unsigned int loh = 0, doh;
+    
+    list_for_each_entry(dest, &svc->destinations, n_list) {
+        if (!(dest->flags & IP_VS_DEST_F_AVAILABLE))
+            continue;
+        
+        // 计算负载值 = (活跃连接数 + 非活跃连接数 + 1) / 权重
+        doh = (atomic_read(&dest->activeconns) + 
+               atomic_read(&dest->inactconns) + 1) * 
+              IP_VS_WLC_SCALE / dest->weight;
+        
+        if (!least || doh < loh) {
+            least = dest;
+            loh = doh;
+        }
+    }
+    
+    return least;
+}
+```
+
+**负载计算示例**：
+
+```
+服务器配置与状态：
+┌─────────────┬────────┬──────────────┬────────────────┬──────────────────┐
+│   Server    │ Weight │ Active Conns │ Inactive Conns │ Load = (C+1)/W   │
+├─────────────┼────────┼──────────────┼────────────────┼──────────────────┤
+│  Server A   │   5    │      50      │       30       │ (80+1)/5 = 16.2  │
+│  Server B   │   3    │      20      │       10       │ (30+1)/3 = 10.3  │ ← 最小
+│  Server C   │   2    │      15      │        5       │ (20+1)/2 = 10.5  │
+└─────────────┴────────┴──────────────┴────────────────┴──────────────────┘
+
+新请求将分配给 Server B（负载值最小）
+
+分析：
+- Server B 权重较低(3)，但连接数也少，负载值最小
+- Server C 权重最低(2)，但连接数适中，负载值次小
+- Server A 权重最高(5)，但连接数多，负载值最大
+```
+
+### 算法选择决策树
+
+```
+                    ┌─────────────────────────────────────┐
+                    │       选择负载均衡算法               │
+                    └─────────────────┬───────────────────┘
+                                      │
+                    ┌─────────────────┴───────────────────┐
+                    │                                     │
+            ┌───────▼───────┐                     ┌───────▼───────┐
+            │ 需要会话保持？ │                     │ 不需要会话保持 │
+            └───────┬───────┘                     └───────┬───────┘
+                    │                                     │
+            ┌───────▼───────┐                     ┌───────▼───────┐
+            │   SH 算法     │                     │ 服务器性能相同？│
+            └───────────────┘                     └───────┬───────┘
+                                                          │
+                                          ┌───────────────┴───────────────┐
+                                          │                               │
+                                  ┌───────▼───────┐               ┌───────▼───────┐
+                                  │      是       │               │      否       │
+                                  └───────┬───────┘               └───────┬───────┘
+                                          │                               │
+                                  ┌───────▼───────┐               ┌───────▼───────┐
+                                  │ 请求处理时间  │               │ 请求处理时间  │
+                                  │ 差异大？      │               │ 差异大？      │
+                                  └───────┬───────┘               └───────┬───────┘
+                                          │                               │
+                              ┌───────────┴───────────┐       ┌───────────┴───────────┐
+                              │                       │       │                       │
+                      ┌───────▼───────┐       ┌───────▼───────┐ ┌───────▼───────┐ ┌───────▼───────┐
+                      │      是       │       │      否       │ │      是       │ │      否       │
+                      └───────┬───────┘       └───────┬───────┘ └───────┬───────┘ └───────┬───────┘
+                              │                       │                 │                 │
+                      ┌───────▼───────┐       ┌───────▼───────┐ ┌───────▼───────┐ ┌───────▼───────┐
+                      │   LC 算法     │       │   RR 算法     │ │   WLC 算法    │ │   WRR 算法    │
+                      └───────────────┘       └───────────────┘ └───────────────┘ └───────────────┘
+```
+
+### 实际场景算法选择
+
+#### 场景一：Web服务集群
+
+```
+需求分析：
+- 请求处理时间差异较小
+- 服务器性能有差异
+- 需要高并发处理
+
+推荐算法：WRR 或 WLC
+
+配置示例：
+ipvsadm -A -t 192.168.1.100:80 -s wrr
+ipvsadm -a -t 192.168.1.100:80 -r 192.168.2.101:80 -g -w 5
+ipvsadm -a -t 192.168.1.100:80 -r 192.168.2.102:80 -g -w 3
+ipvsadm -a -t 192.168.1.100:80 -r 192.168.2.103:80 -g -w 2
+```
+
+#### 场景二：API网关
+
+```
+需求分析：
+- 请求处理时间差异大
+- 需要动态负载均衡
+- 服务器性能差异大
+
+推荐算法：WLC
+
+配置示例：
+ipvsadm -A -t 192.168.1.100:8080 -s wlc
+ipvsadm -a -t 192.168.1.100:8080 -r 192.168.2.101:8080 -g -w 10
+ipvsadm -a -t 192.168.1.100:8080 -r 192.168.2.102:8080 -g -w 8
+ipvsadm -a -t 192.168.1.100:8080 -r 192.168.2.103:8080 -g -w 6
+```
+
+#### 场景三：电商购物车服务
+
+```
+需求分析：
+- 需要会话保持
+- 用户状态存储在服务器内存
+- 请求处理时间差异大
+
+推荐算法：SH + 持久连接
+
+配置示例：
+ipvsadm -A -t 192.168.1.100:8080 -s sh -p 3600
+ipvsadm -a -t 192.168.1.100:8080 -r 192.168.2.101:8080 -g
+ipvsadm -a -t 192.168.1.100:8080 -r 192.168.2.102:8080 -g
+ipvsadm -a -t 192.168.1.100:8080 -r 192.168.2.103:8080 -g
+```
+
+#### 场景四：缓存服务器集群
+
+```
+需求分析：
+- 需要缓存命中率最大化
+- 同一请求应路由到同一服务器
+- 服务器性能相同
+
+推荐算法：DH（目标地址哈希）
+
+配置示例：
+ipvsadm -A -t 192.168.1.100:80 -s dh
+ipvsadm -a -t 192.168.1.100:80 -r 192.168.2.101:80 -g
+ipvsadm -a -t 192.168.1.100:80 -r 192.168.2.102:80 -g
+ipvsadm -a -t 192.168.1.100:80 -r 192.168.2.103:80 -g
+```
+
+### 权重调优策略
+
+#### 基于服务器性能的权重计算
+
+```bash
+#!/bin/bash
+# 动态权重计算脚本
+
+# 服务器性能指标
+CPU_CORES=$(nproc)
+MEMORY_GB=$(free -g | awk '/^Mem:/{print $2}')
+DISK_IOPS=$(fio --name=test --filename=/tmp/test --size=1G --bs=4k --rw=randread --iodepth=64 --numjobs=4 --runtime=10 --time_based --group_reporting 2>/dev/null | grep -oP 'IOPS=\K[0-9]+')
+
+# 计算权重（示例公式）
+# 权重 = CPU核心数 * 10 + 内存GB * 5 + IOPS/10000
+WEIGHT=$(echo "$CPU_CORES * 10 + $MEMORY_GB * 5 + $DISK_IOPS / 10000" | bc)
+
+# 确保权重在有效范围内（1-255）
+if [ $WEIGHT -lt 1 ]; then
+    WEIGHT=1
+elif [ $WEIGHT -gt 255 ]; then
+    WEIGHT=255
+fi
+
+echo "Calculated weight: $WEIGHT"
+
+# 更新LVS权重
+ipvsadm -e -t $VIP:$PORT -r $RIP:$PORT -w $WEIGHT
+```
+
+#### 基于响应时间的动态权重调整
+
+```python
+#!/usr/bin/env python3
+import time
+import subprocess
+import statistics
+
+class DynamicWeightAdjuster:
+    def __init__(self, vip, port, servers):
+        self.vip = vip
+        self.port = port
+        self.servers = servers
+        self.weights = {server: 10 for server in servers}
+        self.response_times = {server: [] for server in servers}
+    
+    def measure_response_time(self, server):
+        start = time.time()
+        try:
+            subprocess.run(
+                ['curl', '-s', '-o', '/dev/null', '-w', '%{http_code}',
+                 f'http://{server}:{self.port}/health'],
+                timeout=5,
+                check=True
+            )
+            return time.time() - start
+        except:
+            return float('inf')
+    
+    def calculate_weight(self, server):
+        times = self.response_times[server]
+        if not times:
+            return 10
+        
+        avg_time = statistics.mean(times[-10:])
+        
+        if avg_time < 0.1:
+            return 20
+        elif avg_time < 0.5:
+            return 15
+        elif avg_time < 1.0:
+            return 10
+        elif avg_time < 2.0:
+            return 5
+        else:
+            return 1
+    
+    def adjust_weights(self):
+        for server in self.servers:
+            rt = self.measure_response_time(server)
+            self.response_times[server].append(rt)
+            
+            new_weight = self.calculate_weight(server)
+            if new_weight != self.weights[server]:
+                self.weights[server] = new_weight
+                self.update_lvs_weight(server, new_weight)
+    
+    def update_lvs_weight(self, server, weight):
+        cmd = f'ipvsadm -e -t {self.vip}:{self.port} -r {server}:{self.port} -w {weight}'
+        subprocess.run(cmd, shell=True)
+        print(f"Updated {server} weight to {weight}")
+
+if __name__ == '__main__':
+    adjuster = DynamicWeightAdjuster(
+        vip='192.168.1.100',
+        port='80',
+        servers=['192.168.2.101', '192.168.2.102', '192.168.2.103']
+    )
+    
+    while True:
+        adjuster.adjust_weights()
+        time.sleep(60)
+```
+
+### 算法性能测试
+
+```bash
+#!/bin/bash
+# 负载均衡算法性能测试脚本
+
+VIP="192.168.1.100"
+PORT="80"
+ALGORITHMS=("rr" "wrr" "lc" "wlc" "sh")
+REQUESTS=100000
+CONCURRENCY=100
+
+for algo in "${ALGORITHMS[@]}"; do
+    echo "Testing algorithm: $algo"
+    
+    # 配置算法
+    ipvsadm -E -t $VIP:$PORT -s $algo
+    
+    # 重置统计
+    ipvsadm -Z -t $VIP:$PORT
+    
+    # 运行测试
+    ab -n $REQUESTS -c $CONCURRENCY http://$VIP:$PORT/ > /tmp/result_$algo.txt
+    
+    # 收集结果
+    echo "=== $algo Results ==="
+    grep "Requests per second" /tmp/result_$algo.txt
+    grep "Time per request" /tmp/result_$algo.txt
+    
+    # 查看连接分布
+    ipvsadm -Ln --stats | grep $VIP
+    
+    echo ""
+done
+```
+
+**预期测试结果**：
+
+```
+算法性能对比（100,000请求，100并发）：
+
+┌─────────┬────────────────────┬──────────────────┬─────────────────┐
+│ 算法    │ Requests/sec       │ Time/req (ms)    │ 连接分布标准差   │
+├─────────┼────────────────────┼──────────────────┼─────────────────┤
+│ RR      │ 15,234             │ 6.56             │ 12.3            │
+│ WRR     │ 15,456             │ 6.47             │ 8.5             │
+│ LC      │ 16,123             │ 6.20             │ 5.2             │
+│ WLC     │ 16,456             │ 6.08             │ 3.1             │
+│ SH      │ 14,892             │ 6.71             │ 25.6            │
+└─────────┴────────────────────┴──────────────────┴─────────────────┘
+
+结论：
+- WLC算法在连接分布均匀性上表现最好
+- SH算法由于哈希特性，连接分布可能不均
+- 动态算法（LC/WLC）在请求处理时间差异大时表现更好
+```
+
+### 监控与调优
+
+#### LVS监控指标
+
+```bash
+#!/bin/bash
+# LVS监控脚本
+
+VIP="192.168.1.100"
+PORT="80"
+
+echo "=== LVS Statistics ==="
+echo ""
+
+echo "Virtual Server Statistics:"
+ipvsadm -Ln --stats -t $VIP:$PORT
+
+echo ""
+echo "Connection Distribution:"
+ipvsadm -Ln -t $VIP:$PORT | tail -n +3 | while read line; do
+    server=$(echo $line | awk '{print $2}')
+    active=$(ipvsadm -Ln --stats -t $VIP:$PORT | grep $server | awk '{print $5}')
+    inactive=$(ipvsadm -Ln --stats -t $VIP:$PORT | grep $server | awk '{print $6}')
+    echo "$server: Active=$active, Inactive=$inactive"
+done
+
+echo ""
+echo "Throughput (bytes/sec):"
+ipvsadm -Ln --rate -t $VIP:$PORT
+```
+
+#### Prometheus监控配置
+
+```yaml
+# prometheus.yml
+scrape_configs:
+  - job_name: 'lvs'
+    static_configs:
+      - targets: ['lvs-exporter:9100']
+
+# 告警规则
+groups:
+  - name: lvs_alerts
+    rules:
+      - alert: LVSConnectionImbalance
+        expr: |
+          lvs_active_connections / on(server) group_left() 
+          avg(lvs_active_connections) by (server) > 2
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "LVS connection imbalance detected"
+          description: "Server {{ $labels.server }} has 2x more connections than average"
+      
+      - alert: LVSRealServerDown
+        expr: lvs_real_server_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "LVS real server is down"
+          description: "Real server {{ $labels.server }} is not responding"
+```
+
+### 最佳实践总结
+
+| 场景 | 推荐算法 | 工作模式 | 权重策略 |
+|------|----------|----------|----------|
+| 高并发Web服务 | WLC | DR | 基于CPU/内存动态调整 |
+| API网关 | WLC | DR | 基于响应时间动态调整 |
+| 电商购物车 | SH | DR | 固定权重 |
+| 缓存集群 | DH | DR | 固定权重 |
+| 数据库读写分离 | WRR | NAT | 读服务器高权重 |
+| 微服务网关 | WLC | DR | 基于服务实例规格 |
+| 视频流媒体 | LC | TUN | 基于带宽动态调整 |
+| 游戏服务器 | SH | DR | 基于玩家区域固定 |
+
+**关键建议**：
+
+1. **默认选择WLC**：大多数场景下WLC算法表现最佳
+2. **需要会话保持时使用SH**：但要注意可能的负载不均
+3. **DR模式优先**：性能最高，除非有特殊需求
+4. **动态权重调整**：结合监控实现自适应负载均衡
+5. **健康检查必配**：使用Keepalived实现自动故障转移

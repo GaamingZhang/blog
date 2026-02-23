@@ -9,3 +9,4 @@ internal/
 CLAUDE.md
 .claude/
 run-dev-loop.sh
+agents/
