@@ -4,7 +4,8 @@ pipeline {
   environment {
     VERSION_FILE = 'k8s/jenkins/version'
     GIT_REMOTE = 'git@192.168.31.50:gaamingzhang/blog.git'
-    WORKDIR = 'workspace'
+    WORKDIR = 'kubernetes_workspace'
+    UPDATE_VERSION_JOB = 'GaamingBlogUpdateVersion'
   }
 
   stages {
@@ -12,7 +13,7 @@ pipeline {
       steps {
         script {
           // 触发updateVersion.Jenkinsfile的构建并等待完成
-          build job: 'updateVersion', wait: true
+          build job: env.UPDATE_VERSION_JOB, wait: true
           echo "updateVersion build completed"
         }
       }
