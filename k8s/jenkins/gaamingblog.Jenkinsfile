@@ -76,27 +76,26 @@ pipeline {
     stage('Push to Harbor - Cluster1') {
       steps {
         script {
-          // 切换到workdir目录
           dir(env.WORKDIR) {
-            def imageTag = env.IMAGE_TAG
-            def harborUrl = env.HARBOR_URL_CLUSTER1
-            def imageName = env.IMAGE_NAME
-            
             withCredentials([
               string(credentialsId: 'Harbor_Robot_Account_Name_Cluster1', variable: 'HARBOR_USER'),
               string(credentialsId: 'Harbor_Robot_Account_Token_Cluster1', variable: 'HARBOR_PASSWORD')
             ]) {
-              sh """
-                docker tag ${imageName}:${imageTag} ${harborUrl}/${imageName}:${imageTag}
-                docker tag ${imageName}:${imageTag} ${harborUrl}/${imageName}:latest
-                
-                echo "${HARBOR_PASSWORD}" | docker login ${harborUrl} -u "${HARBOR_USER}" --password-stdin
-                
-                docker push ${harborUrl}/${imageName}:${imageTag}
-                docker push ${harborUrl}/${imageName}:latest
-              """
+              withEnv([
+                "IMAGE_TAG=${env.IMAGE_TAG}",
+                "HARBOR_URL=${env.HARBOR_URL_CLUSTER1}",
+                "IMAGE_NAME=${env.IMAGE_NAME}"
+              ]) {
+                sh '''
+                  docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${HARBOR_URL}/${IMAGE_NAME}:${IMAGE_TAG}
+                  docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${HARBOR_URL}/${IMAGE_NAME}:latest
+                  echo "${HARBOR_PASSWORD}" | docker login ${HARBOR_URL} -u "${HARBOR_USER}" --password-stdin
+                  docker push ${HARBOR_URL}/${IMAGE_NAME}:${IMAGE_TAG}
+                  docker push ${HARBOR_URL}/${IMAGE_NAME}:latest
+                '''
+              }
             }
-            echo "Pushed image to Harbor Cluster1: ${harborUrl}/${imageName}:${imageTag}"
+            echo "Pushed image to Harbor Cluster1: ${env.HARBOR_URL_CLUSTER1}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
           }
         }
       }
@@ -105,27 +104,26 @@ pipeline {
     stage('Push to Harbor - Cluster2') {
       steps {
         script {
-          // 切换到workdir目录
           dir(env.WORKDIR) {
-            def imageTag = env.IMAGE_TAG
-            def harborUrl = env.HARBOR_URL_CLUSTER2
-            def imageName = env.IMAGE_NAME
-            
             withCredentials([
               string(credentialsId: 'Harbor_Robot_Account_Name_Cluster2', variable: 'HARBOR_USER'),
               string(credentialsId: 'Harbor_Robot_Account_Token_Cluster2', variable: 'HARBOR_PASSWORD')
             ]) {
-              sh """
-                docker tag ${imageName}:${imageTag} ${harborUrl}/${imageName}:${imageTag}
-                docker tag ${imageName}:${imageTag} ${harborUrl}/${imageName}:latest
-                
-                echo "${HARBOR_PASSWORD}" | docker login ${harborUrl} -u "${HARBOR_USER}" --password-stdin
-                
-                docker push ${harborUrl}/${imageName}:${imageTag}
-                docker push ${harborUrl}/${imageName}:latest
-              """
+              withEnv([
+                "IMAGE_TAG=${env.IMAGE_TAG}",
+                "HARBOR_URL=${env.HARBOR_URL_CLUSTER2}",
+                "IMAGE_NAME=${env.IMAGE_NAME}"
+              ]) {
+                sh '''
+                  docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${HARBOR_URL}/${IMAGE_NAME}:${IMAGE_TAG}
+                  docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${HARBOR_URL}/${IMAGE_NAME}:latest
+                  echo "${HARBOR_PASSWORD}" | docker login ${HARBOR_URL} -u "${HARBOR_USER}" --password-stdin
+                  docker push ${HARBOR_URL}/${IMAGE_NAME}:${IMAGE_TAG}
+                  docker push ${HARBOR_URL}/${IMAGE_NAME}:latest
+                '''
+              }
             }
-            echo "Pushed image to Harbor Cluster2: ${harborUrl}/${imageName}:${imageTag}"
+            echo "Pushed image to Harbor Cluster2: ${env.HARBOR_URL_CLUSTER2}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
           }
         }
       }
