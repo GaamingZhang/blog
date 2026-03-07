@@ -12,23 +12,10 @@ pipeline {
       steps {
         script {
           def gitRemote = env.GIT_REMOTE
-          def gitBranch = env.GIT_BRANCH
-          
-          // 检查是否为git仓库
-          def isGitRepo = sh(script: 'git rev-parse --is-inside-work-tree 2>/dev/null', returnStatus: true) == 0
           
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            withEnv(["GIT_SSH_COMMAND=ssh -i ${SSH_KEY}"]) {
-              if (!isGitRepo) {
-                // 如果不是git仓库，克隆仓库
-                sh "git clone ${gitRemote} ."
-                echo "Cloned repository from ${gitRemote}"
-              } else {
-                // 如果是git仓库，拉取最新代码
-                sh "git pull origin ${gitBranch}"
-                echo "Pulled from origin ${gitBranch} branch"
-              }
-            }
+            sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git clone $GIT_REMOTE .'
+            echo "Cloned repository from ${gitRemote}"
           }
         }
       }
@@ -115,9 +102,7 @@ pipeline {
           def gitRemote = env.GIT_REMOTE
           def branchName = env.BRANCH_NAME
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            withEnv(["GIT_SSH_COMMAND=ssh -i ${SSH_KEY}"]) {
-              sh "git push ${gitRemote} ${branchName}"
-            }
+            sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git push $GIT_REMOTE $BRANCH_NAME'
           }
           echo "Pushed changes to origin"
         }
@@ -128,8 +113,9 @@ pipeline {
       steps {
         script {
           // 创建git tag和official分支
+          env.OFFICIAL_BRANCH = "official.${env.NEW_VERSION}"
           def newVersion = env.NEW_VERSION
-          def officialBranch = "official.${newVersion}"
+          def officialBranch = env.OFFICIAL_BRANCH
           def gitRemote = env.GIT_REMOTE
           def branchName = env.BRANCH_NAME
           
@@ -140,12 +126,10 @@ pipeline {
           sh "git checkout -b ${officialBranch}"
           
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            withEnv(["GIT_SSH_COMMAND=ssh -i ${SSH_KEY}"]) {
-              // 推送tag
-              sh "git push ${gitRemote} v${newVersion}"
-              // 推送分支
-              sh "git push ${gitRemote} ${officialBranch}"
-            }
+            // 推送tag
+            sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git push $GIT_REMOTE v$NEW_VERSION'
+            // 推送分支
+            sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git push $GIT_REMOTE $OFFICIAL_BRANCH'
           }
           
           // 切回原分支（本地操作，不需要SSH）
