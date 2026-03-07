@@ -5,6 +5,7 @@ pipeline {
     VERSION_FILE = 'k8s/jenkins/version'
     GIT_REMOTE = 'git@192.168.31.50:gaamingzhang/blog.git'
     GIT_BRANCH = 'main'
+    WORKDIR = 'workspace'
   }
 
   stages {
@@ -12,10 +13,20 @@ pipeline {
       steps {
         script {
           def gitRemote = env.GIT_REMOTE
+          def workdir = env.WORKDIR
           
-          withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git clone $GIT_REMOTE .'
-            echo "Cloned repository from ${gitRemote}"
+          // 删除workdir目录及其内容
+          sh "rm -rf ${workdir}"
+          
+          // 创建workdir目录
+          sh "mkdir -p ${workdir}"
+          
+          // 切换到workdir目录
+          dir(workdir) {
+            withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
+              sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git clone $GIT_REMOTE .'
+              echo "Cloned repository from ${gitRemote}"
+            }
           }
         }
       }
@@ -24,15 +35,18 @@ pipeline {
     stage('Read Current Version') {
       steps {
         script {
-          // 读取当前版本号
-          if (fileExists(VERSION_FILE)) {
-            def currentVersion = readFile(VERSION_FILE).trim()
-            echo "Current version: ${currentVersion}"
-            env.CURRENT_VERSION = currentVersion
-          } else {
-            // 如果文件不存在，使用默认版本
-            echo "Version file not found, using default version 1.0.0"
-            env.CURRENT_VERSION = '1.0.0'
+          // 切换到workdir目录
+          dir(env.WORKDIR) {
+            // 读取当前版本号
+            if (fileExists(VERSION_FILE)) {
+              def currentVersion = readFile(VERSION_FILE).trim()
+              echo "Current version: ${currentVersion}"
+              env.CURRENT_VERSION = currentVersion
+            } else {
+              // 如果文件不存在，使用默认版本
+              echo "Version file not found, using default version 1.0.0"
+              env.CURRENT_VERSION = '1.0.0'
+            }
           }
         }
       }
@@ -74,9 +88,12 @@ pipeline {
     stage('Update Version File') {
       steps {
         script {
-          // 更新版本文件
-          writeFile file: VERSION_FILE, text: env.NEW_VERSION
-          echo "Updated version file to ${env.NEW_VERSION}"
+          // 切换到workdir目录
+          dir(env.WORKDIR) {
+            // 更新版本文件
+            writeFile file: VERSION_FILE, text: env.NEW_VERSION
+            echo "Updated version file to ${env.NEW_VERSION}"
+          }
         }
       }
     }
@@ -84,13 +101,16 @@ pipeline {
     stage('Git Commit') {
       steps {
         script {
-          // 提交更改到git
-          def versionFile = env.VERSION_FILE
-          def newVersion = env.NEW_VERSION
-          sh "git config user.name 'Jenkins CI'"
-          sh "git config user.email 'jenkins@gaaming.com.cn'"
-          sh "git add ${versionFile}"
-          sh "git commit -m 'Update version to ${newVersion}'"
+          // 切换到workdir目录
+          dir(env.WORKDIR) {
+            // 提交更改到git
+            def versionFile = env.VERSION_FILE
+            def newVersion = env.NEW_VERSION
+            sh "git config user.name 'Jenkins CI'"
+            sh "git config user.email 'jenkins@gaaming.com.cn'"
+            sh "git add ${versionFile}"
+            sh "git commit -m 'Update version to ${newVersion}'"
+          }
         }
       }
     }
@@ -98,13 +118,16 @@ pipeline {
     stage('Push Changes') {
       steps {
         script {
-          // 推送提交
-          def gitRemote = env.GIT_REMOTE
-          def branchName = env.BRANCH_NAME
-          withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git push $GIT_REMOTE $BRANCH_NAME'
+          // 切换到workdir目录
+          dir(env.WORKDIR) {
+            // 推送提交
+            def gitRemote = env.GIT_REMOTE
+            def branchName = env.BRANCH_NAME
+            withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
+              sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git push $GIT_REMOTE $BRANCH_NAME'
+            }
+            echo "Pushed changes to origin"
           }
-          echo "Pushed changes to origin"
         }
       }
     }
@@ -112,31 +135,31 @@ pipeline {
     stage('Create Git Tag and Branch') {
       steps {
         script {
-          // 创建git tag和official分支
-          env.OFFICIAL_BRANCH = "official.${env.NEW_VERSION}"
-          def newVersion = env.NEW_VERSION
-          def officialBranch = env.OFFICIAL_BRANCH
-          def gitRemote = env.GIT_REMOTE
-          def branchName = env.BRANCH_NAME
-          
-          // 创建tag（本地操作，不需要SSH）
-          sh "git tag -a v${newVersion} -m 'Version ${newVersion}'"
-          
-          // 创建分支（本地操作，不需要SSH）
-          sh "git checkout -b ${officialBranch}"
-          
-          withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            // 推送tag
-            sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git push $GIT_REMOTE v$NEW_VERSION'
-            // 推送分支
-            sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git push $GIT_REMOTE $OFFICIAL_BRANCH'
+          // 切换到workdir目录
+          dir(env.WORKDIR) {
+            // 创建git tag和official分支
+            env.OFFICIAL_BRANCH = "official.${env.NEW_VERSION}"
+            def newVersion = env.NEW_VERSION
+            def officialBranch = env.OFFICIAL_BRANCH
+            def gitRemote = env.GIT_REMOTE
+            def branchName = env.BRANCH_NAME
+            
+            // 创建tag（本地操作，不需要SSH）
+            sh "git tag -a v${newVersion} -m 'Version ${newVersion}'"
+            
+            // 创建分支（本地操作，不需要SSH）
+            sh "git checkout -b ${officialBranch}"
+            
+            withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
+              // 推送tag
+              sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git push $GIT_REMOTE v$NEW_VERSION'
+              // 推送分支
+              sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git push $GIT_REMOTE $OFFICIAL_BRANCH'
+            }
+            
+            echo "Created and pushed tag v${newVersion}"
+            echo "Created and pushed branch ${officialBranch}"
           }
-          
-          // 切回原分支（本地操作，不需要SSH）
-          sh "git checkout ${branchName}"
-          
-          echo "Created and pushed tag v${newVersion}"
-          echo "Created and pushed branch ${officialBranch}"
         }
       }
     }
