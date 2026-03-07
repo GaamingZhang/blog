@@ -3,19 +3,22 @@ pipeline {
 
   environment {
     VERSION_FILE = 'k8s/jenkins/version'
+    GIT_REMOTE = 'git@192.168.31.50:gaamingzhang/blog.git'
+    GIT_BRANCH = 'main'
   }
 
   stages {
     stage('Checkout') {
       steps {
         script {
-          // 推送提交
+          // 拉取代码
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
             sh '''
-              git pull origin main
+              git remote set-url origin ${GIT_REMOTE}
+              git pull origin ${GIT_BRANCH}
             '''
           }
-          echo "Pull from origin main branch"
+          echo "Pull from origin ${GIT_BRANCH} branch"
         }
       }
     }
@@ -100,7 +103,7 @@ pipeline {
           // 推送提交
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
             sh '''
-              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git push origin ${env.BRANCH_NAME}
+              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git push ${GIT_REMOTE} ${env.BRANCH_NAME}
             '''
           }
           echo "Pushed changes to origin"
@@ -116,11 +119,11 @@ pipeline {
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
             sh '''
               GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git tag -a v${env.NEW_VERSION} -m "Version ${env.NEW_VERSION}"
-              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git push origin v${env.NEW_VERSION}
+              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git push ${GIT_REMOTE} v${env.NEW_VERSION}
               
               # 创建并推送official分支
               GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git checkout -b ${officialBranch}
-              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git push origin ${officialBranch}
+              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git push ${GIT_REMOTE} ${officialBranch}
               
               # 切回原分支
               GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git checkout ${env.BRANCH_NAME}
