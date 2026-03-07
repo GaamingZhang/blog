@@ -11,14 +11,25 @@ pipeline {
     stage('Checkout') {
       steps {
         script {
-          // 拉取代码
+          // 检查是否为git仓库
+          def isGitRepo = sh(script: 'git rev-parse --is-inside-work-tree 2>/dev/null || echo "false"', returnStdout: true).trim()
+          
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            sh '''
-              git remote set-url origin ${GIT_REMOTE}
-              git pull origin ${GIT_BRANCH}
-            '''
+            if (isGitRepo == "false") {
+              // 如果不是git仓库，克隆仓库
+              sh '''
+                GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git clone ${GIT_REMOTE} .
+              '''
+              echo "Cloned repository from ${GIT_REMOTE}"
+            } else {
+              // 如果是git仓库，更新远程地址并拉取代码
+              sh '''
+                git remote set-url origin ${GIT_REMOTE}
+                git pull origin ${GIT_BRANCH}
+              '''
+              echo "Pull from origin ${GIT_BRANCH} branch"
+            }
           }
-          echo "Pull from origin ${GIT_BRANCH} branch"
         }
       }
     }
