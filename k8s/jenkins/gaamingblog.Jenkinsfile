@@ -82,7 +82,10 @@ pipeline {
             def harborUrl = env.HARBOR_URL_CLUSTER1
             def imageName = env.IMAGE_NAME
             
-            withCredentials([usernamePassword(credentialsId: 'harbor-cluster1-credentials', usernameVariable: 'HARBOR_USER', passwordVariable: 'HARBOR_PASSWORD')]) {
+            withCredentials([
+              string(credentialsId: 'Harbor_Robot_Account_Name_Cluster1', variable: 'HARBOR_USER'),
+              string(credentialsId: 'Harbor_Robot_Account_Token_Cluster1', variable: 'HARBOR_PASSWORD')
+            ]) {
               sh """
                 docker tag ${imageName}:${imageTag} ${harborUrl}/${imageName}:${imageTag}
                 docker tag ${imageName}:${imageTag} ${harborUrl}/${imageName}:latest
@@ -108,7 +111,10 @@ pipeline {
             def harborUrl = env.HARBOR_URL_CLUSTER2
             def imageName = env.IMAGE_NAME
             
-            withCredentials([usernamePassword(credentialsId: 'harbor-cluster2-credentials', usernameVariable: 'HARBOR_USER', passwordVariable: 'HARBOR_PASSWORD')]) {
+            withCredentials([
+              string(credentialsId: 'Harbor_Robot_Account_Name_Cluster2', variable: 'HARBOR_USER'),
+              string(credentialsId: 'Harbor_Robot_Account_Token_Cluster2', variable: 'HARBOR_PASSWORD')
+            ]) {
               sh """
                 docker tag ${imageName}:${imageTag} ${harborUrl}/${imageName}:${imageTag}
                 docker tag ${imageName}:${imageTag} ${harborUrl}/${imageName}:latest
