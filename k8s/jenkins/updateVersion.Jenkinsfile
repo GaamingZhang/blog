@@ -8,14 +8,7 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        checkout([
-          $class: 'GitSCM',
-          branches: [[name: env.BRANCH_NAME]],
-          userRemoteConfigs: [[
-            url: 'git@gitlab.com:gaamingzhang/gaamingzhang-blog.git',
-            credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key'
-          ]]
-        ])
+        checkout scm
       }
     }
 
