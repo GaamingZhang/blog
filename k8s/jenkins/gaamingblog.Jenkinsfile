@@ -170,8 +170,6 @@ pipeline {
 
             withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
               sh '''
-                git config user.name "Jenkins"
-                git config user.email "jenkins@gaamingzhang.com"
                 git add apps/blog
                 git commit -m "feat: 更新 blog 镜像版本到 ${IMAGE_TAG}"
                 GIT_SSH_COMMAND="ssh -i $SSH_KEY" git push origin main
