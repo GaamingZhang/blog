@@ -11,24 +11,11 @@ pipeline {
     stage('Checkout') {
       steps {
         script {
-          // 检查是否为git仓库
-          def isGitRepo = sh(script: 'git rev-parse --is-inside-work-tree 2>/dev/null || echo "false"', returnStdout: true).trim()
-          
+          def gitRemote = env.GIT_REMOTE
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            if (isGitRepo == "false") {
-              // 如果不是git仓库，克隆仓库
-              sh '''
-                GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git clone ${GIT_REMOTE} .
-              '''
-              echo "Cloned repository from ${GIT_REMOTE}"
-            } else {
-              // 如果是git仓库，更新远程地址并拉取代码
-              sh '''
-                git remote set-url origin ${GIT_REMOTE}
-                git pull origin ${GIT_BRANCH}
-              '''
-              echo "Pull from origin ${GIT_BRANCH} branch"
-            }
+            // 克隆仓库
+            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git clone ${gitRemote} ."
+            echo "Cloned repository from ${gitRemote}"
           }
         }
       }
@@ -98,12 +85,12 @@ pipeline {
       steps {
         script {
           // 提交更改到git
-          sh '''
-            git config user.name "Jenkins CI"
-            git config user.email "jenkins@gaaming.com.cn"
-            git add ${VERSION_FILE}
-            git commit -m "Update version to ${env.NEW_VERSION}"
-          '''
+          def versionFile = env.VERSION_FILE
+          def newVersion = env.NEW_VERSION
+          sh "git config user.name 'Jenkins CI'"
+          sh "git config user.email 'jenkins@gaaming.com.cn'"
+          sh "git add ${versionFile}"
+          sh "git commit -m 'Update version to ${newVersion}'"
         }
       }
     }
@@ -112,10 +99,10 @@ pipeline {
       steps {
         script {
           // 推送提交
+          def gitRemote = env.GIT_REMOTE
+          def branchName = env.BRANCH_NAME
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            sh '''
-              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git push ${GIT_REMOTE} ${env.BRANCH_NAME}
-            '''
+            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git push ${gitRemote} ${branchName}"
           }
           echo "Pushed changes to origin"
         }
@@ -126,21 +113,22 @@ pipeline {
       steps {
         script {
           // 创建git tag和official分支
-          def officialBranch = "official.${env.NEW_VERSION}"
+          def newVersion = env.NEW_VERSION
+          def officialBranch = "official.${newVersion}"
+          def gitRemote = env.GIT_REMOTE
+          def branchName = env.BRANCH_NAME
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            sh '''
-              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git tag -a v${env.NEW_VERSION} -m "Version ${env.NEW_VERSION}"
-              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git push ${GIT_REMOTE} v${env.NEW_VERSION}
-              
-              # 创建并推送official分支
-              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git checkout -b ${officialBranch}
-              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git push ${GIT_REMOTE} ${officialBranch}
-              
-              # 切回原分支
-              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git checkout ${env.BRANCH_NAME}
-            '''
+            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git tag -a v${newVersion} -m 'Version ${newVersion}'"
+            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git push ${gitRemote} v${newVersion}"
+            
+            // 创建并推送official分支
+            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git checkout -b ${officialBranch}"
+            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git push ${gitRemote} ${officialBranch}"
+            
+            // 切回原分支
+            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git checkout ${branchName}"
           }
-          echo "Created and pushed tag v${env.NEW_VERSION}"
+          echo "Created and pushed tag v${newVersion}"
           echo "Created and pushed branch ${officialBranch}"
         }
       }
