@@ -1,70 +1,61 @@
 pipeline {
   agent any
 
-  tools {
-    nodejs 'NodeJS'
-  }
-
-  parameters {
-    booleanParam(name: 'DEPLOY_TO_KUBERNETES', defaultValue: false, description: '是否部署到Kubernetes集群')
-  }
-
   environment {
-    VERSION = "${BUILD_NUMBER}"
-    REGISTRY_NODE_PORT = '30500'
-    K8S_NODE_IP = '192.168.31.40'
-    IMAGE_NAME = 'gaamingzhang-blog'
-    K8S_NAMESPACE = 'default'
+    VERSION_FILE = 'k8s/jenkins/version'
+    GIT_REMOTE = 'git@192.168.31.50:gaamingzhang/blog.git'
+    WORKDIR = 'workspace'
   }
 
   stages {
-    stage('Checkout') {
+    stage('Trigger updateVersion') {
       steps {
-        checkout scm
-      }
-    }
-    
-    stage('Install & Build') {
-      steps {
-        sh '''
-          set -e
-          corepack enable
-          corepack prepare pnpm@latest --activate
-          pnpm install --frozen-lockfile
-          pnpm run docs:build
-        '''
+        script {
+          // 触发updateVersion.Jenkinsfile的构建并等待完成
+          build job: 'updateVersion', wait: true
+          echo "updateVersion build completed"
+        }
       }
     }
 
-    stage('Build & Push Docker Image') {
-      when {
-        expression { params.DEPLOY_TO_KUBERNETES == true }
-      }
+    stage('Checkout Official Branch') {
       steps {
         script {
-          withCredentials([
-            usernamePassword(credentialsId: 'registry-credentials', usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD')
-          ]) {
-            sh '''
-              set -e
+          def workdir = env.WORKDIR
+          
+          // 删除workdir目录及其内容
+          sh "rm -rf ${workdir}"
+          
+          // 创建workdir目录
+          sh "mkdir -p ${workdir}"
+          
+          // 切换到workdir目录
+          dir(workdir) {
+            withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
+              // 克隆仓库
+              sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git clone $GIT_REMOTE .'
               
-              REGISTRY_URL="${K8S_NODE_IP}:${REGISTRY_NODE_PORT}"
+              // 读取版本号
+              def version = readFile(VERSION_FILE).trim()
+              echo "Current version: ${version}"
               
-              echo "构建 Docker 镜像..."
-              docker build -t ${REGISTRY_URL}/${IMAGE_NAME}:${VERSION} -t ${REGISTRY_URL}/${IMAGE_NAME}:latest .
-              
-              echo "登录 Registry (${REGISTRY_URL})..."
-              echo "${REGISTRY_PASSWORD}" | docker login ${REGISTRY_URL} -u "${REGISTRY_USER}" --password-stdin
-              
-              echo "推送镜像到 Registry..."
-              docker push ${REGISTRY_URL}/${IMAGE_NAME}:${VERSION}
-              docker push ${REGISTRY_URL}/${IMAGE_NAME}:latest
-              
-              echo "镜像推送完成: ${REGISTRY_URL}/${IMAGE_NAME}:${VERSION}"
-            '''
+              // 切换到official分支
+              def officialBranch = "official.${version}"
+              sh "git checkout ${officialBranch}"
+              echo "Switched to branch: ${officialBranch}"
+            }
           }
         }
       }
+    }
+  }
+
+  post {
+    success {
+      echo "Pipeline completed successfully!"
+    }
+    failure {
+      echo "Pipeline failed!"
     }
   }
 }
