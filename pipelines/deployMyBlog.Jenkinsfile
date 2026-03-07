@@ -9,7 +9,6 @@ pipeline {
     booleanParam(name: 'SKIP_ACCESS_LOG_PROCESSOR', defaultValue: false, description: '是否跳过博客访问日志处理服务的部署')
     booleanParam(name: 'DEPLOY_TO_ALI_BEIJING_NODE', defaultValue: false, description: '是否部署到Ali BeiJing Node')
     booleanParam(name: 'DEPLOY_TO_TENCENT_GUANGZHOU_NODE', defaultValue: false, description: '是否部署到Tencent Guangzhou Node')
-    booleanParam(name: 'DEPLOY_TO_KUBERNETES', defaultValue: false, description: '是否部署到Kubernetes集群')
     booleanParam(name: 'SYNC_SSL_CERTS', defaultValue: false, description: '是否同步SSL证书文件')
     choice(name: 'SSL_CERTS_SOURCE_SERVER', choices: ['AliBeijing', 'TencentGuangzhou'], description: 'SSL证书源服务器')
     choice(name: 'SSL_CERTS_TARGET_SERVER', choices: ['TencentGuangzhou', 'AliBeijing'], description: 'SSL证书目标服务器')
@@ -33,10 +32,6 @@ pipeline {
     SSL_DHPARAM_TARGET = '/etc/letsencrypt/ssl-dhparams.pem'
     SSL_OPTIONS_SOURCE = '/etc/letsencrypt/options-ssl-nginx.conf'
     SSL_OPTIONS_TARGET = '/etc/letsencrypt/options-ssl-nginx.conf'
-    REGISTRY_NODE_PORT = '30500'
-    K8S_NODE_IP = '192.168.31.40'
-    IMAGE_NAME = 'gaamingzhang-blog'
-    K8S_NAMESPACE = 'default'
   }
 
   // TODO: 部署前生成 official_blog_<buildNumber> 分支
@@ -61,36 +56,7 @@ pipeline {
       }
     }
 
-    stage('Build & Push Docker Image') {
-      when {
-        expression { params.DEPLOY_TO_KUBERNETES == true }
-      }
-      steps {
-        script {
-          withCredentials([
-            usernamePassword(credentialsId: 'registry-credentials', usernameVariable: 'REGISTRY_USER', passwordVariable: 'REGISTRY_PASSWORD')
-          ]) {
-            sh '''
-              set -e
-              
-              REGISTRY_URL="${K8S_NODE_IP}:${REGISTRY_NODE_PORT}"
-              
-              echo "构建 Docker 镜像..."
-              docker build -t ${REGISTRY_URL}/${IMAGE_NAME}:${VERSION} -t ${REGISTRY_URL}/${IMAGE_NAME}:latest .
-              
-              echo "登录 Registry (${REGISTRY_URL})..."
-              echo "${REGISTRY_PASSWORD}" | docker login ${REGISTRY_URL} -u "${REGISTRY_USER}" --password-stdin
-              
-              echo "推送镜像到 Registry..."
-              docker push ${REGISTRY_URL}/${IMAGE_NAME}:${VERSION}
-              docker push ${REGISTRY_URL}/${IMAGE_NAME}:latest
-              
-              echo "镜像推送完成: ${REGISTRY_URL}/${IMAGE_NAME}:${VERSION}"
-            '''
-          }
-        }
-      }
-    }
+
 
     stage('Deploy Static Site') {
       steps {
@@ -256,41 +222,7 @@ pipeline {
       }
     }
 
-    stage('Deploy to Kubernetes') {
-      when {
-        expression { params.DEPLOY_TO_KUBERNETES == true }
-      }
-      steps {
-        script {
-          echo "部署到 Kubernetes 集群..."
-          
-          withCredentials([file(credentialsId: 'kubernetes-kubeconfig-file', variable: 'KUBECONFIG_FILE')]) {
-            sh '''
-              set -e
-              
-              export KUBECONFIG=${KUBECONFIG_FILE}
-              REGISTRY_URL="${K8S_NODE_IP}:${REGISTRY_NODE_PORT}"
-              
-              echo "更新 deployment 镜像版本..."
-              sed -i.bak "s|image: .*gaamingzhang-blog:.*|image: ${REGISTRY_URL}/${IMAGE_NAME}:${VERSION}|g" k8s/deployment.yaml
-              
-              echo "应用 Kubernetes 配置..."
-              kubectl apply -f k8s/deployment.yaml
-              kubectl apply -f k8s/service.yaml
-              kubectl apply -f k8s/ingress.yaml
-              
-              echo "等待部署完成..."
-              kubectl rollout status deployment/gaamingzhang-blog -n ${K8S_NAMESPACE} --timeout=300s
-              
-              echo "验证部署状态..."
-              kubectl get pods -n ${K8S_NAMESPACE} -l app=gaamingzhang-blog
-              kubectl get services -n ${K8S_NAMESPACE}
-              kubectl get ingress -n ${K8S_NAMESPACE}
-            '''
-          }
-        }
-      }
-    }
+
   }
 
   post {
@@ -302,7 +234,7 @@ pipeline {
         string(credentialsId: 'wxpush_templateID', variable: 'WXPUSH_TEMPLATEID')
       ]) {
         sh '''
-          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署成功" -content "gaamingzhangblog v.'${BUILD_NUMBER}' 部署成功"
+          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客静态部署成功" -content "gaamingzhangblog v.'${BUILD_NUMBER}' 静态部署成功"
         '''
       }
     }
@@ -314,7 +246,7 @@ pipeline {
         string(credentialsId: 'wxpush_templateID', variable: 'WXPUSH_TEMPLATEID')
       ]) {
         sh '''
-          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客部署失败" -content "gaamingzhangblog v.'${BUILD_NUMBER}' 部署失败"
+          /var/wxpush/wxpush -appID ${WXPUSH_APPID} -secret ${WXPUSH_SECRET} -userID ${WXPUSH_USERID} -templateID ${WXPUSH_TEMPLATEID} -title "博客静态部署失败" -content "gaamingzhangblog v.'${BUILD_NUMBER}' 静态部署失败"
         '''
       }
     }
