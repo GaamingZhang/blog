@@ -1,0 +1,22 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: blog-cluster2
+  namespace: argocd
+  finalizers:
+  - resources-finalizer.argocd.argoproj.io
+spec:
+  project: blog
+  source:
+    repoURL: git@192.168.31.50:gaamingzhang/gaamingblogkubernetesargocd.git
+    targetRevision: HEAD
+    path: apps/blog/cluster2
+  destination:
+    name: cluster2
+    namespace: blog
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true

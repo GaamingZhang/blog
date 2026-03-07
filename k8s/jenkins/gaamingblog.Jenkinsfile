@@ -13,6 +13,8 @@ pipeline {
     HARBOR_URL_CLUSTER1 = '192.168.31.30:30002'
     HARBOR_URL_CLUSTER2 = '192.168.31.31:30002'
     IMAGE_NAME = 'gaaming/blog'
+    ARGOCD_GIT_REMOTE = 'git@192.168.31.50:gaamingzhang/gaamingblogkubernetesargocd.git'
+    ARGOCD_WORKDIR = 'argocd_workspace'
   }
 
   stages {
@@ -125,6 +127,59 @@ pipeline {
             }
             echo "Pushed image to Harbor Cluster2: ${env.HARBOR_URL_CLUSTER2}/${env.IMAGE_NAME}:${env.IMAGE_TAG}"
           }
+        }
+      }
+    }
+
+    stage('Render and Push to ArgoCD') {
+      steps {
+        script {
+          def argocdWorkdir = env.ARGOCD_WORKDIR
+          def imageTag = env.IMAGE_TAG
+
+          sh "rm -rf ${argocdWorkdir}"
+          sh "mkdir -p ${argocdWorkdir}"
+
+          dir(argocdWorkdir) {
+            withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
+              sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git clone $ARGOCD_GIT_REMOTE .'
+            }
+
+            sh "cp -r ${WORKDIR}/k8s/kustomize ."
+
+            dir('kustomize') {
+              withEnv([
+                "IMAGE_TAG=${imageTag}",
+                "HARBOR_URL_CLUSTER1=${env.HARBOR_URL_CLUSTER1}",
+                "HARBOR_URL_CLUSTER2=${env.HARBOR_URL_CLUSTER2}"
+              ]) {
+                sh '''
+                  kustomize edit set image gaaming/blog=${HARBOR_URL_CLUSTER1}/gaaming/blog:${IMAGE_TAG} --apps/blog/overlays/cluster1
+                  kustomize edit set image gaaming/blog=${HARBOR_URL_CLUSTER2}/gaaming/blog:${IMAGE_TAG} --apps/blog/overlays/cluster2
+                '''
+              }
+            }
+
+            sh '''
+              rm -rf apps/blog
+              kustomize build kustomize/blog/overlays/cluster1 -o apps/blog/cluster1/
+              kustomize build kustomize/blog/overlays/cluster2 -o apps/blog/cluster2/
+            '''
+
+            sh "rm -rf kustomize argocd"
+
+            withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
+              sh '''
+                git config user.name "Jenkins"
+                git config user.email "jenkins@gaamingzhang.com"
+                git add apps/blog
+                git commit -m "feat: 更新 blog 镜像版本到 ${IMAGE_TAG}"
+                GIT_SSH_COMMAND="ssh -i $SSH_KEY" git push origin main
+              '''
+            }
+          }
+
+          echo "Rendered and pushed Kubernetes manifests to ArgoCD repository"
         }
       }
     }
