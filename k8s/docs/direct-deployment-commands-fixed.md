@@ -557,6 +557,13 @@ data:
         }
       ]
     }
+  setup: |-
+    #!/bin/sh
+    mkdir -p "$VOL_DIR"
+    chmod 777 "$VOL_DIR"
+  teardown: |-
+    #!/bin/sh
+    rm -rf "$VOL_DIR"
   helperPod.yaml: |-
     apiVersion: v1
     kind: Pod
@@ -707,10 +714,9 @@ kubectl create namespace harbor
 helm install harbor harbor/harbor \
   --namespace harbor \
   --set expose.type=nodePort \
-  --set expose.nodePort.ports.https.nodePort=30003 \
-  --set expose.tls.enabled=true \
-  --set expose.tls.auto.commonName=192.168.31.30 \
-  --set externalURL=https://192.168.31.30:30003 \
+  --set expose.nodePort.ports.http.nodePort=30002 \
+  --set expose.tls.enabled=false \
+  --set externalURL=http://192.168.31.30:30002 \
   --set harborAdminPassword="Harbor12345" \
   --set persistence.persistentVolumeClaim.registry.size=50Gi
 
@@ -732,10 +738,9 @@ kubectl create namespace harbor
 helm install harbor harbor/harbor \
   --namespace harbor \
   --set expose.type=nodePort \
-  --set expose.nodePort.ports.https.nodePort=30003 \
-  --set expose.tls.enabled=true \
-  --set expose.tls.auto.commonName=192.168.31.31 \
-  --set externalURL=https://192.168.31.31:30003 \
+  --set expose.nodePort.ports.http.nodePort=30002 \
+  --set expose.tls.enabled=false \
+  --set externalURL=http://192.168.31.31:30002 \
   --set harborAdminPassword="Harbor12345" \
   --set persistence.persistentVolumeClaim.registry.size=50Gi
 
