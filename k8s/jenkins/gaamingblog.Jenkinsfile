@@ -1,11 +1,18 @@
 pipeline {
   agent any
 
+  tools {
+    nodejs 'NodeJS'
+  }
+
   environment {
     VERSION_FILE = 'k8s/jenkins/version'
     GIT_REMOTE = 'git@192.168.31.50:gaamingzhang/blog.git'
     WORKDIR = 'kubernetes_deploy_workspace'
     UPDATE_VERSION_JOB = 'GaamingBlogUpdateVersion'
+    HARBOR_URL_CLUSTER1 = '192.168.31.30:30003'
+    HARBOR_URL_CLUSTER2 = '192.168.31.31:30003'
+    IMAGE_NAME = 'gaamingzhang/blog'
   }
 
   stages {
@@ -39,6 +46,7 @@ pipeline {
               // 读取版本号
               def version = readFile(VERSION_FILE).trim()
               echo "Current version: ${version}"
+              env.IMAGE_TAG = version
               
               // 切换到official分支
               def officialBranch = "official.${version}"
@@ -49,11 +57,79 @@ pipeline {
         }
       }
     }
+
+    stage('Build Image') {
+      steps {
+        script {
+          // 切换到workdir目录
+          dir(env.WORKDIR) {
+            def imageTag = env.IMAGE_TAG
+            
+            // 构建镜像
+            sh "docker build -t ${env.IMAGE_NAME}:${imageTag} -t ${env.IMAGE_NAME}:latest ."
+            echo "Built image: ${env.IMAGE_NAME}:${imageTag}"
+          }
+        }
+      }
+    }
+
+    stage('Push to Harbor - Cluster1') {
+      steps {
+        script {
+          // 切换到workdir目录
+          dir(env.WORKDIR) {
+            def imageTag = env.IMAGE_TAG
+            def harborUrl = env.HARBOR_URL_CLUSTER1
+            def imageName = env.IMAGE_NAME
+            
+            withCredentials([usernamePassword(credentialsId: 'harbor-cluster1-credentials', usernameVariable: 'HARBOR_USER', passwordVariable: 'HARBOR_PASSWORD')]) {
+              sh """
+                docker tag ${imageName}:${imageTag} ${harborUrl}/${imageName}:${imageTag}
+                docker tag ${imageName}:${imageTag} ${harborUrl}/${imageName}:latest
+                
+                echo "${HARBOR_PASSWORD}" | docker login ${harborUrl} -u "${HARBOR_USER}" --password-stdin
+                
+                docker push ${harborUrl}/${imageName}:${imageTag}
+                docker push ${harborUrl}/${imageName}:latest
+              """
+            }
+            echo "Pushed image to Harbor Cluster1: ${harborUrl}/${imageName}:${imageTag}"
+          }
+        }
+      }
+    }
+
+    stage('Push to Harbor - Cluster2') {
+      steps {
+        script {
+          // 切换到workdir目录
+          dir(env.WORKDIR) {
+            def imageTag = env.IMAGE_TAG
+            def harborUrl = env.HARBOR_URL_CLUSTER2
+            def imageName = env.IMAGE_NAME
+            
+            withCredentials([usernamePassword(credentialsId: 'harbor-cluster2-credentials', usernameVariable: 'HARBOR_USER', passwordVariable: 'HARBOR_PASSWORD')]) {
+              sh """
+                docker tag ${imageName}:${imageTag} ${harborUrl}/${imageName}:${imageTag}
+                docker tag ${imageName}:${imageTag} ${harborUrl}/${imageName}:latest
+                
+                echo "${HARBOR_PASSWORD}" | docker login ${harborUrl} -u "${HARBOR_USER}" --password-stdin
+                
+                docker push ${harborUrl}/${imageName}:${imageTag}
+                docker push ${harborUrl}/${imageName}:latest
+              """
+            }
+            echo "Pushed image to Harbor Cluster2: ${harborUrl}/${imageName}:${imageTag}"
+          }
+        }
+      }
+    }
   }
 
   post {
     success {
       echo "Pipeline completed successfully!"
+      echo "Image version: ${env.IMAGE_TAG}"
     }
     failure {
       echo "Pipeline failed!"
