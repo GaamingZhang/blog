@@ -8,7 +8,15 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        checkout scm
+        script {
+          // 推送提交
+          withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
+            sh '''
+              git pull origin main
+            '''
+          }
+          echo "Pull from origin main branch"
+        }
       }
     }
 
@@ -76,12 +84,12 @@ pipeline {
       steps {
         script {
           // 提交更改到git
-          sh """
+          sh '''
             git config user.name "Jenkins CI"
             git config user.email "jenkins@gaaming.com.cn"
             git add ${VERSION_FILE}
             git commit -m "Update version to ${env.NEW_VERSION}"
-          """
+          '''
         }
       }
     }
@@ -91,9 +99,9 @@ pipeline {
         script {
           // 推送提交
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            sh """
-              GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git push origin ${env.BRANCH_NAME}
-            """
+            sh '''
+              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git push origin ${env.BRANCH_NAME}
+            '''
           }
           echo "Pushed changes to origin"
         }
@@ -106,17 +114,17 @@ pipeline {
           // 创建git tag和official分支
           def officialBranch = "official.${env.NEW_VERSION}"
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            sh """
-              GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git tag -a v${env.NEW_VERSION} -m 'Version ${env.NEW_VERSION}'
-              GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git push origin v${env.NEW_VERSION}
+            sh '''
+              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git tag -a v${env.NEW_VERSION} -m "Version ${env.NEW_VERSION}"
+              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git push origin v${env.NEW_VERSION}
               
               # 创建并推送official分支
-              GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git checkout -b ${officialBranch}
-              GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git push origin ${officialBranch}
+              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git checkout -b ${officialBranch}
+              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git push origin ${officialBranch}
               
               # 切回原分支
-              GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git checkout ${env.BRANCH_NAME}
-            """
+              GIT_SSH_COMMAND="ssh -i ${SSH_KEY}" git checkout ${env.BRANCH_NAME}
+            '''
           }
           echo "Created and pushed tag v${env.NEW_VERSION}"
           echo "Created and pushed branch ${officialBranch}"
