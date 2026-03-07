@@ -12,7 +12,7 @@ pipeline {
     UPDATE_VERSION_JOB = 'GaamingBlogUpdateVersion'
     HARBOR_URL_CLUSTER1 = '192.168.31.30:30002'
     HARBOR_URL_CLUSTER2 = '192.168.31.31:30002'
-    IMAGE_NAME = 'gaamingzhang/blog'
+    IMAGE_NAME = 'gaaming/blog'
   }
 
   stages {
@@ -66,7 +66,7 @@ pipeline {
             def imageTag = env.IMAGE_TAG
             
             // 构建镜像
-            sh "sudo docker build -t ${env.IMAGE_NAME}:${imageTag} -t ${env.IMAGE_NAME}:latest ."
+            sh "docker build -t ${env.IMAGE_NAME}:${imageTag} -t ${env.IMAGE_NAME}:latest ."
             echo "Built image: ${env.IMAGE_NAME}:${imageTag}"
           }
         }
@@ -87,11 +87,11 @@ pipeline {
                 "IMAGE_NAME=${env.IMAGE_NAME}"
               ]) {
                 sh '''
-                  sudo docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${HARBOR_URL}/${IMAGE_NAME}:${IMAGE_TAG}
-                  sudo docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${HARBOR_URL}/${IMAGE_NAME}:latest
-                  echo "${HARBOR_PASSWORD}" | sudo docker login ${HARBOR_URL} -u "${HARBOR_USER}" --password-stdin
-                  sudo docker push ${HARBOR_URL}/${IMAGE_NAME}:${IMAGE_TAG}
-                  sudo docker push ${HARBOR_URL}/${IMAGE_NAME}:latest
+                  docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${HARBOR_URL}/${IMAGE_NAME}:${IMAGE_TAG}
+                  docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${HARBOR_URL}/${IMAGE_NAME}:latest
+                  echo "${HARBOR_PASSWORD}" | docker login ${HARBOR_URL} -u "${HARBOR_USER}" --password-stdin
+                  docker push ${HARBOR_URL}/${IMAGE_NAME}:${IMAGE_TAG}
+                  docker push ${HARBOR_URL}/${IMAGE_NAME}:latest
                 '''
               }
             }
@@ -115,11 +115,11 @@ pipeline {
                 "IMAGE_NAME=${env.IMAGE_NAME}"
               ]) {
                 sh '''
-                  sudo docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${HARBOR_URL}/${IMAGE_NAME}:${IMAGE_TAG}
-                  sudo docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${HARBOR_URL}/${IMAGE_NAME}:latest
-                  echo "${HARBOR_PASSWORD}" | sudo docker login ${HARBOR_URL} -u "${HARBOR_USER}" --password-stdin
-                  sudo docker push ${HARBOR_URL}/${IMAGE_NAME}:${IMAGE_TAG}
-                  sudo docker push ${HARBOR_URL}/${IMAGE_NAME}:latest
+                  docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${HARBOR_URL}/${IMAGE_NAME}:${IMAGE_TAG}
+                  docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${HARBOR_URL}/${IMAGE_NAME}:latest
+                  echo "${HARBOR_PASSWORD}" | docker login ${HARBOR_URL} -u "${HARBOR_USER}" --password-stdin
+                  docker push ${HARBOR_URL}/${IMAGE_NAME}:${IMAGE_TAG}
+                  docker push ${HARBOR_URL}/${IMAGE_NAME}:latest
                 '''
               }
             }
