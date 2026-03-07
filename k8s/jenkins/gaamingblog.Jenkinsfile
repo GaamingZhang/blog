@@ -4,7 +4,7 @@ pipeline {
   environment {
     VERSION_FILE = 'k8s/jenkins/version'
     GIT_REMOTE = 'git@192.168.31.50:gaamingzhang/blog.git'
-    WORKDIR = 'kubernetes_workspace'
+    WORKDIR = 'kubernetes_deploy_workspace'
     UPDATE_VERSION_JOB = 'GaamingBlogUpdateVersion'
   }
 

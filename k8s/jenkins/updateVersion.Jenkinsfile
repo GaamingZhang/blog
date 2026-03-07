@@ -5,7 +5,7 @@ pipeline {
     VERSION_FILE = 'k8s/jenkins/version'
     GIT_REMOTE = 'git@192.168.31.50:gaamingzhang/blog.git'
     GIT_BRANCH = 'main'
-    WORKDIR = 'workspace'
+    WORKDIR = 'update_version_workspace'
   }
 
   stages {
