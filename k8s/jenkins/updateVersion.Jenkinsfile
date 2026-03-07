@@ -12,10 +12,29 @@ pipeline {
       steps {
         script {
           def gitRemote = env.GIT_REMOTE
+          def gitBranch = env.GIT_BRANCH
+          
+          // 检查目录是否为空
+          def isEmpty = sh(script: 'ls -la | grep -v "\." | grep -v "\.\." | wc -l', returnStdout: true).trim().toInteger() == 0
+          
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            // 克隆仓库
-            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git clone ${gitRemote} ."
-            echo "Cloned repository from ${gitRemote}"
+            if (isEmpty) {
+              // 如果目录为空，克隆仓库
+              sh(script: 'git clone ${GIT_REMOTE} .', env: ["GIT_SSH_COMMAND": "ssh -i ${SSH_KEY}"])
+              echo "Cloned repository from ${gitRemote}"
+            } else {
+              // 如果目录不为空，检查是否为git仓库
+              def isGitRepo = sh(script: 'git rev-parse --is-inside-work-tree 2>/dev/null || echo "false"', returnStdout: true).trim()
+              if (isGitRepo == "false") {
+                // 如果不是git仓库，报错
+                error "Current directory is not empty and not a git repository"
+              } else {
+                // 如果是git仓库，更新远程地址并拉取代码
+                sh 'git remote set-url origin ${GIT_REMOTE}'
+                sh(script: 'git pull origin ${GIT_BRANCH}', env: ["GIT_SSH_COMMAND": "ssh -i ${SSH_KEY}"])
+                echo "Pull from origin ${gitBranch} branch"
+              }
+            }
           }
         }
       }
@@ -102,7 +121,7 @@ pipeline {
           def gitRemote = env.GIT_REMOTE
           def branchName = env.BRANCH_NAME
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git push ${gitRemote} ${branchName}"
+            sh(script: 'git push ${GIT_REMOTE} ${BRANCH_NAME}', env: ["GIT_SSH_COMMAND": "ssh -i ${SSH_KEY}", "GIT_REMOTE": gitRemote, "BRANCH_NAME": branchName])
           }
           echo "Pushed changes to origin"
         }
@@ -118,15 +137,18 @@ pipeline {
           def gitRemote = env.GIT_REMOTE
           def branchName = env.BRANCH_NAME
           withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git tag -a v${newVersion} -m 'Version ${newVersion}'"
-            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git push ${gitRemote} v${newVersion}"
+            // 创建tag（本地操作，不需要SSH）
+            sh "git tag -a v${newVersion} -m 'Version ${newVersion}'"
+            // 推送tag
+            sh(script: 'git push ${GIT_REMOTE} v${NEW_VERSION}', env: ["GIT_SSH_COMMAND": "ssh -i ${SSH_KEY}", "GIT_REMOTE": gitRemote, "NEW_VERSION": newVersion])
             
-            // 创建并推送official分支
-            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git checkout -b ${officialBranch}"
-            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git push ${gitRemote} ${officialBranch}"
+            // 创建分支（本地操作，不需要SSH）
+            sh "git checkout -b ${officialBranch}"
+            // 推送分支
+            sh(script: 'git push ${GIT_REMOTE} ${OFFICIAL_BRANCH}', env: ["GIT_SSH_COMMAND": "ssh -i ${SSH_KEY}", "GIT_REMOTE": gitRemote, "OFFICIAL_BRANCH": officialBranch])
             
-            // 切回原分支
-            sh "GIT_SSH_COMMAND='ssh -i ${SSH_KEY}' git checkout ${branchName}"
+            // 切回原分支（本地操作，不需要SSH）
+            sh "git checkout ${branchName}"
           }
           echo "Created and pushed tag v${newVersion}"
           echo "Created and pushed branch ${officialBranch}"
