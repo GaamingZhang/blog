@@ -15,13 +15,13 @@ pipeline {
     IMAGE_NAME = 'gaaming/blog'
     ARGOCD_GIT_REMOTE = 'git@192.168.31.50:gaamingzhang/gaamingblogkubernetesargocd.git'
     ARGOCD_WORKDIR = 'argocd_workspace'
+    HELM_CHART_PATH = 'k8s/helm/blog'
   }
 
   stages {
     stage('Trigger updateVersion') {
       steps {
         script {
-          // 触发updateVersion.Jenkinsfile的构建并等待完成
           build job: env.UPDATE_VERSION_JOB, wait: true
           echo "updateVersion build completed"
         }
@@ -33,24 +33,17 @@ pipeline {
         script {
           def workdir = env.WORKDIR
           
-          // 删除workdir目录及其内容
           sh "rm -rf ${workdir}"
-          
-          // 创建workdir目录
           sh "mkdir -p ${workdir}"
           
-          // 切换到workdir目录
           dir(workdir) {
             withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-              // 克隆仓库
               sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git clone $GIT_REMOTE .'
               
-              // 读取版本号
               def version = readFile(VERSION_FILE).trim()
               echo "Current version: ${version}"
               env.IMAGE_TAG = version
               
-              // 切换到official分支
               def officialBranch = "official.${version}"
               sh "git checkout ${officialBranch}"
               echo "Switched to branch: ${officialBranch}"
@@ -63,11 +56,9 @@ pipeline {
     stage('Build Image') {
       steps {
         script {
-          // 切换到workdir目录
           dir(env.WORKDIR) {
             def imageTag = env.IMAGE_TAG
             
-            // 构建镜像
             sh "docker build -t ${env.IMAGE_NAME}:${imageTag} -t ${env.IMAGE_NAME}:latest ."
             echo "Built image: ${env.IMAGE_NAME}:${imageTag}"
           }
@@ -145,39 +136,46 @@ pipeline {
               sh 'GIT_SSH_COMMAND="ssh -i $SSH_KEY" git clone $ARGOCD_GIT_REMOTE .'
             }
 
-            sh "cp -r ${WORKDIR}/k8s/kustomize ."
+            sh "mkdir -p apps/blog/cluster1 apps/blog/cluster2"
 
-            dir('kustomize') {
-              withEnv([
-                "IMAGE_TAG=${imageTag}",
-                "HARBOR_URL_CLUSTER1=${env.HARBOR_URL_CLUSTER1}",
-                "HARBOR_URL_CLUSTER2=${env.HARBOR_URL_CLUSTER2}"
-              ]) {
-                sh '''
-                  kustomize edit set image gaaming/blog=${HARBOR_URL_CLUSTER1}/gaaming/blog:${IMAGE_TAG} --apps/blog/overlays/cluster1
-                  kustomize edit set image gaaming/blog=${HARBOR_URL_CLUSTER2}/gaaming/blog:${IMAGE_TAG} --apps/blog/overlays/cluster2
-                '''
-              }
+            sh "cp -r ${WORKDIR}/${HELM_CHART_PATH} ./helm-chart"
+
+            dir('helm-chart') {
+              sh """
+                helm template blog . \
+                  --namespace blog \
+                  --set image.repository=${env.HARBOR_URL_CLUSTER1}/gaaming/blog \
+                  --set image.tag=${imageTag} \
+                  --set cluster=cluster1 \
+                  -f values-cluster1.yaml \
+                  > ../apps/blog/cluster1/all.yaml
+              """
+
+              sh """
+                helm template blog . \
+                  --namespace blog \
+                  --set image.repository=${env.HARBOR_URL_CLUSTER2}/gaaming/blog \
+                  --set image.tag=${imageTag} \
+                  --set cluster=cluster2 \
+                  -f values-cluster2.yaml \
+                  > ../apps/blog/cluster2/all.yaml
+              """
             }
 
-            sh '''
-              rm -rf apps/blog
-              kustomize build kustomize/blog/overlays/cluster1 -o apps/blog/cluster1/
-              kustomize build kustomize/blog/overlays/cluster2 -o apps/blog/cluster2/
-            '''
-
-            sh "rm -rf kustomize argocd"
+            sh "rm -rf helm-chart"
 
             withCredentials([sshUserPrivateKey(credentialsId: 'Jenkins_Pipeline_Agent_SSH_Key', keyFileVariable: 'SSH_KEY')]) {
-              sh '''
+              sh """
+                git config user.name "Jenkins CI"
+                git config user.email "jenkins@gaaming.com.cn"
                 git add apps/blog
-                git commit -m "feat: 更新 blog 镜像版本到 ${IMAGE_TAG}"
+                git commit -m "feat: 更新 blog 镜像版本到 ${imageTag}"
                 GIT_SSH_COMMAND="ssh -i $SSH_KEY" git push origin main
-              '''
+              """
             }
           }
 
-          echo "Rendered and pushed Kubernetes manifests to ArgoCD repository"
+          echo "Rendered and pushed Kubernetes manifests to ArgoCD repository using Helm"
         }
       }
     }

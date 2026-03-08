@@ -1,0 +1,17 @@
+image:
+  repository: 192.168.31.30:30002/gaaming/blog
+  tag: latest
+
+cluster: cluster1
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "false"
+    nginx.ingress.kubernetes.io/load-balance: round_robin
+  hosts:
+    - host: local.blog
+      paths:
+        - path: /
+          pathType: Prefix

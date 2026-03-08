@@ -1,0 +1,35 @@
+{{- if and .Values.ingress.enabled .Values.canary.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "blog.fullname" . }}-canary
+  namespace: {{ include "blog.namespace" . }}
+  labels:
+    {{- include "blog.labels" . | nindent 4 }}
+  annotations:
+    nginx.ingress.kubernetes.io/canary: "true"
+    {{- if .Values.canary.weight }}
+    nginx.ingress.kubernetes.io/canary-weight: {{ .Values.canary.weight | quote }}
+    {{- end }}
+    {{- if and .Values.canary.header.enabled .Values.canary.header.name .Values.canary.header.value }}
+    nginx.ingress.kubernetes.io/canary-by-header: {{ .Values.canary.header.name }}
+    nginx.ingress.kubernetes.io/canary-by-header-value: {{ .Values.canary.header.value }}
+    {{- end }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            pathType: {{ .pathType }}
+            backend:
+              service:
+                name: {{ include "blog.fullname" $ }}
+                port:
+                  number: {{ $.Values.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}
