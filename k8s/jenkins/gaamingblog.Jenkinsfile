@@ -138,7 +138,7 @@ pipeline {
 
             sh "mkdir -p apps/blog/cluster1 apps/blog/cluster2"
 
-            sh "cp -r ${WORKDIR}/${HELM_CHART_PATH} ./helm-chart"
+            sh "cp -r ${env.WORKSPACE}/${WORKDIR}/${HELM_CHART_PATH} ./helm-chart"
 
             dir('helm-chart') {
               sh """
