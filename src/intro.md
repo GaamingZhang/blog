@@ -3,8 +3,8 @@ date: 2025-07-01
 author: Gaaming Zhang
 icon: material-symbols:account-box-sharp
 cover: /assets/images/cover0.jpg
-sticky: 1001
-star: 1001
+sticky: 1002
+star: 1002
 isOriginal: true
 ---
 
