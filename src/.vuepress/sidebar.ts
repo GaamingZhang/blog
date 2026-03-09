@@ -5,6 +5,15 @@ export default sidebar({
     "",
     "intro",
     {
+      text: "部署架构",
+      icon: "material-symbols:architecture",
+      collapsible: true,
+      children: [
+        "部署架构",
+        "博客本地Kubernetes部署架构实践",
+      ],
+    },
+    {
       text: "文档",
       icon: "book",
       prefix: "posts/",
