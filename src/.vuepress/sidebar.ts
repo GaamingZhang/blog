@@ -4,7 +4,7 @@ export default sidebar({
   "/": [
     "",
     "intro",
-    "部署架构",
+    "archi",
     {
       text: "文档",
       icon: "book",
