@@ -31,9 +31,64 @@ kubectl port-forward svc/argocd-server -n argocd 8080:443 --address 0.0.0.0 &
 # 密码: 上一步获取的初始密码
 ```
 
-## 二、配置 SSH Known Hosts
+## 二、集群架构说明
 
-### 2.1 获取 Git 服务器的 SSH 密钥
+### 2.1 主备架构
+
+本项目采用**主备架构（Active-Standby）**：
+
+| 集群 | 角色 | 状态 | IP 地址 | 说明 |
+|------|------|------|---------|------|
+| Cluster1 | 主集群 | Active | 192.168.31.30 | 处理所有用户请求，运行 ArgoCD |
+| Cluster2 | 备份集群 | Standby | 192.168.31.31 | 保持应用同步，不处理请求，故障时接管 |
+
+### 2.2 架构图
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    主备集群架构                                  │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│                    ┌─────────────────┐                          │
+│                    │   用户请求       │                          │
+│                    │   local.blog    │                          │
+│                    └────────┬────────┘                          │
+│                             │                                    │
+│                             ▼                                    │
+│              ┌──────────────────────────────┐                   │
+│              │   Cluster1 - 主集群 (Active)  │                   │
+│              │   192.168.31.30              │                   │
+│              │   • 处理所有请求              │                   │
+│              │   • ArgoCD 管理              │                   │
+│              │   • Harbor 镜像仓库          │                   │
+│              └──────────────────────────────┘                   │
+│                             │                                    │
+│                             │ 数据同步                           │
+│                             ▼                                    │
+│              ┌──────────────────────────────┐                   │
+│              │   Cluster2 - 备份集群(Standby)│                   │
+│              │   192.168.31.31              │                   │
+│              │   • 应用保持同步              │                   │
+│              │   • 不处理请求                │                   │
+│              │   • 故障时接管                │                   │
+│              └──────────────────────────────┘                   │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 2.3 故障切换流程
+
+当 Cluster1 发生故障时：
+
+1. **检测故障**：监控系统发现 Cluster1 不可用
+2. **确认切换**：运维人员确认需要切换到 Cluster2
+3. **DNS 切换**：修改 local.blog 的 DNS 指向 Cluster2（192.168.31.42）
+4. **验证服务**：确认 Cluster2 正常提供服务
+5. **修复主集群**：修复 Cluster1 并恢复为 Active 状态
+
+## 三、配置 SSH Known Hosts
+
+### 3.1 获取 Git 服务器的 SSH 密钥
 
 ```bash
 # 获取 Git 服务器的 SSH 密钥
@@ -43,7 +98,7 @@ ssh-keyscan 192.168.31.50
 # 192.168.31.50 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ...
 ```
 
-### 2.2 配置 ArgoCD Known Hosts
+### 3.2 配置 ArgoCD Known Hosts
 
 ```bash
 # 编辑 ConfigMap
@@ -74,9 +129,9 @@ EOF
 kubectl patch cm argocd-ssh-known-hosts-cm -n argocd --patch-file ssh-known-hosts-patch.yaml
 ```
 
-## 三、配置 SSH 私钥
+## 四、配置 SSH 私钥
 
-### 3.1 创建 SSH 私钥 Secret
+### 4.1 创建 SSH 私钥 Secret
 
 ```bash
 # 使用 Jenkins 的 SSH 密钥创建 Secret
@@ -89,7 +144,7 @@ kubectl label secret argocd-repo-ssh-key -n argocd \
   argocd.argoproj.io/secret-type=repository
 ```
 
-### 3.2 验证 Secret 创建成功
+### 4.2 验证 Secret 创建成功
 
 ```bash
 # 查看 Secret
@@ -99,7 +154,7 @@ kubectl get secret argocd-repo-ssh-key -n argocd
 kubectl describe secret argocd-repo-ssh-key -n argocd
 ```
 
-## 四、配置多集群（可选）
+## 五、配置多集群（可选）
 
 如果需要部署到多个集群，需要将 Cluster2 注册到 ArgoCD：
 
@@ -133,7 +188,7 @@ argocd cluster add cluster2 \
   --name cluster2
 ```
 
-## 五、应用 ArgoCD 配置
+## 六、应用 ArgoCD 配置
 
 ### 5.1 应用 Project 和 Applications
 
@@ -160,9 +215,9 @@ kubectl get applications -n argocd
 kubectl describe application blog-cluster1 -n argocd
 ```
 
-## 六、Helm Chart 结构
+## 七、Helm Chart 结构
 
-### 6.1 目录结构
+### 7.1 目录结构
 
 ```
 k8s/helm/blog/
@@ -178,7 +233,7 @@ k8s/helm/blog/
     └── ingress-canary.yaml # Canary Ingress 模板
 ```
 
-### 6.2 主要配置项
+### 7.2 主要配置项
 
 **values.yaml 默认配置：**
 
@@ -212,7 +267,7 @@ ingress:
           pathType: Prefix
 ```
 
-### 6.3 本地渲染测试
+### 7.3 本地渲染测试
 
 ```bash
 # 渲染 Cluster1 配置
@@ -232,9 +287,9 @@ helm template blog k8s/helm/blog \
   -f k8s/helm/blog/values-cluster2.yaml
 ```
 
-## 七、验证部署状态
+## 八、验证部署状态
 
-### 7.1 使用 kubectl 验证
+### 8.1 使用 kubectl 验证
 
 ```bash
 # 查看 Applications 状态
@@ -251,7 +306,7 @@ kubectl get all -n blog
 kubectl get ingress -n blog
 ```
 
-### 7.2 使用 ArgoCD CLI
+### 8.2 使用 ArgoCD CLI
 
 ```bash
 # 登录 ArgoCD
@@ -281,7 +336,7 @@ argocd app history blog-cluster1
    - 🟡 OutOfSync：需要同步
    - 🔴 Degraded：部署异常
 
-## 八、CI/CD 流程
+## 九、CI/CD 流程
 
 ### 8.1 完整部署流程
 
@@ -359,7 +414,7 @@ helm template blog ./helm-chart \
   > apps/blog/cluster2/all.yaml
 ```
 
-## 九、故障排查
+## 十、故障排查
 
 ### 9.1 常见问题
 
@@ -437,7 +492,7 @@ argocd app logs blog-cluster1
 argocd admin cluster stats
 ```
 
-## 十、配置 Canary 发布
+## 十一、配置 Canary 发布
 
 ### 10.1 启用 Canary
 
@@ -453,14 +508,14 @@ canary:
     value: "true"
 ```
 
-### 10.2 Canary 发布流程
+### 11.2 Canary 发布流程
 
 1. 修改 `values-cluster1.yaml` 或 `values-cluster2.yaml`
 2. 提交代码触发流水线
 3. ArgoCD 自动同步新配置
 4. Nginx Ingress 根据 Canary 配置分流流量
 
-## 十一、仓库说明
+## 十二、仓库说明
 
 ### 11.1 仓库关系
 
@@ -514,7 +569,7 @@ canary:
 | 修改 Ingress | `k8s/helm/blog/templates/ingress.yaml` | Ingress 模板 |
 | 修改 Deployment | `k8s/helm/blog/templates/deployment.yaml` | Deployment 模板 |
 
-## 十二、快速配置步骤（完整流程）
+## 十三、快速配置步骤（完整流程）
 
 ### 12.1 首次配置
 
