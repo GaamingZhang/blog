@@ -37,8 +37,8 @@
 ### 1.2 部署目标
 
 **阶段一目标**：在现有单集群上实现双环境部署
-- GaamingBlog-Prod环境（生产）
-- GaamingBlog-Canary环境（开发）
+- JiamingBlog-Prod环境（生产）
+- JiamingBlog-Canary环境（开发）
 
 **阶段二目标**：扩展为双集群架构（可选）
 
@@ -191,7 +191,7 @@ CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 
 -- 创建应用用户
-CREATE USER IF NOT EXISTS 'gaamingblog'@'%' IDENTIFIED BY 'GaamingBlog@2024#Prod';
+CREATE USER IF NOT EXISTS 'gaamingblog'@'%' IDENTIFIED BY 'JiamingBlog@2024#Prod';
 
 -- 授权
 GRANT ALL PRIVILEGES ON gaamingblog_prod.* TO 'gaamingblog'@'%';
@@ -216,7 +216,7 @@ kubectl create secret generic gaamingblog-prod-db-secret \
   --from-literal=db-port=3306 \
   --from-literal=db-name=gaamingblog_prod \
   --from-literal=db-user=gaamingblog \
-  --from-literal=db-password='GaamingBlog@2024#Prod' \
+  --from-literal=db-password='JiamingBlog@2024#Prod' \
   --namespace=gaamingblog-prod
 
 # 创建开发环境数据库Secret
@@ -225,7 +225,7 @@ kubectl create secret generic gaamingblog-canary-db-secret \
   --from-literal=db-port=3306 \
   --from-literal=db-name=gaamingblog_canary \
   --from-literal=db-user=gaamingblog \
-  --from-literal=db-password='GaamingBlog@2024#Prod' \
+  --from-literal=db-password='JiamingBlog@2024#Prod' \
   --namespace=gaamingblog-canary
 
 # 验证Secret
@@ -465,7 +465,7 @@ mkdir -p infrastructure/argocd/{projects,applications}
 
 # 创建README
 cat > README.md << 'EOF'
-# GaamingBlog GitOps Repository
+# JiamingBlog GitOps Repository
 
 ## 目录结构
 
@@ -483,7 +483,7 @@ cat > README.md << 'EOF'
 EOF
 ```
 
-### 4.2 创建GaamingBlog应用配置
+### 4.2 创建JiamingBlog应用配置
 
 #### 4.2.1 创建生产环境Helm Chart
 
@@ -492,7 +492,7 @@ EOF
 cat > clusters/cluster1/prod/apps/gaamingblog/Chart.yaml << 'EOF'
 apiVersion: v2
 name: gaamingblog
-description: GaamingBlog Production Environment
+description: JiamingBlog Production Environment
 type: application
 version: 1.0.0
 appVersion: "1.0.0"
@@ -575,7 +575,7 @@ EOF
 cat > clusters/cluster1/canary/apps/gaamingblog/Chart.yaml << 'EOF'
 apiVersion: v2
 name: gaamingblog
-description: GaamingBlog Canary Environment
+description: JiamingBlog Canary Environment
 type: application
 version: 1.0.0
 appVersion: "1.0.0"
@@ -823,7 +823,7 @@ metadata:
   name: gaamingblog-prod
   namespace: argocd
 spec:
-  description: GaamingBlog Production Environment
+  description: JiamingBlog Production Environment
   sourceRepos:
   - '*'
   destinations:
@@ -849,7 +849,7 @@ metadata:
   name: gaamingblog-canary
   namespace: argocd
 spec:
-  description: GaamingBlog Canary/Development Environment
+  description: JiamingBlog Canary/Development Environment
   sourceRepos:
   - '*'
   destinations:
@@ -1380,7 +1380,7 @@ kubectl create secret generic gaamingblog-prod-db-secret \
   --from-literal=db-port=3306 \
   --from-literal=db-name=gaamingblog_prod \
   --from-literal=db-user=gaamingblog \
-  --from-literal=db-password='GaamingBlog@2024#Prod' \
+  --from-literal=db-password='JiamingBlog@2024#Prod' \
   --namespace=gaamingblog-prod --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl create secret generic gaamingblog-canary-db-secret \
@@ -1388,7 +1388,7 @@ kubectl create secret generic gaamingblog-canary-db-secret \
   --from-literal=db-port=3306 \
   --from-literal=db-name=gaamingblog_canary \
   --from-literal=db-user=gaamingblog \
-  --from-literal=db-password='GaamingBlog@2024#Prod' \
+  --from-literal=db-password='JiamingBlog@2024#Prod' \
   --namespace=gaamingblog-canary --dry-run=client -o yaml | kubectl apply -f -
 
 kubectl create secret docker-registry harbor-registry-secret \

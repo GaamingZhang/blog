@@ -1,6 +1,6 @@
-# Gaaming Zhang Blog
+# Jiaming Zhang Blog
 
-> Gaaming Zhang 的个人技术博客，保存开发相关的学习记录。
+> Jiaming Zhang 的个人技术博客，保存开发相关的学习记录。
 
 ## 项目简介
 
@@ -201,7 +201,7 @@ pnpm docs:clean-dev
 ```markdown
 ---
 date: 2025-07-01
-author: Gaaming Zhang
+author: Jiaming Zhang
 isOriginal: true
 article: true
 category: 分类名称
@@ -222,7 +222,7 @@ tag:
 
 ## 联系方式
 
-- **作者**: Gaaming Zhang
+- **作者**: Jiaming Zhang
 - **博客**: [https://www.gaaming.com.cn](https://www.gaaming.com.cn)
 
 ## 许可证

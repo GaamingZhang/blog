@@ -1,6 +1,6 @@
 ---
 date: 2026-03-05
-author: Gaaming Zhang
+author: Jiaming Zhang
 isOriginal: true
 article: true
 category: 机试

@@ -1,6 +1,6 @@
 ---
 date: 2026-03-09
-author: Gaaming Zhang
+author: Jiaming Zhang
 isOriginal: true
 icon: material-symbols:architecture
 sticky: 1001

@@ -875,7 +875,7 @@ kubectl create secret generic gaamingblog-prod-db-secret \
   --from-literal=db-port=3306 \
   --from-literal=db-name=gaamingblog_prod \
   --from-literal=db-user=gaamingblog \
-  --from-literal=db-password='GaamingBlog@2024#Prod' \
+  --from-literal=db-password='JiamingBlog@2024#Prod' \
   --namespace=gaamingblog-prod
 
 # 数据库Secret - 开发环境
@@ -884,7 +884,7 @@ kubectl create secret generic gaamingblog-canary-db-secret \
   --from-literal=db-port=3306 \
   --from-literal=db-name=gaamingblog_canary \
   --from-literal=db-user=gaamingblog \
-  --from-literal=db-password='GaamingBlog@2024#Prod' \
+  --from-literal=db-password='JiamingBlog@2024#Prod' \
   --namespace=gaamingblog-canary
 
 # Harbor Registry Secret - 生产环境
@@ -911,7 +911,7 @@ kubectl create secret generic gaamingblog-prod-db-secret \
   --from-literal=db-port=3306 \
   --from-literal=db-name=gaamingblog_prod \
   --from-literal=db-user=gaamingblog \
-  --from-literal=db-password='GaamingBlog@2024#Prod' \
+  --from-literal=db-password='JiamingBlog@2024#Prod' \
   --namespace=gaamingblog-prod
 
 # 数据库Secret - 开发环境
@@ -920,7 +920,7 @@ kubectl create secret generic gaamingblog-canary-db-secret \
   --from-literal=db-port=3306 \
   --from-literal=db-name=gaamingblog_canary \
   --from-literal=db-user=gaamingblog \
-  --from-literal=db-password='GaamingBlog@2024#Prod' \
+  --from-literal=db-password='JiamingBlog@2024#Prod' \
   --namespace=gaamingblog-canary
 
 # Harbor Registry Secret - 生产环境

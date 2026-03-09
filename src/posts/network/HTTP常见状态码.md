@@ -1,6 +1,6 @@
 ---
 date: 2025-12-28
-author: Gaaming Zhang
+author: Jiaming Zhang
 isOriginal: false
 article: true
 category:

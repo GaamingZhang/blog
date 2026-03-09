@@ -1,6 +1,6 @@
 ---
 date: 2026-02-27
-author: Gaaming Zhang
+author: Jiaming Zhang
 isOriginal: false
 article: true
 category: elasticsearch

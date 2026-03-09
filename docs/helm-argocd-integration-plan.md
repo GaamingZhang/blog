@@ -131,7 +131,7 @@ charts/gaamingzhang-blog/
 ```yaml
 apiVersion: v2
 name: gaamingzhang-blog
-description: A Helm chart for Gaaming Zhang's personal blog
+description: A Helm chart for Jiaming Zhang's personal blog
 
 type: application
 
@@ -604,7 +604,7 @@ metadata:
   name: blog-project
   namespace: argocd
 spec:
-  description: Gaaming Zhang Blog Project
+  description: Jiaming Zhang Blog Project
 
   sourceRepos:
     - '*'  # 允许所有 Git 仓库，生产环境应限制

@@ -7,8 +7,8 @@ export default defineUserConfig({
   base: "/",
 
   lang: "zh-CN",
-  title: "Gaaming Zhang",
-  description: "Gaaming Zhang 的个人博客",
+  title: "Jiaming Zhang",
+  description: "Jiaming Zhang 的个人博客",
 
   theme,
 
