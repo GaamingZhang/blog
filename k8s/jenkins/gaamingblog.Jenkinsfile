@@ -9,7 +9,7 @@ pipeline {
     VERSION_FILE = 'k8s/jenkins/version'
     GIT_REMOTE = 'git@192.168.31.50:gaamingzhang/blog.git'
     WORKDIR = 'kubernetes_deploy_workspace'
-    UPDATE_VERSION_JOB = 'JiamingBlogUpdateVersion'
+    UPDATE_VERSION_JOB = 'GaamingBlogUpdateVersion'
     HARBOR_URL_CLUSTER1 = '192.168.31.30:30002'
     HARBOR_URL_CLUSTER2 = '192.168.31.31:30002'
     IMAGE_NAME = 'gaaming/blog'
