@@ -608,68 +608,7 @@ spec:
     - CreateNamespace=true
 ```
 
-**blog-cluster2.yaml:**
-
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: blog-cluster2
-  namespace: argocd
-spec:
-  project: blog
-  source:
-    repoURL: git@192.168.31.50:gaamingzhang/gaamingblogkubernetesargocd.git
-    targetRevision: HEAD
-    path: apps/blog/cluster2
-  destination:
-    name: cluster2
-    namespace: blog
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-    syncOptions:
-    - CreateNamespace=true
-```
-
-**关键配置说明：**
-
-| 配置项 | Cluster1 | Cluster2 |
-|--------|----------|----------|
-| destination.server | `https://kubernetes.default.svc` | 不指定（使用 name） |
-| destination.name | 不指定 | `cluster2` |
-| path | `apps/blog/cluster1` | `apps/blog/cluster2` |
-
-**注意：** Cluster2 使用 `destination.name: cluster2` 而不是 `server` URL，这需要先在 ArgoCD 中注册集群。
-
-### 8.3 注册 Cluster2 到 ArgoCD
-
-在 ArgoCD 能够部署应用到 Cluster2 之前，需要先将 Cluster2 注册到 ArgoCD：
-
-```bash
-# 1. 切换到 Cluster2 的 context
-kubectl config use-context cluster2
-
-# 2. 创建 ArgoCD 管理服务账号
-kubectl create serviceaccount argocd-manager -n kube-system
-
-# 3. 创建 ClusterRoleBinding
-kubectl create clusterrolebinding argocd-manager-role-binding \
-  --clusterrole=cluster-admin \
-  --serviceaccount=kube-system:argocd-manager
-
-# 4. 切换回 Cluster1 的 context（ArgoCD 所在集群）
-kubectl config use-context cluster1
-
-# 5. 注册 Cluster2 到 ArgoCD
-argocd cluster add cluster2 --name cluster2
-
-# 6. 验证集群注册成功
-argocd cluster list
-```
-
-### 8.4 部署流程
+### 8.3 部署流程
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -701,42 +640,6 @@ argocd cluster list
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
-
-### 8.5 验证双集群部署
-
-部署完成后，需要验证 blog 已成功部署到两个集群：
-
-```bash
-# 验证 Cluster1 部署状态
-kubectl config use-context cluster1
-kubectl get pods -n blog
-kubectl get application blog-cluster1 -n argocd
-
-# 验证 Cluster2 部署状态
-kubectl config use-context cluster2
-kubectl get pods -n blog
-kubectl get application blog-cluster2 -n argocd
-
-# 在 ArgoCD UI 中查看
-# 访问 https://argocd.local，确认两个 Application 都显示 "Synced" 和 "Healthy"
-```
-
-**常见问题排查：**
-
-| 问题 | 可能原因 | 解决方案 |
-|------|---------|---------|
-| blog-cluster2 显示 "Unknown" | Cluster2 未注册到 ArgoCD | 执行 `argocd cluster add cluster2` |
-| blog-cluster2 显示 "Degraded" | 镜像拉取失败 | 检查 Harbor 认证和网络连通性 |
-| blog-cluster2 不存在 | Application 未创建 | 执行 `kubectl apply -f blog-cluster2.yaml` |
-| Cluster2 Pod 无法启动 | 资源不足或配置错误 | 检查 values-cluster2.yaml 配置 |
-
-**确保 Cluster2 部署的检查清单：**
-
-- [ ] Cluster2 已注册到 ArgoCD (`argocd cluster list`)
-- [ ] blog-cluster2 Application 已创建 (`kubectl get applications -n argocd`)
-- [ ] ArgoCD 仓库中存在 `apps/blog/cluster2/all.yaml`
-- [ ] Cluster2 的 Harbor 可访问并包含镜像
-- [ ] Cluster2 有足够的资源运行 Pod
 
 ## 九、本地访问配置
 
