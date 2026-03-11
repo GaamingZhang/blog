@@ -3,7 +3,6 @@ date: 2026-02-13
 author: Jiaming Zhang
 isOriginal: false
 article: true
-star: 900
 category: SRE
 tag:
   - SRE
