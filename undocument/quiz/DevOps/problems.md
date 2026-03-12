@@ -1,0 +1,4 @@
+-熟悉主流AWS服务包括EKS,RDS,Lambda,MQ等，有生产环境Kubernetes管理经验。
+-熟悉主流数据库如PostgreSQL/MySQL/MongoDB的性能优化，集群管理。
+-具备Prometheus/Grafana/Datadog等监控体系的实践经验。
+-掌握Python/Go至少一种，有过自动化加速工作效率实践经验。
